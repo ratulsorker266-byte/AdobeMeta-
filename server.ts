@@ -13,7 +13,8 @@ async function startServer() {
 
   app.post("/api/analyze", async (req, res) => {
     try {
-      const { imageBase64, mimeType, marketplace, isAiGenerated } = req.body;
+      const { imageBase64, mimeType, marketplace, isAiGenerated, tier, assetType, language } = req.body;
+    const aiModel = tier === "pro" ? "gemini-1.5-pro" : "gemini-2.5-flash";
       const clientApiKey = req.headers['x-api-key'] as string;
       const apiKeyToUse = clientApiKey || process.env.GEMINI_API_KEY;
 
@@ -40,8 +41,9 @@ async function startServer() {
       Target Marketplace Platform: ${marketplace?.toUpperCase() || 'ADOBE_STOCK'}.
       Is AI Generated Asset: ${isAiGenerated}.
 
-      PRO-LEVEL SEO & METADATA RULES:
-      1. TITLE OPTIMIZATION: Write a highly descriptive, commercial SEO title (5 to 15 words). 
+      CRITICAL: You MUST write the Title, Description, and ALL Keywords in ${language || "English"}.
+      PRO-LEVEL SEO PRO-LEVEL SEO & METADATA RULES: METADATA RULES:
+      1. TITLE OPTIMIZATION (${assetType ? `Make sure to start the title by identifying it as a ${assetType} (e.g., Vector illustration of..., 3D render of...)` : `Identify the asset type naturally`}): Write a highly descriptive, commercial SEO title (5 to 15 words). 
          Structure: [Main Subject] + [Action/Emotion] + [Environment/Setting]. 
          Make it sound exactly like what a buyer (designer/marketer) would type in a search bar.
       2. KEYWORD STRATEGY (Generate the maximum allowed for ${marketplace}, usually 45-49):
@@ -56,7 +58,7 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: aiModel,
         contents: [
           {
             parts: [
@@ -142,6 +144,23 @@ async function startServer() {
   let lastTrendFetchTime = 0;
   const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours cache for general trends
 
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { messages, tier } = req.body;
+      const clientApiKey = req.headers["x-api-key"] as string;
+      const apiKeyToUse = clientApiKey || process.env.GEMINI_API_KEY;
+      if (!apiKeyToUse) return res.status(401).json({ error: "No API key provided." });
+      // Allowed for all, limits enforced on client
+      const ai = new GoogleGenAI({ apiKey: apiKeyToUse });
+      const response = await ai.models.generateContent({
+        model: "gemini-1.5-pro",
+        contents: messages
+      });
+      res.json({ text: response.text });
+    } catch(e: any) {
+      res.status(500).json({ error: e.message || "Chat failed" });
+    }
+  });
   app.post("/api/trends", async (req, res) => {
     try {
       const { searchQuery, date } = req.body;
@@ -178,12 +197,13 @@ async function startServer() {
       Today's date is: ${date}.
       ${searchQuery ? `The user is specifically searching for trends related to: "${searchQuery}". Tailor your response to this niche if possible.` : `Provide general top trends across all of Adobe Stock.`}
 
+      If the user searches for a specific month (e.g., "October"), list the key seasonal events, holidays, and stock photography opportunities for that month, and BOLD the most crucial/high-selling events in the description using markdown (**event**).
       Return exactly 4 current trends (what's selling right now for the running month) and exactly 4 upcoming trends (what contributors should shoot/create now for the upcoming 3 to 4 months).
       For each, provide a specific topic, a brief visual description of what sells, and 5-8 SEO keywords.
       `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: aiModel,
         contents: [
           {
             role: 'user',

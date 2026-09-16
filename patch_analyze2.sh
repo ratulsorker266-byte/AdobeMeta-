@@ -1,0 +1,1 @@
+sed -i 's/1. TITLE OPTIMIZATION:/1. TITLE OPTIMIZATION (${assetType ? `Make sure to start the title by identifying it as a ${assetType} (e.g., Vector illustration of..., 3D render of...)` : `Identify the asset type naturally`}):/g' server.ts

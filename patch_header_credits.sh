@@ -1,0 +1,1 @@
+sed -i 's/<span className="text-xs font-bold text-slate-300 bg-slate-800 px-2 rounded-md">{credits} Credits<\/span>/<span className="text-xs font-bold text-slate-300 bg-slate-800 px-2 rounded-md" title="Max 100 per day">{100 - dailyUsage} left today<\/span>/g' src/App.tsx

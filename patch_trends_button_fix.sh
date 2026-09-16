@@ -1,0 +1,2 @@
+sed -i 's/if (planType === "pro_1m" onClick={() => setCurrentView('\''trends'\'')}onClick={() => setCurrentView('\''trends'\'')} trendsUsage >= 1)/if (planType === "pro_1m" \&\& trendsUsage >= 1)/g' src/App.tsx
+sed -i 's/if (planType === "pro_3m" onClick={() => setCurrentView('\''trends'\'')}onClick={() => setCurrentView('\''trends'\'')} trendsUsage >= 3)/if (planType === "pro_3m" \&\& trendsUsage >= 3)/g' src/App.tsx
