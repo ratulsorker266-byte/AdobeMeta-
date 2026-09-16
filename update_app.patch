@@ -1,0 +1,229 @@
+--- src/App.tsx
++++ src/App.tsx
+@@ -233,2 +233,4 @@
+   const [customBgUrl, setCustomBgUrl] = useState<string | null>(localStorage.getItem('custom_bg') || null);
++  const [isDragging, setIsDragging] = useState(false);
++  const [toastMessage, setToastMessage] = useState<string | null>(null);
+ 
+@@ -395,14 +397,29 @@
+ 
+-  const handleFilesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+-    if (!e.target.files) return;
+-    const selectedFiles = Array.from(e.target.files).slice(0, 100);
++  const processFiles = (files: File[]) => {
++    const selectedFiles = files.slice(0, 100);
+ 
+     const newItems: BulkItem[] = selectedFiles.map((f, i) => ({
+       id: `${Date.now()}-${i}`,
+       file: f,
+       previewUrl: URL.createObjectURL(f),
+       status: 'pending',
+       progress: 0,
+     }));
+ 
+     setItems((prev) => [...prev, ...newItems].slice(0, 100));
++  };
++
++  const handleFilesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
++    if (e.target.files) {
++      processFiles(Array.from(e.target.files));
++    }
++  };
++
++  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
++    e.preventDefault();
++    setIsDragging(false);
++    if (e.dataTransfer.files) {
++      processFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.name.endsWith('.svg') || f.name.endsWith('.eps')));
++    }
+   };
+ 
+@@ -565,2 +582,3 @@
+     setTimeout(() => setCopiedId(null), 2000);
++    showToast("✓ Metadata copied successfully!");
+   };
+@@ -620,2 +638,7 @@
+ 
++  const showToast = (msg: string) => {
++    setToastMessage(msg);
++    setTimeout(() => setToastMessage(null), 3000);
++  };
++
+   const handleEmbedAll = async () => {
+@@ -632,2 +655,3 @@
+     }
++    showToast("✓ All Metadata embedded & downloaded!");
+   };
+@@ -930,13 +954,23 @@
+                 <motion.div 
+-                  whileHover={{ scale: 1.01, borderColor: "rgba(99, 102, 241, 0.5)" }}
+-                  className="border-2 border-dashed border-slate-800 transition-all rounded-xl p-8 text-center bg-slate-900/40 relative group overflow-hidden"
++                  whileHover={{ scale: 1.01, borderColor: "rgba(99, 102, 241, 0.8)" }}
++                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
++                  onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
++                  onDrop={handleDrop}
++                  className={`border-2 border-dashed transition-all rounded-xl p-12 text-center relative group overflow-hidden ${
++                    isDragging 
++                      ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_50px_rgba(99,102,241,0.2)]' 
++                      : 'border-slate-700 bg-slate-900/40 hover:bg-slate-800/60'
++                  }`}
+                 >
+                   <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                   <input
+                     type="file"
+                     multiple
+                     onChange={handleFilesSelect}
+                     accept="image/*,.svg,.eps"
+                     className="hidden"
+                     id="bulkInput"
+                   />
+-                  <label htmlFor="bulkInput" className="cursor-pointer space-y-3 block relative z-10">
++                  <label htmlFor="bulkInput" className="cursor-pointer space-y-4 block relative z-10">
+                     <motion.div 
+@@ -948,3 +982,5 @@
+                     </motion.div>
+-                    <p className="text-base font-bold text-slate-200">Click to select files (Selected: <span className="text-indigo-400">{items.length}</span>/100 Files)</p>
++                    <h3 className="text-xl font-bold text-slate-100">
++                      {isDragging ? 'Drop images here!' : 'Drag & Drop files or Click to select'}
++                    </h3>
++                    <p className="text-sm text-slate-400 font-medium">Supports JPG, PNG, WEBP, SVG (Max 100 files, 45MB each)</p>
+                     <p className="text-xs text-slate-500 font-medium">Supports JPG, PNG, WEBP, SVG previews up to 45MB each</p>
+@@ -954,49 +990,2 @@
+ 
+-                <div className="flex flex-wrap items-center justify-between gap-4">
+-                  <div className="flex items-center gap-3 bg-slate-900/50 backdrop-blur px-4 py-3 rounded-xl border border-slate-800">
+-                    <input
+-                      type="checkbox"
+-                      id="aiCheck"
+-                      checked={isAiGenerated}
+-                      onChange={(e) => setIsAiGenerated(e.target.checked)}
+-                      className="w-4 h-4 rounded border-slate-700 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-slate-900 bg-slate-800"
+-                    />
+-                    <label htmlFor="aiCheck" className="text-sm font-medium text-slate-300 flex items-center gap-2 cursor-pointer">
+-                      <Sparkles className="w-4 h-4 text-amber-400" />
+-                      Created with Generative AI
+-                    </label>
+-                  </div>
+-                  
+-                  <div className="flex flex-wrap items-center gap-3">
+-                    {items.filter(i => i.result).length > 0 && (
+-                      <motion.button
+-                        whileHover={{ scale: 1.02 }}
+-                        whileTap={{ scale: 0.98 }}
+-                        onClick={handleEmbedAll}
+-                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold px-6 py-3 rounded-xl transition flex items-center gap-2 shadow-lg shadow-indigo-600/20"
+-                      >
+-                        <Download className="w-5 h-5" />
+-                        Embed All ({items.filter(i => i.result).length})
+-                      </motion.button>
+-                    )}
+-                    {items.length > 0 && (
+-                      showClearConfirm ? (
+-                        <div className="flex items-center gap-2">
+-                          <motion.button
+-                            whileHover={{ scale: 1.02 }}
+-                            whileTap={{ scale: 0.98 }}
+-                            onClick={clearAllItems}
+-                            className="bg-red-600 hover:bg-red-500 text-white text-sm font-bold px-6 py-3 rounded-xl transition flex items-center gap-2 shadow-lg shadow-red-600/20"
+-                          >
+-                            <Check className="w-5 h-5" /> Sure?
+-                          </motion.button>
+-                          <motion.button
+-                            whileHover={{ scale: 1.02 }}
+-                            whileTap={{ scale: 0.98 }}
+-                            onClick={() => setShowClearConfirm(false)}
+-                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-3 rounded-xl transition flex items-center gap-2"
+-                          >
+-                            <X className="w-5 h-5" />
+-                          </motion.button>
+-                        </div>
+-                      ) : (
+@@ -1035,3 +1024,3 @@
+                       key={item.id} 
+-                      className="bg-slate-950/80 backdrop-blur-xl border border-slate-800 rounded-xl p-4 flex flex-wrap items-center gap-4 justify-between shadow-lg hover:border-slate-700 transition-colors"
++                      className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-xl p-4 flex flex-wrap items-center gap-4 justify-between shadow-[0_4px_30px_rgba(0,0,0,0.1)] hover:border-indigo-500/50 hover:bg-slate-900/60 transition-all duration-300"
+                     >
+@@ -1300,2 +1289,84 @@
+       </AnimatePresence>
++      
++      {/* Sticky Floating Action Bar */}
++      <AnimatePresence>
++        {items.length > 0 && currentView === 'upload' && (
++          <motion.div
++            initial={{ y: 100, opacity: 0 }}
++            animate={{ y: 0, opacity: 1 }}
++            exit={{ y: 100, opacity: 0 }}
++            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-4xl px-4 pointer-events-none"
++          >
++            <div className="pointer-events-auto bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-3 rounded-2xl flex flex-wrap items-center justify-between gap-4">
++              <div className="flex items-center gap-4 pl-2">
++                <div className="flex items-center gap-3 bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700/50">
++                  <input
++                    type="checkbox"
++                    id="aiCheckFloating"
++                    checked={isAiGenerated}
++                    onChange={(e) => setIsAiGenerated(e.target.checked)}
++                    className="w-4 h-4 rounded border-slate-600 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-slate-900 bg-slate-700"
++                  />
++                  <label htmlFor="aiCheckFloating" className="text-sm font-medium text-slate-200 flex items-center gap-2 cursor-pointer">
++                    <Sparkles className="w-4 h-4 text-amber-400" />
++                    <span className="hidden sm:inline">Generated via AI</span>
++                    <span className="sm:hidden">AI</span>
++                  </label>
++                </div>
++                <span className="text-sm font-bold text-indigo-300 bg-indigo-900/30 px-3 py-1.5 rounded-lg border border-indigo-500/20">
++                  {items.length} Files
++                </span>
++              </div>
++              
++              <div className="flex items-center gap-2">
++                {showClearConfirm ? (
++                  <div className="flex items-center gap-1">
++                    <button onClick={clearAllItems} className="bg-red-600 hover:bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-1">
++                      <Check className="w-4 h-4" /> Yes
++                    </button>
++                    <button onClick={() => setShowClearConfirm(false)} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl transition">
++                      <X className="w-4 h-4" />
++                    </button>
++                  </div>
++                ) : (
++                  <button onClick={() => setShowClearConfirm(true)} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-2" title="Clear All">
++                    <Trash2 className="w-4 h-4" />
++                  </button>
++                )}
++                
++                {items.filter(i => i.result).length > 0 && (
++                  <button onClick={exportBatchCSV} className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-2">
++                    <FileDown className="w-4 h-4 text-emerald-400" /> <span className="hidden sm:inline">CSV</span>
++                  </button>
++                )}
++                
++                <button
++                  onClick={startBulkProcessing}
++                  disabled={isProcessing || items.every(i => i.status === 'completed' || i.status === 'error')}
++                  className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-sm font-bold px-6 py-2 rounded-xl transition flex items-center gap-2 shadow-lg shadow-indigo-600/25"
++                >
++                  {isProcessing ? <RefreshCw className="animate-spin w-4 h-4" /> : <Layers className="w-4 h-4" />}
++                  {isProcessing ? 'Processing...' : 'Generate AI'}
++                </button>
++              </div>
++            </div>
++          </motion.div>
++        )}
++      </AnimatePresence>
++
++      {/* Toast Notification */}
++      <AnimatePresence>
++        {toastMessage && (
++          <motion.div
++            initial={{ opacity: 0, y: 50, scale: 0.9 }}
++            animate={{ opacity: 1, y: 0, scale: 1 }}
++            exit={{ opacity: 0, y: 20, scale: 0.9 }}
++            className="fixed bottom-24 sm:bottom-10 right-4 sm:right-10 z-[100] bg-emerald-500 text-white px-6 py-3 rounded-2xl font-bold shadow-[0_10px_30px_rgba(16,185,129,0.3)] flex items-center gap-3 border border-emerald-400"
++          >
++            <Check className="w-5 h-5" />
++            {toastMessage}
++          </motion.div>
++        )}
++      </AnimatePresence>
+     </div>

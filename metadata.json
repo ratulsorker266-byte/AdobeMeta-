@@ -1,0 +1,6 @@
+{
+  "name": "AdobeMeta Pro",
+  "description": "Expert Stock Marketplace Metadata Specialist, SEO Specialist, Computer Vision Quality Inspector, and Compliance Analyst.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

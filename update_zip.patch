@@ -1,0 +1,50 @@
+--- src/App.tsx
++++ src/App.tsx
+@@ -10,2 +10,3 @@
+ import confetti from 'canvas-confetti';
++import JSZip from 'jszip';
+ 
+@@ -628,2 +629,32 @@
+ 
++  const exportBatchZip = async () => {
++    const completedItems = items.filter(i => i.result && i.status === 'completed');
++    if (completedItems.length === 0) return;
++    
++    showToast("Preparing ZIP file... Please wait.");
++    setIsProcessing(true);
++    
++    try {
++      const zip = new JSZip();
++      for (const item of completedItems) {
++         if (!item.result) continue;
++         const blob = await embedJpegMetadata(item.file, item.result.recommendedTitle, item.result.keywords);
++         zip.file(`meta_${item.file.name}`, blob);
++      }
++      
++      const content = await zip.generateAsync({ type: 'blob' });
++      const url = URL.createObjectURL(content);
++      const a = document.createElement('a');
++      a.href = url;
++      a.download = `Stock_Metadata_Images_${Date.now()}.zip`;
++      document.body.appendChild(a);
++      a.click();
++      document.body.removeChild(a);
++      URL.revokeObjectURL(url);
++      
++      showToast("✓ All Metadata embedded & ZIP downloaded!");
++    } catch (err) {
++      showToast("Failed to create ZIP (some images may not be JPG)");
++    } finally {
++      setIsProcessing(false);
++    }
++  };
++
+   const deleteItem = async (id: string, isHistory?: boolean) => {
+@@ -1421,2 +1452,7 @@
+                 
++                {items.filter(i => i.result).length > 0 && (
++                  <button onClick={exportBatchZip} className="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500 text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-2">
++                    <Download className="w-4 h-4 text-white" /> <span className="hidden sm:inline">Embed to ZIP</span>
++                  </button>
++                )}
+                 {items.filter(i => i.result).length > 0 && (
