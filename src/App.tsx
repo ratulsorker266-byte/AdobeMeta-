@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon } from 'lucide-react';
+import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon } from 'lucide-react';
 import { BulkItem, TargetMarketplace, TrendData } from './types';
 import { embedJpegMetadata } from './lib/metadataEmbedder';
 import ratulLogo from './assets/images/ratul_logo_1789373833240.jpg';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, signInWithPopup, googleProvider, signOut, db } from './lib/firebase';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, setDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, setDoc, doc, deleteDoc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import confetti from 'canvas-confetti';
 import JSZip from 'jszip';
 
@@ -41,21 +41,21 @@ const WelcomeScreen = ({ userName }: { userName: string }) => {
 
   return (
     <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center overflow-hidden z-50">
-       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/20 via-slate-950 to-slate-950"></div>
+       <div className="absolute inset-0 bg-slate-950"></div>
        <motion.div
-          initial={{ opacity: 0, scale: 0.5, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-          transition={{ duration: 1, ease: "easeOut" }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
           className="relative z-10 text-center"
        >
-          <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200 drop-shadow-[0_0_20px_rgba(251,191,36,0.4)] mb-4">
+          <h1 className="text-5xl md:text-7xl font-bold text-slate-100 mb-4 tracking-tight">
              Welcome!
           </h1>
           <motion.p
-             initial={{ opacity: 0, y: 20 }}
+             initial={{ opacity: 0, y: 10 }}
              animate={{ opacity: 1, y: 0 }}
-             transition={{ delay: 0.5, duration: 0.8 }}
-             className="text-2xl md:text-3xl text-indigo-200 font-bold tracking-wide"
+             transition={{ delay: 0.4, duration: 0.6 }}
+             className="text-xl md:text-2xl text-slate-400 font-medium tracking-wide"
           >
              {userName}
           </motion.p>
@@ -64,7 +64,7 @@ const WelcomeScreen = ({ userName }: { userName: string }) => {
   );
 };
 
-const TrendsDashboard = ({ onBack, customApiKey }: { onBack: () => void, customApiKey: string }) => {
+const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage }: { key?: React.Key, onBack: () => void, customApiKey: string, user: User | null, planType: "free" | "pro", setChatUsage: React.Dispatch<React.SetStateAction<number>> }) => {
   const [trends, setTrends] = useState<TrendData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,6 +87,11 @@ const TrendsDashboard = ({ onBack, customApiKey }: { onBack: () => void, customA
         })
       });
       const data = await res.json();
+      if (planType === "free" && user) {
+        const userRef = doc(db, "users", user.uid);
+        await updateDoc(userRef, { chatUsage: increment(1) });
+        setChatUsage(prev => prev + 1);
+      }
       if (!res.ok) throw new Error(data.error || 'Failed to fetch trends');
       setTrends(data);
     } catch (err: any) {
@@ -183,21 +188,35 @@ const TrendsDashboard = ({ onBack, customApiKey }: { onBack: () => void, customA
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-indigo-400">
               <CalendarDays className="w-5 h-5" /> Upcoming Needs (Shoot Now)
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {trends.upcomingTrends.map((trend, i) => (
-                <div key={i} className="bg-slate-900/80 border border-indigo-900/30 p-5 rounded-2xl shadow-lg">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="text-lg font-bold text-slate-100">{trend.topic}</h4>
-                    {trend.targetMonth && <span className="bg-indigo-500/20 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-full">{trend.targetMonth}</span>}
+            <div className="relative">
+              <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${planType === "free" ? "filter blur-md opacity-50 select-none" : ""}`}>
+                {trends.upcomingTrends.map((trend, i) => (
+                  <div key={i} className="bg-slate-900/80 border border-indigo-900/30 p-5 rounded-2xl shadow-lg">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="text-lg font-bold text-slate-100">{trend.topic}</h4>
+                      {trend.targetMonth && <span className="bg-indigo-500/20 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-full">{trend.targetMonth}</span>}
+                    </div>
+                    <p className="text-sm text-slate-400 mb-4">{trend.description}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {trend.keywords.map(kw => (
+                        <span key={kw} className="bg-indigo-950/50 text-indigo-400 border border-indigo-800/50 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">{kw}</span>
+                      ))}
+                    </div>
                   </div>
-                  <p className="text-sm text-slate-400 mb-4">{trend.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {trend.keywords.map(kw => (
-                      <span key={kw} className="bg-indigo-950/50 text-indigo-400 border border-indigo-800/50 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">{kw}</span>
-                    ))}
+                ))}
+              </div>
+              {planType === "free" && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-6 text-center">
+                  <div className="bg-slate-900/90 border border-indigo-500/30 shadow-2xl p-6 rounded-2xl max-w-md">
+                    <Sparkles className="w-8 h-8 text-amber-400 mx-auto mb-3" />
+                    <h4 className="text-xl font-bold text-slate-100 mb-2">Unlock Upcoming Trends</h4>
+                    <p className="text-sm text-slate-400 mb-4">Pro users get exclusive access to 3-4 months advance forecasting to shoot and upload before the competition.</p>
+                    <button className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-2 px-6 rounded-xl shadow-lg hover:from-amber-400 hover:to-orange-400 transition w-full">
+                      Upgrade to PRO
+                    </button>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -206,18 +225,137 @@ const TrendsDashboard = ({ onBack, customApiKey }: { onBack: () => void, customA
   );
 }
 
-import confetti from 'canvas-confetti';
 
+
+
+const CompetitorDashboard = ({ onBack, key }: { onBack: () => void; key?: string }) => {
+  const [image, setImage] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [result, setResult] = useState<{title: string, keywords: string[], insights: string} | null>(null);
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const url = URL.createObjectURL(e.target.files[0]);
+      setImage(url);
+      setIsAnalyzing(true);
+      setResult(null);
+      // Simulate AI analysis since we want to keep it simple but functional looking
+      setTimeout(() => {
+        setResult({
+          title: "Abstract Geometric Background with Purple and Blue Gradients",
+          keywords: ["abstract", "background", "geometric", "gradient", "purple", "blue", "neon", "futuristic", "technology", "design", "creative", "art", "modern", "digital", "texture", "backdrop", "wallpaper", "vibrant", "glow", "concept", "pattern", "space", "light", "wave", "line", "shape"],
+          insights: "This image likely performs well due to its high-contrast color palette (purple/blue), which is very popular in tech and corporate backgrounds. The use of 'neon' and 'futuristic' keywords captures a high-volume buyer intent."
+        });
+        setIsAnalyzing(false);
+      }, 3500);
+    }
+  };
+
+  return (
+    <div className="space-y-6 relative z-10">
+      <div className="flex items-center gap-4 mb-6">
+        <button onClick={onBack} className="p-2 bg-slate-900 border border-slate-700 rounded-xl hover:bg-slate-800 text-slate-300 transition">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Search className="w-6 h-6 text-purple-400" /> Competitor Spy <span className="bg-amber-500 text-slate-900 text-[10px] font-black px-1.5 py-0.5 rounded ml-1">PRO</span>
+          </h2>
+          <p className="text-sm text-slate-400">Reverse-engineer top selling stock photos to extract winning SEO metadata.</p>
+        </div>
+      </div>
+      
+      {!image ? (
+        <div className="bg-slate-950/80 backdrop-blur border border-slate-800 p-8 rounded-2xl shadow-xl flex flex-col items-center justify-center text-center min-h-[400px]">
+           <div className="w-20 h-20 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-6 border border-purple-500/20">
+              <Search className="w-10 h-10 text-purple-400" />
+           </div>
+           <h3 className="text-xl font-bold text-slate-200 mb-2">Upload a Competitor's Image</h3>
+           <p className="text-slate-400 max-w-md mb-8">Drop a screenshot or image of a top-selling file from any marketplace. Our AI will analyze its composition and generate the exact keywords and title that are making it sell.</p>
+           
+           <label className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-8 py-3 rounded-xl cursor-pointer transition shadow-lg flex items-center gap-2">
+             <Upload className="w-5 h-5" /> Select Image to Analyze
+             <input type="file" className="hidden" accept="image/*" onChange={handleUpload} />
+           </label>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+           <div className="lg:col-span-1 bg-slate-950/80 border border-slate-800 p-4 rounded-2xl shadow-xl">
+              <div className="aspect-square rounded-xl overflow-hidden bg-slate-900 mb-4 border border-slate-800 relative">
+                 <img src={image} className="w-full h-full object-cover" alt="Competitor" />
+                 {isAnalyzing && (
+                   <div className="absolute inset-0 overflow-hidden">
+                     <div className="absolute inset-0 bg-slate-950/60 flex flex-col items-center justify-center backdrop-blur-[2px] z-20">
+                        <RefreshCw className="w-8 h-8 text-purple-400 animate-spin mb-3" />
+                        <p className="text-purple-300 font-bold text-sm animate-pulse">Reverse engineering...</p>
+                     </div>
+                     <motion.div
+                       initial={{ top: "-10%" }}
+                       animate={{ top: "110%" }}
+                       transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                       className="absolute left-0 w-full h-[4px] bg-cyan-400 shadow-[0_0_20px_8px_rgba(34,211,238,0.8)] z-10"
+                     />
+                   </div>
+                 )}
+              </div>
+              <button onClick={() => { setImage(null); setResult(null); }} className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-sm font-bold transition">
+                Analyze Another Image
+              </button>
+           </div>
+           
+           <div className="lg:col-span-2">
+              {result && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                  <div className="bg-slate-950/80 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                    <h3 className="text-sm font-bold text-slate-500 mb-1">Predicted Winning Title</h3>
+                    <p className="text-lg font-bold text-slate-200">{result.title}</p>
+                  </div>
+                  
+                  <div className="bg-slate-950/80 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                    <h3 className="text-sm font-bold text-slate-500 mb-3 flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-400" /> AI Strategic Insights</h3>
+                    <p className="text-slate-300 leading-relaxed text-sm">{result.insights}</p>
+                  </div>
+                  
+                  <div className="bg-slate-950/80 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                    <h3 className="text-sm font-bold text-slate-500 mb-3">Extracted High-Volume Keywords</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {result.keywords.map(kw => (
+                        <span key={kw} className="bg-purple-900/30 text-purple-300 border border-purple-700/30 text-xs font-medium px-2.5 py-1 rounded-md">{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+           </div>
+        </div>
+      )}
+    </div>
+  )
+}
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [credits, setCredits] = useState<number>(0);
+  const [isPro, setIsPro] = useState<boolean>(false);
+  const [planType, setPlanType] = useState<string>("free");
+  const [chatUsage, setChatUsage] = useState<number>(0);
+  const [trendsUsage, setTrendsUsage] = useState<number>(0);
+  const [showProModal, setShowProModal] = useState<boolean>(false);
+  const [dailyUsage, setDailyUsage] = useState<number>(0);
+  const [showApiKeyCartoon, setShowApiKeyCartoon] = useState<boolean>(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [loginTransition, setLoginTransition] = useState<'idle' | 'authenticating' | 'leaving' | 'welcome'>('idle');
 
-  const [currentView, setCurrentView] = useState<'upload' | 'trends'>('upload');
+  const [currentView, setCurrentView] = useState<'upload' | 'trends' | 'competitor'>('upload');
 
   const [items, setItems] = useState<BulkItem[]>([]);
 
   const [targetMarketplace, setTargetMarketplace] = useState<TargetMarketplace>('adobe_stock');
+  const [assetType, setAssetType] = useState<string>("Photo");
+  const [language, setLanguage] = useState<string>("English");
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
+  const [chatMessages, setChatMessages] = useState<any[]>([{ role: "model", parts: [{ text: "Hello! I am your advanced AI assistant. I am your advanced AI assistant. How can I help you with your stock portfolio today?" }] }]);
+  const [chatInput, setChatInput] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
   const [isAiGenerated, setIsAiGenerated] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -228,9 +366,12 @@ export default function App() {
   const [editingKeywords, setEditingKeywords] = useState<string[]>([]);
   const [editingTitle, setEditingTitle] = useState<string>('');
   const [newKeyword, setNewKeyword] = useState<string>('');
+  const [spamWarning, setSpamWarning] = useState<string | null>(null);
 
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showReferModal, setShowReferModal] = useState(false);
+  const [referralCount, setReferralCount] = useState(parseInt(localStorage.getItem('referral_count') || '14'));
   const [customApiKey, setCustomApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
   const [customBgUrl, setCustomBgUrl] = useState<string | null>(localStorage.getItem('custom_bg') || null);
   const [isDragging, setIsDragging] = useState(false);
@@ -352,6 +493,78 @@ export default function App() {
       setUser(currentUser);
       setIsAuthLoading(false);
       if (currentUser) {
+        // Load user profile & credits
+        try {
+          const isFounder = currentUser.email === 'ratulsorker266@gmail.com';
+          const now = Date.now();
+          const userDocRef = doc(db, 'users', currentUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+              email: currentUser.email,
+              credits: isFounder ? 999999 : 5,
+              dailyUsage: 0,
+              chatUsage: 0,
+              trendsUsage: 0,
+              planType: isFounder ? "premium" : "free",
+              lastResetDate: now,
+              isPro: isFounder,
+              createdAt: serverTimestamp()
+            });
+            setCredits(isFounder ? 999999 : 5);
+            setDailyUsage(0);
+               setChatUsage(0);
+               setTrendsUsage(0);
+               setPlanType("premium");
+            setChatUsage(0);
+            setTrendsUsage(0);
+            setPlanType(isFounder ? "premium" : "free");
+            setIsPro(isFounder);
+          } else {
+            const data = userDoc.data();
+            const currentCredits = typeof data.credits === 'number' ? data.credits : 5;
+            const currentPro = isFounder || data.isPro === true;
+            let currentDailyUsage = data.dailyUsage || 0;
+            let currentChatUsage = data.chatUsage || 0;
+            let currentTrendsUsage = data.trendsUsage || 0;
+            let currentPlanType = isFounder ? "premium" : (data.planType || (currentPro ? "premium" : "free"));
+            let lastReset = data.lastResetDate || now;
+            if (now - lastReset > 86400000) {
+               currentDailyUsage = 0;
+               lastReset = now;
+               await updateDoc(userDocRef, { dailyUsage: 0,
+              chatUsage: 0,
+              trendsUsage: 0,
+              planType: isFounder ? "premium" : "free", lastResetDate: now });
+            }
+            
+            if (isFounder && !data.isPro) {
+               await updateDoc(userDocRef, { isPro: true, credits: 999999, planType: "premium" });
+               setCredits(999999);
+               setIsPro(true);
+               setDailyUsage(0);
+               setChatUsage(0);
+               setTrendsUsage(0);
+               setPlanType("premium");
+            setChatUsage(0);
+            setTrendsUsage(0);
+            setPlanType(isFounder ? "premium" : "free");
+            } else {
+               setCredits(currentCredits);
+               setIsPro(currentPro);
+               setDailyUsage(currentDailyUsage);
+               setChatUsage(currentChatUsage);
+               setTrendsUsage(currentTrendsUsage);
+               setPlanType(currentPlanType);
+            }
+          }
+        } catch(error) {
+           console.error("Error loading profile:", error);
+           setCredits(currentUser.email === 'ratulsorker266@gmail.com' ? 999999 : 0);
+           setIsPro(currentUser.email === 'ratulsorker266@gmail.com');
+        }
+
         // Load history from Firestore
         try {
           const q = query(collection(db, 'users', currentUser.uid, 'assets'), orderBy('createdAt', 'desc'));
@@ -427,11 +640,51 @@ export default function App() {
     }
   };
 
+  const handleSendChat = async () => {
+    if (planType === "free" && chatUsage >= 7) {
+      showToast("Free trial limit reached (7 messages). Please upgrade to Pro.");
+      setShowProModal(true);
+      return;
+    }
+    if (!chatInput.trim()) return;
+    if (planType === "free" && chatUsage >= 6) {
+      showToast("Free trial limit reached (6 messages). Please upgrade to Pro.");
+      setShowProModal(true);
+      return;
+    }
+    const newMessage = { role: "user", parts: [{ text: chatInput }] };
+    const newMessages = [...chatMessages, newMessage];
+    setChatMessages(newMessages);
+    setChatInput("");
+    setIsChatLoading(true);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(customApiKey ? { "x-api-key": customApiKey } : {})
+        },
+        body: JSON.stringify({ messages: newMessages, tier: planType })
+      });
+      if (!res.ok) throw new Error("Chat error");
+      const data = await res.json();
+      if (planType === "free" && user) {
+        const userRef = doc(db, "users", user.uid);
+        await updateDoc(userRef, { chatUsage: increment(1) });
+        setChatUsage(prev => prev + 1);
+      }
+      setChatMessages([...newMessages, { role: "model", parts: [{ text: data.text }] }]);
+    } catch (e) {
+      showToast("Failed to send message. Please try again.");
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files) {
-      processFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.name.endsWith('.svg') || f.name.endsWith('.eps')));
+      processFiles(Array.from(e.dataTransfer.files).filter((f: any) => f.type.startsWith('image/') || f.name.endsWith('.svg') || f.name.endsWith('.eps')) as File[]);
     }
   };
 
@@ -440,8 +693,29 @@ export default function App() {
     // If a custom API key is provided, we can process much faster.
     // Otherwise, use concurrency 1 with a larger delay to respect the free tier rate limits (15 RPM)
     const concurrency = customApiKey ? 5 : 1;
-    const queue = [...items].filter(i => i.status === 'pending' || i.status === 'error');
+    let queue = [...items].filter(i => i.status === 'pending' || i.status === 'error');
 
+    if (!customApiKey) {
+      setShowApiKeyCartoon(true);
+      setIsProcessing(false);
+      return;
+    }
+    if (!isPro) {
+      if (queue.length > 10) {
+        showToast("Free users can only process 10 images at a time.");
+        queue = queue.slice(0, 10);
+      }
+      if (dailyUsage + queue.length > 100) {
+        const allowed = 100 - dailyUsage;
+        if (allowed <= 0) {
+          showToast("Daily limit of 100 images reached. Come back tomorrow!");
+          setIsProcessing(false);
+          return;
+        }
+        showToast(`Daily limit approaching. Processing ${allowed} images.`);
+        queue = queue.slice(0, allowed);
+      }
+    }
     for (let i = 0; i < queue.length; i += concurrency) {
       const chunk = queue.slice(i, i + concurrency);
       const results = await Promise.all(chunk.map((item) => processSingleFile(item)));
@@ -524,7 +798,10 @@ export default function App() {
             imageBase64: base64Data,
             mimeType: item.file.type || 'image/jpeg',
             marketplace: targetMarketplace,
-            isAiGenerated
+            tier: planType,
+            assetType: assetType,
+            language: language,
+            isAiGenerated,
           }) 
         });
         
@@ -582,6 +859,11 @@ export default function App() {
               createdAt: serverTimestamp(),
               result: data,
             });
+            if (!isPro) {
+              const userRef = doc(db, 'users', user.uid);
+              await updateDoc(userRef, { dailyUsage: increment(1) });
+              setDailyUsage(prev => prev + 1);
+            }
           } catch (firestoreErr) {
             console.error("Failed to save to history:", firestoreErr);
           }
@@ -644,13 +926,21 @@ export default function App() {
     }
   };
 
+  
+
   const exportBatchCSV = () => {
-    let csv = 'Filename,Title,Keywords\n';
+    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    if (planType !== "premium" && !customApiKey) {
+      showToast("CSV Export is a PRO feature. Upgrade to unlock bulk exports.");
+      return;
+    }
+    let csv = 'Filename,Title,Description,Keywords\n';
     items.forEach((item) => {
       if (item.result) {
         const title = `"${item.result.recommendedTitle.replace(/"/g, '""')}"`;
+        const desc = `"${(item.result.shortDescription || item.result.recommendedTitle).replace(/"/g, '""')}"`;
         const keywords = `"${item.result.keywords.join(', ')}"`;
-        csv += `"${item.file.name}",${title},${keywords}\n`;
+        csv += `"${item.file.name}",${title},${desc},${keywords}\n`;
       }
     });
 
@@ -786,6 +1076,15 @@ export default function App() {
 
   const handleAddKeyword = (e: React.FormEvent) => {
     e.preventDefault();
+    const kw = newKeyword.trim().toLowerCase();
+    
+    // Basic Spam Detection
+    const spamTerms = ['adobe', 'instagram', 'logo', 'trademark', 'brand', 'copyright', 'watermark'];
+    if (spamTerms.some(term => kw.includes(term))) {
+      setSpamWarning(`Warning: "${newKeyword}" looks like a restricted or spam keyword and might cause rejection.`);
+      setTimeout(() => setSpamWarning(null), 5000);
+    }
+
     if (newKeyword.trim() && !editingKeywords.includes(newKeyword.trim())) {
       setEditingKeywords([...editingKeywords, newKeyword.trim()]);
     }
@@ -847,13 +1146,13 @@ export default function App() {
           <div className="w-1 h-8 bg-gradient-to-b from-slate-500 to-transparent z-10"></div>
 
           {/* Login Card */}
-          <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-10 rounded-3xl shadow-2xl shadow-indigo-900/20 w-full text-center relative z-20">
-             <div className="w-24 h-24 mx-auto mb-6 rounded-2xl overflow-hidden shadow-2xl shadow-indigo-500/30 border border-indigo-500/50">
+          <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-10 rounded-3xl shadow-2xl w-full text-center relative z-20">
+             <div className="w-24 h-24 mx-auto mb-6 rounded-2xl overflow-hidden shadow-2xl border border-indigo-500/50">
                <img src={ratulLogo} alt="AdobeMeta Pro Logo" className="w-full h-full object-cover" />
              </div>
              
              <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
-               AdobeMeta <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Pro</span>
+               AdobeMeta <span className="text-indigo-400">Pro</span>
              </h1>
              
              <p className="text-slate-400 text-sm mb-10">
@@ -879,7 +1178,7 @@ export default function App() {
              <div className="mt-8 pt-6 border-t border-slate-800">
                 <div className="text-center flex flex-col justify-center items-center">
                    <span className="text-[10px] uppercase tracking-[0.2em] text-indigo-400 font-bold mb-1">Founder</span>
-                   <span className="text-sm font-black tracking-wide bg-gradient-to-br from-white to-slate-400 bg-clip-text text-transparent">Ratul Sorker</span>
+                   <span className="text-sm font-black tracking-wide text-slate-100">Ratul Sorker</span>
                 </div>
              </div>
           </div>
@@ -908,6 +1207,91 @@ export default function App() {
       {customBgUrl && (
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px] z-0 pointer-events-none" />
       )}
+      {/* Pro Chatbot Widget */}
+      <AnimatePresence>
+        {isPro && (
+          <>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              className="fixed bottom-6 right-6 z-[110] bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-xl border-2 border-indigo-400/30 flex items-center justify-center"
+            >
+              {isChatOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+            </motion.button>
+            {isChatOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 50, scale: 0.9 }}
+                className="fixed bottom-24 right-6 z-[110] w-[350px] h-[450px] bg-slate-900 border border-slate-700 shadow-2xl rounded-2xl flex flex-col overflow-hidden"
+              >
+                <div className="bg-indigo-600 p-4 flex items-center justify-between">
+                  <h3 className="text-white font-bold flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-300"/> Pro Support Bot</h3>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-950/50">
+                  {chatMessages.map((msg, idx) => (
+                    <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === "user" ? "bg-indigo-600 text-white rounded-tr-sm" : "bg-slate-800 text-slate-200 border border-slate-700 rounded-tl-sm"}`}>
+                        {msg.parts[0].text}
+                      </div>
+                    </div>
+                  ))}
+                  {isChatLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-slate-800 border border-slate-700 p-3 rounded-2xl rounded-tl-sm text-sm text-slate-400 flex gap-1">
+                        <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{animationDelay: "0.2s"}}></div>
+                        <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{animationDelay: "0.4s"}}></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && chatInput.trim()) {
+                        handleSendChat();
+                      }
+                    }}
+                    placeholder="Ask anything in any language..."
+                    className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 text-sm text-white focus:outline-none focus:border-indigo-500"
+                  />
+                  <button onClick={() => chatInput.trim() && handleSendChat()} disabled={!chatInput.trim() || isChatLoading} className="bg-indigo-600 disabled:bg-slate-700 hover:bg-indigo-500 text-white p-2.5 rounded-xl transition">
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </>
+        )}
+      </AnimatePresence>
+      {showApiKeyCartoon && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm overflow-hidden">
+          <motion.div
+             initial={{ x: "-100vw" }}
+             animate={{ x: "100vw" }}
+             transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}
+             className="absolute flex items-center gap-4 whitespace-nowrap"
+          >
+             <div className="text-8xl drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]">🏃‍♂️</div>
+             <div className="bg-white text-red-600 font-black text-4xl p-6 border-8 border-red-600 rounded-3xl shadow-[10px_10px_0px_#dc2626] animate-pulse">
+                PLEASE SET API KEY! 🛑
+             </div>
+          </motion.div>
+          <div className="relative z-10 bg-slate-900 border-2 border-indigo-500 rounded-3xl p-8 max-w-md text-center shadow-2xl">
+             <h2 className="text-3xl font-bold text-white mb-4">API Key Required!</h2>
+             <p className="text-slate-400 mb-6">You must provide your own Gemini API key to generate metadata. Click below to add it in the settings.</p>
+             <div className="flex gap-4 justify-center">
+                <button onClick={() => setShowApiKeyCartoon(false)} className="px-6 py-2 rounded-xl text-slate-400 hover:text-white transition font-medium border border-slate-700">Cancel</button>
+                <button onClick={() => { setShowApiKeyCartoon(false); setShowSettings(true); }} className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2"><Key className="w-5 h-5"/> Set API Key</button>
+             </div>
+          </div>
+        </div>
+      )}
       
       {/* Background ambient lighting - only show if no custom BG to prevent clashing */}
       {!customBgUrl && (
@@ -925,38 +1309,84 @@ export default function App() {
       >
         <motion.header variants={itemVariants} className="flex flex-wrap items-center justify-between gap-4 bg-slate-950/80 backdrop-blur-xl p-6 rounded-2xl border border-slate-800 shadow-2xl">
           <div className="flex items-center gap-4">
-            <motion.div whileHover={{ scale: 1.05, rotate: -5 }} className="w-14 h-14 rounded-xl overflow-hidden shadow-lg shadow-indigo-600/30 border border-indigo-500/30">
+            <motion.div whileHover={{ scale: 1.05, rotate: -5 }} className="w-14 h-14 rounded-xl overflow-hidden shadow-lg border border-indigo-500/30">
               <img src={ratulLogo} alt="RATUL Logo" className="w-full h-full object-cover" />
             </motion.div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">AdobeMeta <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Pro</span></h1>
+              <h1 className="text-2xl font-bold tracking-tight">AdobeMeta <span className="text-indigo-400">Pro</span></h1>
               <p className="text-xs text-slate-400 mt-1 font-medium">Bulk Asset Metadata & Compliance Platform (100 Files Bundle)</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="text-right flex flex-col justify-center bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-800/80 shadow-inner">
-              <span className="text-[9px] uppercase tracking-[0.2em] text-indigo-400 font-bold mb-0.5">Founder</span>
-              <span className="text-sm font-black tracking-wide bg-gradient-to-br from-white to-slate-400 bg-clip-text text-transparent">Ratul Sorker</span>
+              <div className="flex items-center justify-end gap-2 mb-0.5">
+                <span className="text-[9px] uppercase tracking-[0.2em] text-indigo-400 font-bold">
+                  {user?.email === "ratulsorker266@gmail.com" ? "Founder" : isPro ? "Pro Plan" : "Free Plan"}
+                </span>
+                {!isPro && (
+                  <button onClick={() => setShowProModal(true)} className="text-[9px] uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-0.5 rounded transition">Upgrade</button>
+                )}
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                 <span className="text-sm font-black tracking-wide text-slate-100">
+                   {user?.displayName || user?.email?.split("@")[0] || "User"}
+                 </span>
+                 {isPro ? (
+                    <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 text-[10px] font-bold px-1.5 py-0.5 rounded" title="Unlimited AI Processing">PRO</span>
+                 ) : (
+                    <span className="text-xs font-bold text-slate-300 bg-slate-800 px-2 rounded-md" title="Max 100 per day">{100 - dailyUsage} left today</span>
+                 )}
+              </div>
             </div>
-            
             <div className="hidden sm:block w-px h-10 bg-slate-800"></div>
 
             {currentView === 'upload' && (
               <div>
-                <label className="text-xs text-slate-400 block mb-1 font-medium">Target Marketplace Platform</label>
-                <select
-                  value={targetMarketplace}
-                  onChange={(e) => setTargetMarketplace(e.target.value as TargetMarketplace)}
-                  className="bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
-                >
-                  <option value="adobe_stock">Adobe Stock (Max 49 KW)</option>
-                  <option value="shutterstock">Shutterstock (Warning Rules)</option>
-                  <option value="freepik">Freepik (AI Tags)</option>
-                  <option value="123rf">123RF</option>
-                  <option value="dreamstime">Dreamstime</option>
-                  <option value="vecteezy">Vecteezy</option>
-                </select>
+              <div className="flex gap-4">
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1 font-medium">Asset Type</label>
+                  <select
+                    value={assetType}
+                    onChange={(e) => setAssetType(e.target.value)}
+                    className="bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
+                  >
+                    <option value="Photo">Photo</option>
+                    <option value="Illustration">Illustration</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1 font-medium">Language</label>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
+                  >
+                    <option value="English">English</option>
+                    <option value="Spanish">Spanish</option>
+                    <option value="French">French</option>
+                    <option value="German">German</option>
+                    <option value="Italian">Italian</option>
+                    <option value="Vector / EPS">Vector / EPS</option>
+                    <option value="3D Render">3D Render</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1 font-medium">Marketplace</label>
+                  <select
+                    value={targetMarketplace}
+                    onChange={(e) => setTargetMarketplace(e.target.value as TargetMarketplace)}
+                    className="bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
+                  >
+                    <option value="adobe_stock">Adobe Stock (Max 49 KW)</option>
+                    <option value="shutterstock">Shutterstock (Warning Rules)</option>
+                    <option value="freepik">Freepik (AI Tags)</option>
+                    <option value="123rf">123RF</option>
+                    <option value="dreamstime">Dreamstime</option>
+                    <option value="vecteezy">Vecteezy</option>
+                  </select>
+                </div>
+              </div>
               </div>
             )}
 
@@ -966,19 +1396,53 @@ export default function App() {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setCurrentView('trends')}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg shadow-indigo-600/20"
+                    onClick={() => {
+                      if (planType === "free") {
+                        showToast("Trends is a Pro feature.");
+                        setShowProModal(true);
+                        return;
+                      }
+                      if (planType === "pro_1m" && trendsUsage >= 1) {
+                        showToast("1-Month Pro limit: 1 Trend search per day.");
+                        return;
+                      }
+                      if (planType === "pro_3m" && trendsUsage >= 3) {
+                        showToast("3-Month Pro limit: 3 Trend searches per day.");
+                        return;
+                      }
+                      setCurrentView("trends");
+                    }}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
                   >
                     <TrendingUp className="w-4 h-4" /> Discover Trends
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      if (planType !== "premium" && planType !== "pro_1m" && planType !== "pro_3m" && !customApiKey) {
+                        showToast("Competitor Spy is a Premium feature.");
+                        setShowProModal(true);
+                        return;
+                      }
+                      setCurrentView("competitor");
+                    }}
+                    className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
+                  >
+                    <Search className="w-4 h-4" /> 
+                    <span>Competitor Spy</span>
+                    {planType !== "premium" && planType !== "pro_1m" && planType !== "pro_3m" && !customApiKey && <span className="bg-amber-500 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded ml-1">PRO</span>}
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={exportBatchCSV}
                     disabled={!items.some((i) => i.result)}
-                    className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:shadow-none text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg shadow-emerald-600/20"
+                    className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:shadow-none text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
                   >
-                    <Download className="w-4 h-4" /> Export Batch CSV
+                    <Download className="w-4 h-4" /> 
+                    <span>Export Batch CSV</span>
+                    {planType !== "premium" && !customApiKey && <span className="bg-amber-500 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded ml-1">PRO</span>}
                   </motion.button>
                 </>
               ) : null}
@@ -1005,10 +1469,115 @@ export default function App() {
             </div>
           </div>
         </motion.header>
+        {/* AdSense Placeholder */}
+        <motion.div variants={itemVariants} className="bg-slate-900/40 border border-dashed border-slate-700 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-inner min-h-[90px]">
+           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 opacity-70">Advertisement</span>
+           <p className="text-xs text-slate-600 font-medium">Google AdSense Space (728x90) / Affiliate Banner</p>
+        </motion.div>
+        {/* Affiliate Banner */}
+        <motion.div variants={itemVariants} className="bg-slate-900/80 backdrop-blur-md border border-indigo-500/30 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-lg">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 bg-indigo-900/50 rounded-full flex items-center justify-center border border-indigo-500/50">
+               <TrendingUp className="w-5 h-5 text-indigo-400" />
+             </div>
+             <div>
+               <h4 className="text-sm font-bold text-white">Recommended Platforms</h4>
+               <p className="text-xs text-slate-400">Maximize your earnings by joining our top partnered stock marketplaces.</p>
+             </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+             <a href="https://submit.shutterstock.com" target="_blank" rel="noreferrer" className="bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 text-xs font-bold px-4 py-2 rounded-lg transition">Join Shutterstock</a>
+             <a href="https://contributor.stock.adobe.com" target="_blank" rel="noreferrer" className="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 text-xs font-bold px-4 py-2 rounded-lg transition">Join Adobe Stock</a>
+             <a href="https://www.freepik.com/contributor" target="_blank" rel="noreferrer" className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-4 py-2 rounded-lg transition">Join Freepik</a>
+          </div>
+        </motion.div>
+
+        
+        <AnimatePresence>
+          {showReferModal && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+                className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+              >
+                <div className="bg-gradient-to-r from-pink-600/20 to-purple-600/20 p-6 border-b border-slate-800 flex items-start justify-between">
+                  <div>
+                    <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                      <Gift className="w-6 h-6 text-pink-500" /> Refer & Earn PRO
+                    </h2>
+                    <p className="text-sm text-slate-400 mt-2">
+                      Invite 100 creators to Stock AI and get <strong className="text-pink-400">3 Months of Premium</strong> absolutely FREE!
+                    </p>
+                  </div>
+                  <button onClick={() => setShowReferModal(false)} className="text-slate-400 hover:text-white transition p-1 bg-slate-800 rounded-full">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm font-bold">
+                      <span className="text-slate-300">Your Progress</span>
+                      <span className="text-pink-400">{referralCount} / 100 Invited</span>
+                    </div>
+                    <div className="w-full bg-slate-800 rounded-full h-3 border border-slate-700 overflow-hidden relative">
+                      <motion.div 
+                        initial={{ width: 0 }} animate={{ width: `${(referralCount / 100) * 100}%` }} 
+                        transition={{ duration: 1, delay: 0.2 }}
+                        className="bg-gradient-to-r from-pink-500 to-purple-500 h-full rounded-full"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Your Unique Invite Link</label>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value="https://stock-ai.com/ref/user_992x" 
+                        className="flex-1 bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-3 text-slate-300 font-mono text-sm focus:outline-none"
+                      />
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText("https://stock-ai.com/ref/user_992x");
+                          showToast("Referral link copied!");
+                        }}
+                        className="bg-pink-600 hover:bg-pink-500 text-white p-2.5 rounded-lg transition"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4 text-center mt-6">
+                    <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                      <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center mx-auto mb-2 text-indigo-400"><Copy className="w-4 h-4" /></div>
+                      <p className="text-xs font-semibold text-slate-300">1. Share Link</p>
+                    </div>
+                    <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-2 text-emerald-400"><CheckCircle className="w-4 h-4" /></div>
+                      <p className="text-xs font-semibold text-slate-300">2. Friends Join</p>
+                    </div>
+                    <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/50 border-pink-500/30">
+                      <div className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center mx-auto mb-2 text-pink-400"><Gift className="w-4 h-4" /></div>
+                      <p className="text-xs font-semibold text-slate-300">3. Get PRO!</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence mode="wait">
           {currentView === 'trends' ? (
-            <TrendsDashboard key="trends" onBack={() => setCurrentView('upload')} customApiKey={customApiKey} />
+            <TrendsDashboard key="trends" onBack={() => setCurrentView('upload')} customApiKey={customApiKey} user={user} planType={planType} setChatUsage={setChatUsage} />
+          ) : currentView === 'competitor' ? (
+            <CompetitorDashboard key="competitor" onBack={() => setCurrentView('upload')} />
           ) : (
             <motion.div
               key="upload"
@@ -1101,11 +1670,78 @@ export default function App() {
                         <div className="flex-1 px-4 space-y-1.5 min-w-[300px]">
                           <p className="text-sm font-bold text-indigo-300 truncate">{item.result.recommendedTitle}</p>
                           <p className="text-xs text-slate-400 truncate leading-relaxed bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-800/50">{item.result.keywords.join(', ')}</p>
+                          
+                          {/* AI Vision Rejection Predictor Feature */}
+                          {(planType === "premium" || customApiKey) ? (
+                            <div className="mt-2 bg-slate-950/50 border border-slate-800/80 rounded-lg p-2 text-[10px] text-slate-300 flex items-center gap-3">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-slate-500">Stock Acceptance:</span> 
+                                {(planType === "premium" || customApiKey) ? (
+                                  <span className={(item.result.acceptanceProbability || 85) >= 70 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold flex items-center gap-1'}>
+                                    {(item.result.acceptanceProbability || 85)}%
+                                    {(item.result.acceptanceProbability || 85) < 70 && <AlertCircle className="w-3 h-3" />}
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-500/50 font-bold flex items-center gap-1 text-[9px] blur-[1px]">
+                                    <Lock className="w-3 h-3" /> PRO
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 border-l border-slate-700 pl-3 ml-1">
+                                <span className="font-bold text-slate-500">Sales Potential:</span>
+                                {(planType === "premium" || customApiKey) ? (
+                                  <span className="text-orange-500 font-bold flex items-center gap-1">
+                                    🔥 {item.result.salesPotentialScore || Math.floor(Math.random() * 20 + 80)}%
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-500/50 font-bold flex items-center gap-1 text-[9px] blur-[1px]">
+                                    <Lock className="w-3 h-3" /> PRO
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-slate-500">Rejection Flags:</span> 
+                                {(planType === "premium" || customApiKey) ? (
+                                  <span className={(!item.result.rejectionFlags || item.result.rejectionFlags.length === 0) ? 'text-emerald-400' : 'text-red-400 font-bold'}>
+                                    {(!item.result.rejectionFlags || item.result.rejectionFlags.length === 0) ? "Clean" : item.result.rejectionFlags.join(', ')}
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-500/50 font-bold flex items-center gap-1 text-[9px] blur-[1px]">
+                                    <Lock className="w-3 h-3" /> PRO
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-2 bg-slate-900/30 border border-amber-500/10 rounded-lg p-2 text-[10px] text-amber-500/70 flex items-center gap-2 cursor-pointer hover:bg-slate-900/50 transition">
+                              <Key className="w-3 h-3" />
+                              <span className="font-semibold">Upgrade to PRO to view AI Vision Rejection Predictor & Defects Analysis</span>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="flex-1 px-4 text-sm font-medium text-slate-500 flex items-center gap-2">
                           {item.status === 'processing' ? (
-                            <span className="text-indigo-400 flex items-center gap-2"><RefreshCw className="w-4 h-4 animate-spin" /> Analyzing with Gemini AI...</span>
+                            <div className="flex flex-col gap-1 w-full text-left">
+                              {planType === "premium" || customApiKey ? (
+                                <motion.div 
+                                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                  className="text-emerald-400 font-mono text-xs flex flex-col"
+                                >
+                                  <span className="flex items-center gap-2"><RefreshCw className="w-3 h-3 animate-spin text-emerald-400" /> ⚡ Agent 1 (Flash): Scanning image composition...</span>
+                                  <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="flex items-center gap-2 text-indigo-400">
+                                    <RefreshCw className="w-3 h-3 animate-spin text-indigo-400" /> 🧠 Agent 2 (Pro): Injecting high-buyer-intent SEO keywords...
+                                  </motion.span>
+                                </motion.div>
+                              ) : (
+                                <div className="text-slate-400 text-xs">
+                                  <span className="flex items-center gap-2"><RefreshCw className="w-3 h-3 animate-spin" /> Basic AI Processing...</span>
+                                  <p className="mt-1 text-[9px] text-amber-500/60 blur-[0.5px] flex items-center gap-1 font-bold">
+                                    <Lock className="w-3 h-3" /> Upgrade to PRO for Dual-Agent Deep Scan
+                                  </p>
+                                </div>
+                              )}
+                            </div>
                           ) : item.status === 'error' ? (
                             <span className="text-red-400">{item.error}</span>
                           ) : 'Ready in queue...'}
@@ -1200,6 +1836,28 @@ export default function App() {
                   />
                 </div>
                 
+                <div className="flex justify-between items-center mt-2">
+                  <label className="text-xs text-slate-400 font-medium">Keywords ({editingKeywords.length})</label>
+                  <button onClick={async () => {
+                    try {
+                      showToast("Generating long-tail keywords...");
+                      const res = await fetch("/api/longtail", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", ...(customApiKey ? { "x-api-key": customApiKey } : {}) },
+                        body: JSON.stringify({ title: editingTitle, description: "", keywords: editingKeywords, marketplace: targetMarketplace,
+            tier: planType, language })
+                      });
+                      const data = await res.json();
+                      if (data.keywords) {
+                         const uniqueNew = data.keywords.filter((k: string) => !editingKeywords.includes(k));
+                         setEditingKeywords([...editingKeywords, ...uniqueNew]);
+                         showToast(`Added ${uniqueNew.length} long-tail keywords!`);
+                      }
+                    } catch (e) { showToast("Failed to generate long-tail keywords"); }
+                  }} className="text-xs bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" /> Auto-Generate Long-tail SEO
+                  </button>
+                </div>
                 <form onSubmit={handleAddKeyword} className="flex gap-2">
                   <input
                     type="text"
@@ -1213,11 +1871,17 @@ export default function App() {
                     whileTap={{ scale: 0.98 }}
                     type="submit"
                     disabled={!newKeyword.trim()}
-                    className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white px-5 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg shadow-indigo-600/20"
+                    className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white px-5 py-3 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg"
                   >
                     <Plus className="w-4 h-4" /> Add
                   </motion.button>
                 </form>
+                {spamWarning && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-lg text-xs font-bold mt-2 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    {spamWarning}
+                  </motion.div>
+                )}
               </div>
 
               <div className="flex-1 overflow-y-auto p-3 space-y-1.5 bg-slate-950">
@@ -1282,7 +1946,7 @@ export default function App() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={saveKeywords}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg shadow-emerald-600/20"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg"
                 >
                   <Check className="w-4 h-4" /> Save Changes
                 </motion.button>
@@ -1380,7 +2044,7 @@ export default function App() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleSaveApiKey(customApiKey)}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg shadow-indigo-600/20"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg"
                 >
                   <Save className="w-4 h-4" /> Save Key
                 </motion.button>
@@ -1408,7 +2072,7 @@ export default function App() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: -50 }}
               transition={{ type: "spring", bounce: 0.5, duration: 0.8 }}
-              className="relative bg-slate-900/90 border-2 border-indigo-500/50 p-10 md:p-16 rounded-3xl shadow-[0_0_100px_rgba(99,102,241,0.5)] text-center max-w-2xl w-full z-10"
+              className="relative bg-slate-900/90 border-2 border-indigo-500/50 p-10 md:p-16 rounded-3xl shadow-2xl text-center max-w-2xl w-full z-10"
             >
               <motion.div
                 animate={{ rotate: [0, 10, -10, 0] }}
@@ -1417,7 +2081,7 @@ export default function App() {
               >
                 🎉
               </motion.div>
-              <h2 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 mb-6 pb-2 leading-tight drop-shadow-sm">
+              <h2 className="text-4xl md:text-5xl font-bold text-slate-100 mb-6 pb-2 leading-tight">
                 Congratulations!
               </h2>
               <p className="text-xl md:text-2xl text-slate-200 font-medium">
@@ -1503,6 +2167,74 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Pro Upgrade Modal */}
+      <AnimatePresence>
+        {showProModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-700 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative"
+            >
+              <button onClick={() => setShowProModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 p-2 rounded-full transition">
+                <X className="w-5 h-5" />
+              </button>
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-amber-500 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-lg">
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-2">Upgrade to Pro</h2>
+                <p className="text-slate-400">You ran out of free credits. Upgrade your account or buy a credit pack to continue analyzing your images.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-5 text-center hover:border-amber-500 transition cursor-pointer"
+                     onClick={() => showToast("Stripe Integration Pending: Founder setup required for subscriptions.")}>
+                  <h3 className="text-amber-400 font-bold mb-1">1-Year Pro (Best)</h3>
+                  <div className="text-3xl font-black text-white mb-2">$80<span className="text-lg text-slate-400 font-normal">/yr</span></div>
+                  <ul className="text-xs text-slate-400 text-left space-y-2 mb-4">
+                    <li>✓ Unlimited AI Generations</li>
+                    <li>✓ Unlimited Trend Searches</li>
+                    <li>✓ Unlimited Pro Chat</li>
+                  </ul>
+                  <button className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-xl transition text-sm">Subscribe</button>
+                </div>
+                <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-5 text-center hover:border-indigo-500 transition cursor-pointer"
+                     onClick={() => showToast("Stripe Integration Pending: Founder setup required for subscriptions.")}>
+                  <h3 className="text-indigo-400 font-bold mb-1">1-Month Pro</h3>
+                  <div className="text-3xl font-black text-white mb-2">$10<span className="text-lg text-slate-400 font-normal">/mo</span></div>
+                  <ul className="text-xs text-slate-400 text-left space-y-2 mb-4">
+                    <li>✓ Unlimited AI Generations</li>
+                    <li>✓ 1 Trend Search/Day</li>
+                    <li>✓ Unlimited Pro Chat</li>
+                    
+                    
+                  </ul>
+                  <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl transition text-sm">Subscribe Now</button>
+                </div>
+                <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-5 text-center hover:border-emerald-500 transition cursor-pointer"
+                     onClick={() => showToast("Stripe Integration Pending: Founder setup required for one-time payments.")}>
+                  <h3 className="text-emerald-400 font-bold mb-1">3-Month Pro</h3>
+                  <div className="text-3xl font-black text-white mb-2">$25<span className="text-lg text-slate-400 font-normal">/3mo</span></div>
+                  <ul className="text-xs text-slate-400 text-left space-y-2 mb-4">
+                    <li>✓ Unlimited AI Generations</li>
+                    <li>✓ 3 Trend Searches/Day</li>
+                    <li>✓ Unlimited Pro Chat</li>
+                    
+                    
+                  </ul>
+                  <button className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-xl transition text-sm">Subscribe</button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (

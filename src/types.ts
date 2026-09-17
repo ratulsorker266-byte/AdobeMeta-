@@ -13,6 +13,9 @@ export interface BulkItem {
     priorityKeywords: string[];
     overallSubmissionRiskScore: number;
     riskLabel: string;
+    salesPotentialScore?: number;
+    acceptanceProbability?: number;
+    rejectionFlags?: string[];
     technicalQualityScore: number;
     copyrightRiskScore: number;
     explanation: string;

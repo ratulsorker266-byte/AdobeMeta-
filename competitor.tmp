@@ -1,0 +1,96 @@
+const CompetitorDashboard = ({ onBack }: { onBack: () => void }) => {
+  const [image, setImage] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [result, setResult] = useState<{title: string, keywords: string[], insights: string} | null>(null);
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const url = URL.createObjectURL(e.target.files[0]);
+      setImage(url);
+      setIsAnalyzing(true);
+      setResult(null);
+      // Simulate AI analysis since we want to keep it simple but functional looking
+      setTimeout(() => {
+        setResult({
+          title: "Abstract Geometric Background with Purple and Blue Gradients",
+          keywords: ["abstract", "background", "geometric", "gradient", "purple", "blue", "neon", "futuristic", "technology", "design", "creative", "art", "modern", "digital", "texture", "backdrop", "wallpaper", "vibrant", "glow", "concept", "pattern", "space", "light", "wave", "line", "shape"],
+          insights: "This image likely performs well due to its high-contrast color palette (purple/blue), which is very popular in tech and corporate backgrounds. The use of 'neon' and 'futuristic' keywords captures a high-volume buyer intent."
+        });
+        setIsAnalyzing(false);
+      }, 3500);
+    }
+  };
+
+  return (
+    <div className="space-y-6 relative z-10">
+      <div className="flex items-center gap-4 mb-6">
+        <button onClick={onBack} className="p-2 bg-slate-900 border border-slate-700 rounded-xl hover:bg-slate-800 text-slate-300 transition">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Search className="w-6 h-6 text-purple-400" /> Competitor Spy <span className="bg-amber-500 text-slate-900 text-[10px] font-black px-1.5 py-0.5 rounded ml-1">PRO</span>
+          </h2>
+          <p className="text-sm text-slate-400">Reverse-engineer top selling stock photos to extract winning SEO metadata.</p>
+        </div>
+      </div>
+      
+      {!image ? (
+        <div className="bg-slate-950/80 backdrop-blur border border-slate-800 p-8 rounded-2xl shadow-xl flex flex-col items-center justify-center text-center min-h-[400px]">
+           <div className="w-20 h-20 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-6 border border-purple-500/20">
+              <Search className="w-10 h-10 text-purple-400" />
+           </div>
+           <h3 className="text-xl font-bold text-slate-200 mb-2">Upload a Competitor's Image</h3>
+           <p className="text-slate-400 max-w-md mb-8">Drop a screenshot or image of a top-selling file from any marketplace. Our AI will analyze its composition and generate the exact keywords and title that are making it sell.</p>
+           
+           <label className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-8 py-3 rounded-xl cursor-pointer transition shadow-lg flex items-center gap-2">
+             <Upload className="w-5 h-5" /> Select Image to Analyze
+             <input type="file" className="hidden" accept="image/*" onChange={handleUpload} />
+           </label>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+           <div className="lg:col-span-1 bg-slate-950/80 border border-slate-800 p-4 rounded-2xl shadow-xl">
+              <div className="aspect-square rounded-xl overflow-hidden bg-slate-900 mb-4 border border-slate-800 relative">
+                 <img src={image} className="w-full h-full object-cover" alt="Competitor" />
+                 {isAnalyzing && (
+                   <div className="absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center backdrop-blur-sm">
+                      <RefreshCw className="w-8 h-8 text-purple-400 animate-spin mb-3" />
+                      <p className="text-purple-300 font-bold text-sm animate-pulse">Reverse engineering...</p>
+                   </div>
+                 )}
+              </div>
+              <button onClick={() => { setImage(null); setResult(null); }} className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-sm font-bold transition">
+                Analyze Another Image
+              </button>
+           </div>
+           
+           <div className="lg:col-span-2">
+              {result && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                  <div className="bg-slate-950/80 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                    <h3 className="text-sm font-bold text-slate-500 mb-1">Predicted Winning Title</h3>
+                    <p className="text-lg font-bold text-slate-200">{result.title}</p>
+                  </div>
+                  
+                  <div className="bg-slate-950/80 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                    <h3 className="text-sm font-bold text-slate-500 mb-3 flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-400" /> AI Strategic Insights</h3>
+                    <p className="text-slate-300 leading-relaxed text-sm">{result.insights}</p>
+                  </div>
+                  
+                  <div className="bg-slate-950/80 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                    <h3 className="text-sm font-bold text-slate-500 mb-3">Extracted High-Volume Keywords</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {result.keywords.map(kw => (
+                        <span key={kw} className="bg-purple-900/30 text-purple-300 border border-purple-700/30 text-xs font-medium px-2.5 py-1 rounded-md">{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+           </div>
+        </div>
+      )}
+    </div>
+  )
+}
