@@ -1494,55 +1494,55 @@ export default function App() {
             <div className="hidden sm:block w-px h-10 bg-slate-800"></div>
 
             {currentView === 'upload' && (
-              <div>
-              <div className="flex gap-4">
-                <div>
-                  <label className="text-xs text-slate-400 block mb-1 font-medium">Asset Type</label>
-                  <select
-                    value={assetType}
-                    onChange={(e) => setAssetType(e.target.value)}
-                    className="bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
-                  >
-                    <option value="Photo">Photo</option>
-                    <option value="Illustration">Illustration</option>
-                  </select>
+              <div className="w-full lg:w-auto">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full">
+                  <div className="w-full">
+                    <label className="text-xs text-slate-400 block mb-1 font-medium">Asset Type</label>
+                    <select
+                      value={assetType}
+                      onChange={(e) => setAssetType(e.target.value)}
+                      className="w-full bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
+                    >
+                      <option value="Photo">Photo</option>
+                      <option value="Illustration">Illustration</option>
+                    </select>
+                  </div>
+                  <div className="w-full">
+                    <label className="text-xs text-slate-400 block mb-1 font-medium">Language</label>
+                    <select
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value)}
+                      className="w-full bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
+                    >
+                      <option value="English">English</option>
+                      <option value="Spanish">Spanish</option>
+                      <option value="French">French</option>
+                      <option value="German">German</option>
+                      <option value="Italian">Italian</option>
+                      <option value="Vector / EPS">Vector / EPS</option>
+                      <option value="3D Render">3D Render</option>
+                    </select>
+                  </div>
+                  <div className="col-span-2 sm:col-span-1 w-full">
+                    <label className="text-xs text-slate-400 block mb-1 font-medium">Marketplace</label>
+                    <select
+                      value={targetMarketplace}
+                      onChange={(e) => setTargetMarketplace(e.target.value as TargetMarketplace)}
+                      className="w-full bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
+                    >
+                      <option value="adobe_stock">Adobe Stock (Max 49 KW)</option>
+                      <option value="shutterstock">Shutterstock (Warning Rules)</option>
+                      <option value="freepik">Freepik (AI Tags)</option>
+                      <option value="123rf">123RF</option>
+                      <option value="dreamstime">Dreamstime</option>
+                      <option value="vecteezy">Vecteezy</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs text-slate-400 block mb-1 font-medium">Language</label>
-                  <select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                    className="bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
-                  >
-                    <option value="English">English</option>
-                    <option value="Spanish">Spanish</option>
-                    <option value="French">French</option>
-                    <option value="German">German</option>
-                    <option value="Italian">Italian</option>
-                    <option value="Vector / EPS">Vector / EPS</option>
-                    <option value="3D Render">3D Render</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 block mb-1 font-medium">Marketplace</label>
-                  <select
-                    value={targetMarketplace}
-                    onChange={(e) => setTargetMarketplace(e.target.value as TargetMarketplace)}
-                    className="bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
-                  >
-                    <option value="adobe_stock">Adobe Stock (Max 49 KW)</option>
-                    <option value="shutterstock">Shutterstock (Warning Rules)</option>
-                    <option value="freepik">Freepik (AI Tags)</option>
-                    <option value="123rf">123RF</option>
-                    <option value="dreamstime">Dreamstime</option>
-                    <option value="vecteezy">Vecteezy</option>
-                  </select>
-                </div>
-              </div>
               </div>
             )}
 
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
               {currentView === 'upload' ? (
                 <>
                   <motion.button
@@ -1564,7 +1564,7 @@ export default function App() {
                       }
                       setCurrentView("trends");
                     }}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
+                    className="shrink-0 whitespace-nowrap bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
                   >
                     <TrendingUp className="w-4 h-4" /> Discover Trends
                   </motion.button>
@@ -1579,7 +1579,7 @@ export default function App() {
                       }
                       setCurrentView("competitor");
                     }}
-                    className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
+                    className="shrink-0 whitespace-nowrap bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
                   >
                     <Search className="w-4 h-4" /> 
                     <span>Competitor Spy</span>
@@ -1590,7 +1590,7 @@ export default function App() {
                     whileTap={{ scale: 0.98 }}
                     onClick={exportBatchCSV}
                     disabled={!items.some((i) => i.result)}
-                    className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:shadow-none text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
+                    className="shrink-0 whitespace-nowrap bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:shadow-none text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
                   >
                     <Download className="w-4 h-4" /> 
                     <span>Export Batch CSV</span>
@@ -1603,7 +1603,7 @@ export default function App() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setShowSettings(true)}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 border border-slate-700"
+                className="shrink-0 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 border border-slate-700"
                 title="Settings & API Key"
               >
                 <Settings className="w-4 h-4" />
@@ -1613,7 +1613,7 @@ export default function App() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleLogout}
-                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2"
+                className="shrink-0 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
