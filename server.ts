@@ -43,7 +43,8 @@ async function startServer() {
 
   // Helper function to call Gemini with automatic fallback across reliable models
   async function generateWithFallback(ai: GoogleGenAI, options: any) {
-    const candidateModels = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
+    // gemini-3.1-flash-lite is the freshest and has higher available quota, with fallbacks
+    const candidateModels = ["gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-2.5-flash"];
     let lastError: any = null;
 
     for (const model of candidateModels) {
@@ -127,6 +128,14 @@ async function startServer() {
         }
       }
     } catch (_) {}
+
+    // Convert raw Google API rate limit errors into helpful user messages
+    if (msg.includes("Quota exceeded") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("rate-limits")) {
+      const retryMatch = msg.match(/retry in ([\d\.]+)s/i);
+      const retrySec = retryMatch ? Math.round(parseFloat(retryMatch[1])) : 30;
+      return `Gemini API Free Tier rate limit reached. Auto-pausing; please wait ${retrySec}s or add your own free API Key in Settings (⚙️) for unlimited speed.`;
+    }
+
     return msg;
   }
 
@@ -308,39 +317,19 @@ async function startServer() {
         apiKey: apiKeyToUse,
         httpOptions: { headers: { "User-Agent": "aistudio-build" } }
       });
-      const isProTier = tier && tier !== "free";
-      let rawImageAnalysis = "";
-
-      if (isProTier) {
-        const visionPrompt = `You are an Expert Visual Analyst for Stock Photography. Analyze this image meticulously and provide a highly detailed raw data report covering: 1. Main subjects 2. Environment 3. Composition 4. Conceptual Themes 5. Potential Defects. Do not format it as JSON.`;
-        try {
-          const visionResponse = await generateWithFallback(ai, {
-            contents: [
-              {
-                parts: [
-                  { inlineData: { data: rawBase64, mimeType: safeMimeType } },
-                  { text: visionPrompt }
-                ]
-              }
-            ]
-          });
-          rawImageAnalysis = visionResponse.text || "";
-        } catch (visionErr) {
-          console.warn("Vision preview stage skipped due to error:", visionErr);
-        }
-      }
-
+      // Single unified Gemini analysis call to avoid doubling quota consumption
       const prompt = `
-      You are an Elite Stock Photography SEO Specialist. Target: ${marketplace?.toUpperCase() || 'ADOBE_STOCK'}. Is AI: ${isAiGenerated}.
+      You are an Elite Stock Photography SEO Specialist and Visual Reviewer.
+      Target Marketplace: ${marketplace?.toUpperCase() || 'ADOBE_STOCK'}.
+      Asset Type: ${assetType || 'Photo'}.
+      AI Generated: ${isAiGenerated ? 'Yes' : 'No'}.
       MUST write Title, Description, and Keywords in ${language || "English"}.
-      ${isProTier && rawImageAnalysis ? `I ran this image through our AI Vision Analyst. Raw report: ${rawImageAnalysis}. Use this AND your own analysis.` : ''}
       
       PRO-LEVEL SEO & METADATA RULES:
-      1. TITLE: Highly descriptive, commercial SEO title (5 to 15 words). ${assetType ? `Start by identifying it as a ${assetType}` : ''}
-      2. KEYWORDS: Maximum allowed (45-49). Literal, conceptual, framing.
-      3. ANTI-SPAM: Strictly 100% relevant keywords.
-      4. PRIORITY: Top 10 priority keywords.
-      5. STRICT ADOBE STOCK MODERATOR SIMULATION: Act as a ruthless stock photo reviewer. Calculate the "acceptanceProbability" (0-100%). Identify specific "rejectionFlags" (e.g., Intellectual Property, Artifacts, Out of Focus, Similar Content). Give it a highly realistic and strict ratio.
+      1. TITLE: Highly descriptive, commercially viable title (5 to 15 words) identifying subject, context, and mood.
+      2. KEYWORDS: Generate 40 to 48 highly relevant, high-volume search keywords (mixture of specific subjects, actions, concepts, and styles).
+      3. PRIORITY KEYWORDS: Top 10 most critical search terms.
+      4. STRICT ADOBE STOCK MODERATOR SIMULATION: Calculate "acceptanceProbability" (0-100%). Identify realistic "rejectionFlags" (e.g. Intellectual Property, Artifacts, Out of Focus, Noise, or Clean).
       `;
 
       const response = await generateWithFallback(ai, {

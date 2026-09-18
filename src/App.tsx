@@ -787,9 +787,6 @@ export default function App() {
 
   const startBulkProcessing = async () => {
     setIsProcessing(true);
-    // If a custom API key is provided, we can process much faster.
-    // Otherwise, use concurrency 1 with a larger delay to respect standard limits
-    const concurrency = customApiKey ? 5 : 1;
     let queue = [...items].filter(i => i.status === 'pending' || i.status === 'error');
 
     if (queue.length === 0) {
@@ -813,19 +810,20 @@ export default function App() {
         queue = queue.slice(0, allowed);
       }
     }
-    for (let i = 0; i < queue.length; i += concurrency) {
-      const chunk = queue.slice(i, i + concurrency);
-      const results = await Promise.all(chunk.map((item) => processSingleFile(item)));
+
+    // Process one by one with a smart interval to never overload Gemini free tier RPM
+    for (let index = 0; index < queue.length; index++) {
+      const currentItem = queue[index];
+      const hasHardError = await processSingleFile(currentItem);
       
-      // If any of the files in the chunk returned true for hard quota error, stop the loop entirely
-      if (results.some(hasHardError => hasHardError)) {
-        showToast("System Quota Exceeded. Processing stopped.");
+      if (hasHardError) {
+        showToast("Processing stopped.");
         break;
       }
       
-      // Only delay if using the default free-tier key to respect basic limits
-      if (i + concurrency < queue.length && !customApiKey) {
-        await new Promise(resolve => setTimeout(resolve, 4500));
+      // Delay between images: 1.5s if custom key, 2.5s for default key
+      if (index < queue.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, customApiKey ? 1500 : 2500));
       }
     }
     setIsProcessing(false);
@@ -911,26 +909,32 @@ export default function App() {
         }
 
         if (!res.ok) {
-          if (res.status === 403) {
-            throw new Error(data.error || "System Quota Exceeded. Please add your own API key in Settings.");
-          }
-          if ((res.status === 429 || res.status === 503) && attempt < maxRetries - 1) {
+          const errMsg = data.error || 'Failed';
+          const isRateLimit = res.status === 429 || res.status === 503 || errMsg.toLowerCase().includes('rate limit') || errMsg.toLowerCase().includes('quota');
+          
+          if (isRateLimit && attempt < maxRetries - 1) {
              attempt++;
              
-             // Extract retry delay from Gemini message if present (e.g. "retry in 52.17s")
-             let waitTime = 40000;
-             const retryMatch = data.error?.match(/retry in ([\d\.]+)s/i);
+             // Extract retry delay from Gemini message if present
+             let waitTime = 12000;
+             const retryMatch = errMsg.match(/retry in ([\d\.]+)s/i);
              if (retryMatch && retryMatch[1]) {
-               waitTime = (parseFloat(retryMatch[1]) * 1000) + 2000; // Add 2s buffer
+               waitTime = Math.min((parseFloat(retryMatch[1]) * 1000) + 1500, 20000);
+             } else {
+               waitTime = attempt * 5000;
              }
 
              setItems((prev) =>
-               prev.map((i) => (i.id === item.id ? { ...i, error: `Quota/Rate limit hit. Retrying in ${Math.round(waitTime/1000)}s (Attempt ${attempt}/${maxRetries - 1})...` } : i))
+               prev.map((i) => (i.id === item.id ? { 
+                 ...i, 
+                 status: 'processing',
+                 error: `Free Tier rate limit cooling down... auto-resuming in ${Math.round(waitTime/1000)}s (Attempt ${attempt}/${maxRetries - 1})` 
+               } : i))
              );
              await new Promise(resolve => setTimeout(resolve, waitTime));
              continue; // Retry the loop
           }
-          throw new Error(data.error || 'Failed');
+          throw new Error(errMsg);
         }
 
         setItems((prev) =>
@@ -1891,7 +1895,18 @@ export default function App() {
                               )}
                             </div>
                           ) : item.status === 'error' ? (
-                            <span className="text-red-400">{item.error}</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full bg-red-950/20 border border-red-500/20 rounded-lg p-2">
+                              <div className="flex items-center gap-1.5 text-red-400 text-xs font-medium">
+                                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                <span className="line-clamp-2">{item.error}</span>
+                              </div>
+                              <button
+                                onClick={() => processSingleFile(item)}
+                                className="shrink-0 bg-red-500/20 hover:bg-red-500/30 text-red-300 px-2.5 py-1 rounded text-[11px] font-semibold flex items-center gap-1 transition self-start sm:self-auto"
+                              >
+                                <RefreshCw className="w-3 h-3" /> Retry
+                              </button>
+                            </div>
                           ) : 'Ready in queue...'}
                         </div>
                       )}
