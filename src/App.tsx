@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon } from 'lucide-react';
 import { BulkItem, TargetMarketplace, TrendData } from './types';
 import { embedJpegMetadata } from './lib/metadataEmbedder';
@@ -87,13 +87,17 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage }:
         })
       });
       const data = await res.json();
-      if (planType === "free" && user) {
-        const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, { chatUsage: increment(1) });
-        setChatUsage(prev => prev + 1);
-      }
       if (!res.ok) throw new Error(data.error || 'Failed to fetch trends');
       setTrends(data);
+      if (planType === "free" && user) {
+        try {
+          const userRef = doc(db, "users", user.uid);
+          await updateDoc(userRef, { chatUsage: increment(1) });
+          setChatUsage(prev => prev + 1);
+        } catch (e) {
+          console.warn("Could not update chat usage:", e);
+        }
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -228,26 +232,91 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage }:
 
 
 
-const CompetitorDashboard = ({ onBack, key }: { onBack: () => void; key?: string }) => {
+const CompetitorDashboard = ({ onBack, customApiKey }: { onBack: () => void; customApiKey?: string; key?: string }) => {
   const [image, setImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{title: string, keywords: string[], insights: string} | null>(null);
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const url = URL.createObjectURL(e.target.files[0]);
+      const file = e.target.files[0];
+      if (image) {
+        try { URL.revokeObjectURL(image); } catch (_) {}
+      }
+      const url = URL.createObjectURL(file);
       setImage(url);
       setIsAnalyzing(true);
+      setError(null);
       setResult(null);
-      // Simulate AI analysis since we want to keep it simple but functional looking
-      setTimeout(() => {
-        setResult({
-          title: "Abstract Geometric Background with Purple and Blue Gradients",
-          keywords: ["abstract", "background", "geometric", "gradient", "purple", "blue", "neon", "futuristic", "technology", "design", "creative", "art", "modern", "digital", "texture", "backdrop", "wallpaper", "vibrant", "glow", "concept", "pattern", "space", "light", "wave", "line", "shape"],
-          insights: "This image likely performs well due to its high-contrast color palette (purple/blue), which is very popular in tech and corporate backgrounds. The use of 'neon' and 'futuristic' keywords captures a high-volume buyer intent."
+
+      try {
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const MAX_SIZE = 512;
+              let width = img.width;
+              let height = img.height;
+              if (width > height) {
+                if (width > MAX_SIZE) {
+                  height = Math.round(height * (MAX_SIZE / width));
+                  width = MAX_SIZE;
+                }
+              } else {
+                if (height > MAX_SIZE) {
+                  width = Math.round(width * (MAX_SIZE / height));
+                  height = MAX_SIZE;
+                }
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) return reject(new Error('Canvas context unavailable'));
+              ctx.drawImage(img, 0, 0, width, height);
+              resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+            };
+            img.onerror = reject;
+            img.src = ev.target?.result as string;
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
         });
+
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(customApiKey ? { 'x-api-key': customApiKey } : {})
+          },
+          body: JSON.stringify({
+            imageBase64: base64Data,
+            mimeType: file.type || 'image/jpeg',
+            marketplace: 'adobe_stock',
+            tier: 'pro',
+            language: 'English',
+            isAiGenerated: false
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to analyze competitor image.');
+        }
+
+        setResult({
+          title: data.recommendedTitle || 'Top Commercial Stock Visual',
+          keywords: Array.isArray(data.keywords) ? data.keywords : [],
+          insights: data.explanation || 'Analyzed composition, subject hierarchy, and buyer search intent.'
+        });
+      } catch (err: any) {
+        console.error('Competitor analysis error:', err);
+        setError(err?.message || 'Failed to reverse engineer image.');
+      } finally {
         setIsAnalyzing(false);
-      }, 3500);
+      }
     }
   };
 
@@ -304,6 +373,11 @@ const CompetitorDashboard = ({ onBack, key }: { onBack: () => void; key?: string
            </div>
            
            <div className="lg:col-span-2">
+              {error && (
+                <div className="bg-red-950/40 border border-red-700/50 p-4 rounded-xl text-red-300 text-sm mb-4">
+                  {error}
+                </div>
+              )}
               {result && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                   <div className="bg-slate-950/80 border border-slate-800 p-6 rounded-2xl shadow-xl">
@@ -341,7 +415,6 @@ export default function App() {
   const [trendsUsage, setTrendsUsage] = useState<number>(0);
   const [showProModal, setShowProModal] = useState<boolean>(false);
   const [dailyUsage, setDailyUsage] = useState<number>(0);
-  const [showApiKeyCartoon, setShowApiKeyCartoon] = useState<boolean>(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [loginTransition, setLoginTransition] = useState<'idle' | 'authenticating' | 'leaving' | 'welcome'>('idle');
 
@@ -353,9 +426,10 @@ export default function App() {
   const [assetType, setAssetType] = useState<string>("Photo");
   const [language, setLanguage] = useState<string>("English");
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
-  const [chatMessages, setChatMessages] = useState<any[]>([{ role: "model", parts: [{ text: "Hello! I am your advanced AI assistant. I am your advanced AI assistant. How can I help you with your stock portfolio today?" }] }]);
+  const [chatMessages, setChatMessages] = useState<any[]>([{ role: "model", parts: [{ text: "Hello! I am your StockMeta AI assistant. How can I help you with your microstock keywords, titles, or portfolio strategy today?" }] }]);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
   const [isAiGenerated, setIsAiGenerated] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -389,6 +463,13 @@ export default function App() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [items.length]);
 
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    if (isChatOpen) {
+      chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, isChatLoading, isChatOpen]);
+
   const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -419,9 +500,10 @@ export default function App() {
           try {
             localStorage.setItem('custom_bg', dataUrl);
             setCustomBgUrl(dataUrl);
+            showToast('✓ Custom background updated');
           } catch (e) {
             console.error('Storage quota exceeded for background image', e);
-            alert('Image is too large to save as theme. Please try a smaller image.');
+            showToast('Image is too large to save as theme. Please try a smaller image.');
           }
         }
       };
@@ -514,9 +596,6 @@ export default function App() {
             });
             setCredits(isFounder ? 999999 : 5);
             setDailyUsage(0);
-               setChatUsage(0);
-               setTrendsUsage(0);
-               setPlanType("premium");
             setChatUsage(0);
             setTrendsUsage(0);
             setPlanType(isFounder ? "premium" : "free");
@@ -547,9 +626,6 @@ export default function App() {
                setChatUsage(0);
                setTrendsUsage(0);
                setPlanType("premium");
-            setChatUsage(0);
-            setTrendsUsage(0);
-            setPlanType(isFounder ? "premium" : "free");
             } else {
                setCredits(currentCredits);
                setIsPro(currentPro);
@@ -582,12 +658,15 @@ export default function App() {
               isHistory: true // flag to distinguish
             } as any;
           });
-          setItems(historyItems);
+          setItems(prev => {
+            const nonHistory = prev.filter(i => !i.isHistory);
+            return [...nonHistory, ...historyItems];
+          });
         } catch (error) {
           console.error("Error loading history:", error);
         }
       } else {
-        setItems([]);
+        setItems(prev => prev.filter(i => !i.isHistory));
       }
     });
     return () => unsubscribe();
@@ -641,41 +720,59 @@ export default function App() {
   };
 
   const handleSendChat = async () => {
-    if (planType === "free" && chatUsage >= 7) {
-      showToast("Free trial limit reached (7 messages). Please upgrade to Pro.");
+    const textToSend = chatInput.trim();
+    if (!textToSend) return;
+
+    if (planType === "free" && chatUsage >= 20) {
+      showToast("Free trial limit reached (20 messages). Please upgrade to Pro.");
       setShowProModal(true);
       return;
     }
-    if (!chatInput.trim()) return;
-    if (planType === "free" && chatUsage >= 6) {
-      showToast("Free trial limit reached (6 messages). Please upgrade to Pro.");
-      setShowProModal(true);
-      return;
-    }
-    const newMessage = { role: "user", parts: [{ text: chatInput }] };
+
+    const newMessage = { role: "user", parts: [{ text: textToSend }] };
     const newMessages = [...chatMessages, newMessage];
     setChatMessages(newMessages);
     setChatInput("");
     setIsChatLoading(true);
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(customApiKey ? { "x-api-key": customApiKey } : {})
+          ...(customApiKey ? { "x-api-key": customApiKey.trim() } : {})
         },
         body: JSON.stringify({ messages: newMessages, tier: planType })
       });
-      if (!res.ok) throw new Error("Chat error");
+
       const data = await res.json();
-      if (planType === "free" && user) {
-        const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, { chatUsage: increment(1) });
-        setChatUsage(prev => prev + 1);
+      if (!res.ok) {
+        throw new Error(data.error || "Server error while processing your message");
       }
-      setChatMessages([...newMessages, { role: "model", parts: [{ text: data.text }] }]);
-    } catch (e) {
-      showToast("Failed to send message. Please try again.");
+
+      const replyText = data.text || "I am here to assist you with your stock assets. How else can I help?";
+      
+      // Update chat messages immediately with the AI response
+      setChatMessages(prev => [...prev, { role: "model", parts: [{ text: replyText }] }]);
+
+      // Safely update usage in Firestore in the background
+      if (planType === "free" && user) {
+        try {
+          const userRef = doc(db, "users", user.uid);
+          await setDoc(userRef, { chatUsage: increment(1) }, { merge: true });
+          setChatUsage(prev => prev + 1);
+        } catch (dbErr) {
+          console.warn("Could not increment chat usage in Firestore:", dbErr);
+        }
+      }
+    } catch (e: any) {
+      console.error("Chat error:", e);
+      const errMsg = e?.message || "Failed to reach AI assistant. Please try again.";
+      showToast(`Chat: ${errMsg}`);
+      setChatMessages(prev => [
+        ...prev,
+        { role: "model", parts: [{ text: `⚠️ Error: ${errMsg}` }] }
+      ]);
     } finally {
       setIsChatLoading(false);
     }
@@ -691,12 +788,12 @@ export default function App() {
   const startBulkProcessing = async () => {
     setIsProcessing(true);
     // If a custom API key is provided, we can process much faster.
-    // Otherwise, use concurrency 1 with a larger delay to respect the free tier rate limits (15 RPM)
+    // Otherwise, use concurrency 1 with a larger delay to respect standard limits
     const concurrency = customApiKey ? 5 : 1;
     let queue = [...items].filter(i => i.status === 'pending' || i.status === 'error');
 
-    if (!customApiKey) {
-      setShowApiKeyCartoon(true);
+    if (queue.length === 0) {
+      showToast("No pending images to process. Please upload images first.");
       setIsProcessing(false);
       return;
     }
@@ -911,22 +1008,36 @@ export default function App() {
   const downloadEmbeddedCopy = async (item: BulkItem) => {
     if (!item.result) return;
     try {
-      const blob = await embedJpegMetadata(
-        item.file,
-        item.result.recommendedTitle,
-        item.result.keywords
-      );
+      showToast("Embedding EXIF/IPTC metadata...");
+      const title = item.result.recommendedTitle || '';
+      const keywords = item.result.keywords || [];
+      const blob = await embedJpegMetadata(item.file, title, keywords);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `stockmeta_${item.file.name}`;
+      const baseName = item.file.name.replace(/\.[^/.]+$/, "");
+      const ext = item.file.name.match(/\.png$/i) ? '.jpg' : (item.file.name.substring(item.file.name.lastIndexOf('.')) || '.jpg');
+      a.download = `stockmeta_${baseName}${ext}`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("✓ Image downloaded with embedded metadata");
     } catch (err) {
-      alert('EXIF/IPTC embedding supported for JPG images. Downloading sidecar metadata.');
+      console.error("Download copy error:", err);
+      showToast("Downloading sidecar metadata text file...");
+      const sidecar = `Title: ${item.result.recommendedTitle || ''}\nDescription: ${item.result.shortDescription || item.result.recommendedTitle || ''}\nKeywords: ${(item.result.keywords || []).join(', ')}`;
+      const textBlob = new Blob([sidecar], { type: 'text/plain;charset=utf-8' });
+      const textUrl = URL.createObjectURL(textBlob);
+      const a = document.createElement('a');
+      a.href = textUrl;
+      a.download = `${item.file.name}_metadata.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(textUrl), 1000);
     }
   };
-
-  
 
   const exportBatchCSV = () => {
     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
@@ -934,13 +1045,21 @@ export default function App() {
       showToast("CSV Export is a PRO feature. Upgrade to unlock bulk exports.");
       return;
     }
-    let csv = 'Filename,Title,Description,Keywords\n';
-    items.forEach((item) => {
+    const completedItems = items.filter(i => i.result);
+    if (completedItems.length === 0) {
+      showToast("No completed items with metadata to export.");
+      return;
+    }
+
+    // \uFEFF Byte Order Mark for Excel UTF-8 support
+    let csv = '\uFEFFFilename,Title,Description,Keywords\n';
+    completedItems.forEach((item) => {
       if (item.result) {
-        const title = `"${item.result.recommendedTitle.replace(/"/g, '""')}"`;
-        const desc = `"${(item.result.shortDescription || item.result.recommendedTitle).replace(/"/g, '""')}"`;
-        const keywords = `"${item.result.keywords.join(', ')}"`;
-        csv += `"${item.file.name}",${title},${desc},${keywords}\n`;
+        const safeFileName = item.file.name.replace(/"/g, '""');
+        const safeTitle = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+        const safeDesc = (item.result.shortDescription || item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+        const safeKeywords = (item.result.keywords || []).map(k => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+        csv += `"${safeFileName}","${safeTitle}","${safeDesc}","${safeKeywords}"\n`;
       }
     });
 
@@ -949,12 +1068,19 @@ export default function App() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `batch_${targetMarketplace}_metadata.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast("✓ CSV Export complete");
   };
 
   const exportBatchZip = async () => {
     const completedItems = items.filter(i => i.result && i.status === 'completed');
-    if (completedItems.length === 0) return;
+    if (completedItems.length === 0) {
+      showToast("No completed items to export as ZIP.");
+      return;
+    }
     
     showToast("Preparing ZIP file... Please wait.");
     setIsProcessing(true);
@@ -963,8 +1089,14 @@ export default function App() {
       const zip = new JSZip();
       for (const item of completedItems) {
          if (!item.result) continue;
-         const blob = await embedJpegMetadata(item.file, item.result.recommendedTitle, item.result.keywords);
+         const title = item.result.recommendedTitle || '';
+         const keywords = item.result.keywords || [];
+         const blob = await embedJpegMetadata(item.file, title, keywords);
          zip.file(`meta_${item.file.name}`, blob);
+         
+         // Sidecar metadata file
+         const sidecar = `Title: ${title}\nDescription: ${item.result.shortDescription || title}\nKeywords: ${keywords.join(', ')}`;
+         zip.file(`sidecar_${item.file.name}.txt`, sidecar);
       }
       
       const content = await zip.generateAsync({ type: 'blob' });
@@ -975,11 +1107,12 @@ export default function App() {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       
       showToast("✓ All Metadata embedded & ZIP downloaded!");
-    } catch (err) {
-      showToast("Failed to create ZIP (some images may not be JPG)");
+    } catch (err: any) {
+      console.error("ZIP Generation error:", err);
+      showToast("Failed to create ZIP: " + (err?.message || "Unknown error"));
     } finally {
       setIsProcessing(false);
     }
@@ -1207,91 +1340,106 @@ export default function App() {
       {customBgUrl && (
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px] z-0 pointer-events-none" />
       )}
-      {/* Pro Chatbot Widget */}
+      {/* AI Assistant Chatbot Widget */}
       <AnimatePresence>
-        {isPro && (
-          <>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsChatOpen(!isChatOpen)}
-              className="fixed bottom-6 right-6 z-[110] bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-xl border-2 border-indigo-400/30 flex items-center justify-center"
+        <>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className="fixed bottom-6 right-6 z-[110] bg-indigo-600 hover:bg-indigo-500 text-white p-3.5 rounded-full shadow-xl border border-indigo-400/30 flex items-center justify-center gap-2 group"
+            title="Open AI Stock Assistant"
+          >
+            {isChatOpen ? <X className="w-6 h-6" /> : (
+              <>
+                <MessageSquare className="w-6 h-6" />
+                <span className="hidden sm:inline-block text-xs font-semibold pr-1">AI Assistant</span>
+              </>
+            )}
+          </motion.button>
+          {isChatOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.95 }}
+              className="fixed bottom-20 right-4 sm:right-6 z-[110] w-[calc(100vw-2rem)] sm:w-[380px] h-[480px] max-h-[80vh] bg-slate-900 border border-slate-700 shadow-2xl rounded-2xl flex flex-col overflow-hidden"
             >
-              {isChatOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
-            </motion.button>
-            {isChatOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 50, scale: 0.9 }}
-                className="fixed bottom-24 right-6 z-[110] w-[350px] h-[450px] bg-slate-900 border border-slate-700 shadow-2xl rounded-2xl flex flex-col overflow-hidden"
-              >
-                <div className="bg-indigo-600 p-4 flex items-center justify-between">
-                  <h3 className="text-white font-bold flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-300"/> Pro Support Bot</h3>
+              <div className="bg-indigo-600 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-300"/>
+                  <h3 className="text-white font-bold text-sm">StockMeta AI Assistant</h3>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-950/50">
-                  {chatMessages.map((msg, idx) => (
-                    <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === "user" ? "bg-indigo-600 text-white rounded-tr-sm" : "bg-slate-800 text-slate-200 border border-slate-700 rounded-tl-sm"}`}>
-                        {msg.parts[0].text}
-                      </div>
-                    </div>
-                  ))}
-                  {isChatLoading && (
-                    <div className="flex justify-start">
-                      <div className="bg-slate-800 border border-slate-700 p-3 rounded-2xl rounded-tl-sm text-sm text-slate-400 flex gap-1">
-                        <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{animationDelay: "0.2s"}}></div>
-                        <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{animationDelay: "0.4s"}}></div>
-                      </div>
-                    </div>
+                <div className="flex items-center gap-2">
+                  {isPro ? (
+                    <span className="text-[10px] uppercase font-bold tracking-wider bg-amber-400/20 border border-amber-300/40 text-amber-200 px-2 py-0.5 rounded-full">Pro</span>
+                  ) : (
+                    <span className="text-[10px] bg-indigo-950/60 text-indigo-100 px-2 py-0.5 rounded-full font-medium">
+                      {Math.max(0, 20 - chatUsage)} msgs left
+                    </span>
                   )}
-                </div>
-                <div className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && chatInput.trim()) {
-                        handleSendChat();
-                      }
-                    }}
-                    placeholder="Ask anything in any language..."
-                    className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 text-sm text-white focus:outline-none focus:border-indigo-500"
-                  />
-                  <button onClick={() => chatInput.trim() && handleSendChat()} disabled={!chatInput.trim() || isChatLoading} className="bg-indigo-600 disabled:bg-slate-700 hover:bg-indigo-500 text-white p-2.5 rounded-xl transition">
-                    <Send className="w-4 h-4" />
+                  <button onClick={() => setIsChatOpen(false)} className="text-white/80 hover:text-white p-1">
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
-              </motion.div>
-            )}
-          </>
-        )}
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/60">
+                {chatMessages.map((msg, idx) => {
+                  const textContent = msg.parts?.[0]?.text || msg.text || '';
+                  const isError = textContent.startsWith('⚠️');
+                  return (
+                    <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[88%] p-3 rounded-2xl text-xs sm:text-sm whitespace-pre-wrap leading-relaxed ${
+                        msg.role === "user" 
+                          ? "bg-indigo-600 text-white rounded-tr-sm" 
+                          : isError 
+                            ? "bg-rose-950/80 border border-rose-700/60 text-rose-200 rounded-tl-sm"
+                            : "bg-slate-800 text-slate-200 border border-slate-700/80 rounded-tl-sm"
+                      }`}>
+                        {textContent}
+                      </div>
+                    </div>
+                  );
+                })}
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-slate-800 border border-slate-700 p-3 rounded-2xl rounded-tl-sm text-sm text-slate-400 flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{animationDelay: "0.2s"}}></div>
+                        <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{animationDelay: "0.4s"}}></div>
+                      </div>
+                      <span className="text-xs text-slate-400">Thinking...</span>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatBottomRef} />
+              </div>
+              <div className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey && chatInput.trim()) {
+                      e.preventDefault();
+                      handleSendChat();
+                    }
+                  }}
+                  placeholder="Ask anything in English, বাংলা, etc..."
+                  className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+                />
+                <button
+                  onClick={() => chatInput.trim() && handleSendChat()}
+                  disabled={!chatInput.trim() || isChatLoading}
+                  className="bg-indigo-600 disabled:bg-slate-800 disabled:text-slate-600 hover:bg-indigo-500 text-white p-2.5 rounded-xl transition flex items-center justify-center"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </>
       </AnimatePresence>
-      {showApiKeyCartoon && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm overflow-hidden">
-          <motion.div
-             initial={{ x: "-100vw" }}
-             animate={{ x: "100vw" }}
-             transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}
-             className="absolute flex items-center gap-4 whitespace-nowrap"
-          >
-             <div className="text-8xl drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]">🏃‍♂️</div>
-             <div className="bg-white text-red-600 font-black text-4xl p-6 border-8 border-red-600 rounded-3xl shadow-[10px_10px_0px_#dc2626] animate-pulse">
-                PLEASE SET API KEY! 🛑
-             </div>
-          </motion.div>
-          <div className="relative z-10 bg-slate-900 border-2 border-indigo-500 rounded-3xl p-8 max-w-md text-center shadow-2xl">
-             <h2 className="text-3xl font-bold text-white mb-4">API Key Required!</h2>
-             <p className="text-slate-400 mb-6">You must provide your own Gemini API key to generate metadata. Click below to add it in the settings.</p>
-             <div className="flex gap-4 justify-center">
-                <button onClick={() => setShowApiKeyCartoon(false)} className="px-6 py-2 rounded-xl text-slate-400 hover:text-white transition font-medium border border-slate-700">Cancel</button>
-                <button onClick={() => { setShowApiKeyCartoon(false); setShowSettings(true); }} className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2"><Key className="w-5 h-5"/> Set API Key</button>
-             </div>
-          </div>
-        </div>
-      )}
       
       {/* Background ambient lighting - only show if no custom BG to prevent clashing */}
       {!customBgUrl && (
@@ -1577,7 +1725,7 @@ export default function App() {
           {currentView === 'trends' ? (
             <TrendsDashboard key="trends" onBack={() => setCurrentView('upload')} customApiKey={customApiKey} user={user} planType={planType} setChatUsage={setChatUsage} />
           ) : currentView === 'competitor' ? (
-            <CompetitorDashboard key="competitor" onBack={() => setCurrentView('upload')} />
+            <CompetitorDashboard key="competitor" onBack={() => setCurrentView('upload')} customApiKey={customApiKey} />
           ) : (
             <motion.div
               key="upload"

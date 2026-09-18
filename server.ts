@@ -7,9 +7,20 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Increase the limit for image uploads to support exceptionally large payloads
-  app.use(express.json({ limit: "50gb" }));
-  app.use(express.urlencoded({ limit: "50gb", extended: true }));
+  // Secure, bounded limit for base64 image uploads (50MB is safe and prevents OOM attacks)
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Basic security headers
+  app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    next();
+  });
+
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", uptime: process.uptime() });
+  });
 
   const FALLBACK_TRENDS = {
     currentTrends: [
@@ -30,21 +41,141 @@ async function startServer() {
   let lastTrendFetchTime = 0;
   const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours
 
+  // Helper function to call Gemini with automatic fallback across reliable models
+  async function generateWithFallback(ai: GoogleGenAI, options: any) {
+    const candidateModels = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
+    let lastError: any = null;
+
+    for (const model of candidateModels) {
+      try {
+        return await ai.models.generateContent({
+          ...options,
+          model
+        });
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Model ${model} attempt failed: ${err?.message || err}. Trying next fallback...`);
+      }
+    }
+    throw lastError || new Error("All AI models failed to respond.");
+  }
+
+  function sanitizeChatMessages(rawMessages: any[]): any[] {
+    if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
+      return [{ role: "user", parts: [{ text: "Hello" }] }];
+    }
+
+    const formatted: { role: "user" | "model"; parts: { text: string }[] }[] = [];
+    
+    for (const m of rawMessages) {
+      if (!m) continue;
+      const role: "user" | "model" = m.role === "model" ? "model" : "user";
+      let text = "";
+      if (typeof m === "string") {
+        text = m;
+      } else if (Array.isArray(m.parts)) {
+        text = m.parts
+          .map((p: any) => (typeof p === "string" ? p : p?.text || ""))
+          .filter(Boolean)
+          .join("\n")
+          .trim();
+      } else if (typeof m.content === "string") {
+        text = m.content.trim();
+      } else if (typeof m.text === "string") {
+        text = m.text.trim();
+      }
+      
+      // Skip system error badges or empty messages
+      if (text && !text.startsWith("⚠️ Error:")) {
+        formatted.push({ role, parts: [{ text }] });
+      }
+    }
+
+    // Ensure the conversation begins with a 'user' turn (Gemini requirement)
+    const firstUserIdx = formatted.findIndex(m => m.role === "user");
+    if (firstUserIdx === -1) {
+      return [{ role: "user", parts: [{ text: "Hello" }] }];
+    }
+    const fromFirstUser = formatted.slice(firstUserIdx);
+
+    // Ensure strictly alternating roles (user, model, user, model)
+    const alternating: { role: "user" | "model"; parts: { text: string }[] }[] = [];
+    for (const item of fromFirstUser) {
+      if (alternating.length === 0) {
+        alternating.push(item);
+      } else {
+        const prev = alternating[alternating.length - 1];
+        if (prev.role === item.role) {
+          prev.parts[0].text += "\n\n" + item.parts[0].text;
+        } else {
+          alternating.push(item);
+        }
+      }
+    }
+
+    return alternating.length > 0 ? alternating : [{ role: "user", parts: [{ text: "Hello" }] }];
+  }
+
+  function cleanErrorMessage(err: any): string {
+    if (!err) return "Unknown error occurred";
+    let msg = err.message || String(err);
+    try {
+      if (msg.startsWith("{") && msg.endsWith("}")) {
+        const parsed = JSON.parse(msg);
+        if (parsed.error && parsed.error.message) {
+          msg = parsed.error.message;
+        }
+      }
+    } catch (_) {}
+    return msg;
+  }
+
   app.post("/api/chat", async (req, res) => {
     try {
       const { messages, tier } = req.body;
-      const clientApiKey = req.headers["x-api-key"] as string;
-      const apiKeyToUse = clientApiKey || process.env.GEMINI_API_KEY;
-      if (!apiKeyToUse) return res.status(401).json({ error: "No API key provided." });
-      
-      const ai = new GoogleGenAI({ apiKey: apiKeyToUse });
-      const response = await ai.models.generateContent({
-        model: "gemini-1.5-pro",
-        contents: messages
+      const clientApiKey = typeof req.headers["x-api-key"] === "string" ? req.headers["x-api-key"].trim() : "";
+      const primaryKey = clientApiKey || process.env.GEMINI_API_KEY;
+
+      if (!primaryKey) {
+        return res.status(401).json({ error: "No API key configured on server." });
+      }
+
+      const contentsToUse = sanitizeChatMessages(messages);
+      const systemInstruction = "You are StockMeta Pro AI Assistant, an expert consultant in commercial stock photography, microstock SEO (Adobe Stock, Shutterstock, Getty/iStock, Freepik, Vecteezy), keywording, titles, metadata standards, and stock portfolio growth. Always provide direct, helpful, and actionable responses. Answer in the same language as the user's message.";
+
+      let ai = new GoogleGenAI({
+        apiKey: primaryKey,
+        httpOptions: { headers: { "User-Agent": "aistudio-build" } }
       });
-      res.json({ text: response.text });
+
+      let response: any;
+      try {
+        response = await generateWithFallback(ai, {
+          contents: contentsToUse,
+          config: { systemInstruction }
+        });
+      } catch (firstErr: any) {
+        // If client provided a custom key that failed, fallback automatically to server key
+        if (clientApiKey && process.env.GEMINI_API_KEY && clientApiKey !== process.env.GEMINI_API_KEY) {
+          console.warn("Client custom key failed in /api/chat. Falling back to server key:", firstErr?.message);
+          ai = new GoogleGenAI({
+            apiKey: process.env.GEMINI_API_KEY,
+            httpOptions: { headers: { "User-Agent": "aistudio-build" } }
+          });
+          response = await generateWithFallback(ai, {
+            contents: contentsToUse,
+            config: { systemInstruction }
+          });
+        } else {
+          throw firstErr;
+        }
+      }
+
+      const replyText = response?.text || response?.candidates?.[0]?.content?.parts?.[0]?.text || "I am ready to help with your stock photography and metadata questions.";
+      res.json({ text: replyText });
     } catch(e: any) {
-      res.status(500).json({ error: e.message || "Chat failed" });
+      console.error("/api/chat error:", e);
+      res.status(500).json({ error: cleanErrorMessage(e) });
     }
   });
 
@@ -55,11 +186,17 @@ async function startServer() {
       const apiKeyToUse = clientApiKey || process.env.GEMINI_API_KEY;
       if (!apiKeyToUse) return res.status(401).json({ error: "No API key provided." });
       
-      const ai = new GoogleGenAI({ apiKey: apiKeyToUse });
-      const prompt = `You are an elite Stock Photography SEO specialist. The user needs 5 to 8 HIGHLY SPECIFIC, long-tail search phrases (3-5 words each) for ${marketplace || "stock photography"} in ${language || "English"}.\n\nTitle: ${title}\nDescription: ${description}\nCurrent Keywords: ${keywords.slice(0, 15).join(", ")}...\n\nRules:\n1. Generate phrases a buyer would actually search for.\n2. Output purely as a JSON array of strings.\n3. MUST be in ${language || "English"}.`;
+      const ai = new GoogleGenAI({
+        apiKey: apiKeyToUse,
+        httpOptions: { headers: { "User-Agent": "aistudio-build" } }
+      });
+      const safeKeywords = Array.isArray(keywords) ? keywords : (typeof keywords === "string" ? keywords.split(",") : []);
+      const safeTitle = (title || "").trim();
+      const safeDesc = (description || "").trim();
+
+      const prompt = `You are an elite Stock Photography SEO specialist. The user needs 5 to 8 HIGHLY SPECIFIC, long-tail search phrases (3-5 words each) for ${marketplace || "stock photography"} in ${language || "English"}.\n\nTitle: ${safeTitle}\nDescription: ${safeDesc}\nCurrent Keywords: ${safeKeywords.slice(0, 15).join(", ")}...\n\nRules:\n1. Generate phrases a buyer would actually search for.\n2. Output purely as a JSON array of strings.\n3. MUST be in ${language || "English"}.`;
       
-      const response = await ai.models.generateContent({
-        model: "gemini-1.5-pro",
+      const response = await generateWithFallback(ai, {
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -74,7 +211,7 @@ async function startServer() {
       const newKeywords = JSON.parse(text);
       res.json({ keywords: newKeywords });
     } catch(e: any) {
-      res.status(500).json({ error: e.message || "Failed to generate long-tail keywords" });
+      res.status(500).json({ error: cleanErrorMessage(e) });
     }
   });
 
@@ -96,11 +233,13 @@ async function startServer() {
         return res.json(FALLBACK_TRENDS);
       }
       
-      const ai = new GoogleGenAI({ apiKey: apiKeyToUse! });
+      const ai = new GoogleGenAI({
+        apiKey: apiKeyToUse!,
+        httpOptions: { headers: { "User-Agent": "aistudio-build" } }
+      });
       const prompt = `You are a stock photography trends analyst specializing in Adobe Stock. Today's date is: ${date}. ${searchQuery ? `Trends for: "${searchQuery}".` : `General top trends.`} Return exactly 4 current trends and 4 upcoming trends.`;
       
-      const response = await ai.models.generateContent({
-        model: "gemini-1.5-pro",
+      const response = await generateWithFallback(ai, {
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -144,7 +283,7 @@ async function startServer() {
     } catch (error: any) {
       const isGeneral = !req.body.searchQuery || req.body.searchQuery.trim() === '';
       if (isGeneral) return res.json(FALLBACK_TRENDS);
-      res.status(500).json({ error: "Failed to fetch trends." });
+      res.status(500).json({ error: cleanErrorMessage(error) });
     }
   });
 
@@ -155,36 +294,46 @@ async function startServer() {
       const apiKeyToUse = clientApiKey || process.env.GEMINI_API_KEY;
       
       if (!apiKeyToUse) {
-        return res.status(401).json({ error: "No API key provided." });
+        return res.status(401).json({ error: "No API key provided. Please add your Gemini API key in Settings." });
       }
-      if (!imageBase64 || !mimeType) {
-        return res.status(400).json({ error: "Missing image data or mime type." });
+      if (!imageBase64 || typeof imageBase64 !== "string" || !mimeType) {
+        return res.status(400).json({ error: "Missing or invalid image data or mime type." });
       }
 
-      const ai = new GoogleGenAI({ apiKey: apiKeyToUse });
+      // Strip data URL prefix if provided
+      const rawBase64 = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
+      const safeMimeType = String(mimeType || "image/jpeg").toLowerCase();
+
+      const ai = new GoogleGenAI({
+        apiKey: apiKeyToUse,
+        httpOptions: { headers: { "User-Agent": "aistudio-build" } }
+      });
       const isProTier = tier && tier !== "free";
       let rawImageAnalysis = "";
 
       if (isProTier) {
         const visionPrompt = `You are an Expert Visual Analyst for Stock Photography. Analyze this image meticulously and provide a highly detailed raw data report covering: 1. Main subjects 2. Environment 3. Composition 4. Conceptual Themes 5. Potential Defects. Do not format it as JSON.`;
-        const visionResponse = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: [
-            {
-              parts: [
-                { inlineData: { data: imageBase64, mimeType: mimeType } },
-                { text: visionPrompt }
-              ]
-            }
-          ]
-        });
-        rawImageAnalysis = visionResponse.text || "";
+        try {
+          const visionResponse = await generateWithFallback(ai, {
+            contents: [
+              {
+                parts: [
+                  { inlineData: { data: rawBase64, mimeType: safeMimeType } },
+                  { text: visionPrompt }
+                ]
+              }
+            ]
+          });
+          rawImageAnalysis = visionResponse.text || "";
+        } catch (visionErr) {
+          console.warn("Vision preview stage skipped due to error:", visionErr);
+        }
       }
 
       const prompt = `
       You are an Elite Stock Photography SEO Specialist. Target: ${marketplace?.toUpperCase() || 'ADOBE_STOCK'}. Is AI: ${isAiGenerated}.
       MUST write Title, Description, and Keywords in ${language || "English"}.
-      ${isProTier ? `I ran this image through our AI Vision Analyst. Raw report: ${rawImageAnalysis}. Use this AND your own analysis.` : ''}
+      ${isProTier && rawImageAnalysis ? `I ran this image through our AI Vision Analyst. Raw report: ${rawImageAnalysis}. Use this AND your own analysis.` : ''}
       
       PRO-LEVEL SEO & METADATA RULES:
       1. TITLE: Highly descriptive, commercial SEO title (5 to 15 words). ${assetType ? `Start by identifying it as a ${assetType}` : ''}
@@ -194,12 +343,11 @@ async function startServer() {
       5. STRICT ADOBE STOCK MODERATOR SIMULATION: Act as a ruthless stock photo reviewer. Calculate the "acceptanceProbability" (0-100%). Identify specific "rejectionFlags" (e.g., Intellectual Property, Artifacts, Out of Focus, Similar Content). Give it a highly realistic and strict ratio.
       `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-1.5-pro",
+      const response = await generateWithFallback(ai, {
         contents: [
           {
             parts: [
-              { inlineData: { data: imageBase64, mimeType: mimeType } },
+              { inlineData: { data: rawBase64, mimeType: safeMimeType } },
               { text: prompt },
             ],
           },
@@ -228,15 +376,22 @@ async function startServer() {
         },
       });
 
-      res.json(JSON.parse(response.text || "{}"));
+      const parsed = JSON.parse(response.text || "{}");
+      res.json(parsed);
     } catch (error: any) {
-      console.error(error);
-      res.status(500).json({ error: error.message || "Failed to analyze image" });
+      console.error("Analysis error:", error);
+      res.status(500).json({ error: cleanErrorMessage(error) });
     }
   });
 
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
+    const vite = await createViteServer({
+      server: {
+        middlewareMode: true,
+        hmr: false,
+      },
+      appType: "spa",
+    });
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
