@@ -29,12 +29,21 @@ export async function embedJpegMetadata(file: File, title: string, keywords: str
         const zeroth: Record<string, any> = {};
         
         zeroth[piexif.ImageIFD.ImageDescription] = safeTitle;
+        zeroth[piexif.ImageIFD.Software] = "StockMeta Pro AI";
         zeroth[piexif.ImageIFD.XPKeywords] = encodeUTF16(safeKeywords.join('; '));
         zeroth[piexif.ImageIFD.XPTitle] = encodeUTF16(safeTitle);
+        zeroth[piexif.ImageIFD.XPComment] = encodeUTF16(safeTitle);
+        zeroth[piexif.ImageIFD.XPSubject] = encodeUTF16(safeKeywords.slice(0, 5).join(', '));
 
         const exifObj = { "0th": zeroth };
         const exifBytes = piexif.dump(exifObj);
-        const newJpegDataURL = piexif.insert(exifBytes, jpegDataDataURL);
+
+        let cleanJpeg = jpegDataDataURL;
+        try {
+          cleanJpeg = piexif.remove(jpegDataDataURL);
+        } catch (_) {}
+
+        const newJpegDataURL = piexif.insert(exifBytes, cleanJpeg);
         
         const blob = dataURLtoBlob(newJpegDataURL);
         resolve(blob);
@@ -72,8 +81,11 @@ async function convertToJpegAndEmbed(file: File, title: string, keywords: string
         
         const zeroth: Record<string, any> = {};
         zeroth[piexif.ImageIFD.ImageDescription] = safeTitle;
+        zeroth[piexif.ImageIFD.Software] = "StockMeta Pro AI";
         zeroth[piexif.ImageIFD.XPKeywords] = encodeUTF16(safeKeywords.join('; '));
         zeroth[piexif.ImageIFD.XPTitle] = encodeUTF16(safeTitle);
+        zeroth[piexif.ImageIFD.XPComment] = encodeUTF16(safeTitle);
+        zeroth[piexif.ImageIFD.XPSubject] = encodeUTF16(safeKeywords.slice(0, 5).join(', '));
         
         const exifObj = { "0th": zeroth };
         const exifBytes = piexif.dump(exifObj);

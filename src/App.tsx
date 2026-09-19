@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon } from 'lucide-react';
+import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard } from 'lucide-react';
 import { BulkItem, TargetMarketplace, TrendData } from './types';
 import { embedJpegMetadata } from './lib/metadataEmbedder';
 import ratulLogo from './assets/images/ratul_logo_1789373833240.jpg';
@@ -9,6 +9,15 @@ import { User, onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, setDoc, doc, deleteDoc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import confetti from 'canvas-confetti';
 import JSZip from 'jszip';
+import { MultiCsvExportModal } from './components/MultiCsvExportModal';
+import { PromptStudioDashboard } from './components/PromptStudioDashboard';
+import { SeasonalCalendarDashboard } from './components/SeasonalCalendarDashboard';
+import { RejectionShieldBadge } from './components/RejectionShieldBadge';
+import { MarketplaceMockupModal } from './components/MarketplaceMockupModal';
+import { CommercialReadinessGauge } from './components/CommercialReadinessGauge';
+import { SemanticKeywordBadges } from './components/SemanticKeywordBadges';
+import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
+import { ContributorGoalWidget } from './components/ContributorGoalWidget';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   useEffect(() => {
@@ -64,11 +73,27 @@ const WelcomeScreen = ({ userName }: { userName: string }) => {
   );
 };
 
-const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage }: { key?: React.Key, onBack: () => void, customApiKey: string, user: User | null, planType: "free" | "pro", setChatUsage: React.Dispatch<React.SetStateAction<number>> }) => {
+const MONTHS_LIST = [
+  { name: 'January', label: 'Jan' },
+  { name: 'February', label: 'Feb' },
+  { name: 'March', label: 'Mar' },
+  { name: 'April', label: 'Apr' },
+  { name: 'May', label: 'May' },
+  { name: 'June', label: 'Jun' },
+  { name: 'July', label: 'Jul' },
+  { name: 'August', label: 'Aug' },
+  { name: 'September', label: 'Sep' },
+  { name: 'October', label: 'Oct' },
+  { name: 'November', label: 'Nov' },
+  { name: 'December', label: 'Dec' }
+];
+
+const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage, initialSearchQuery }: { key?: React.Key, onBack: () => void, customApiKey: string, user: User | null, planType: "free" | "pro", setChatUsage: React.Dispatch<React.SetStateAction<number>>, initialSearchQuery?: string }) => {
   const [trends, setTrends] = useState<TrendData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [error, setError] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const fetchTrends = async (query = '') => {
     setIsLoading(true);
@@ -86,7 +111,7 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage }:
           date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) 
         })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Failed to fetch trends');
       setTrends(data);
       if (planType === "free" && user) {
@@ -106,12 +131,27 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage }:
   };
 
   useEffect(() => {
-    fetchTrends();
-  }, []);
+    const q = initialSearchQuery || '';
+    if (q) {
+      setSearchQuery(q);
+    }
+    fetchTrends(q);
+  }, [initialSearchQuery]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchTrends(searchQuery);
+  };
+
+  const selectMonth = (monthName: string) => {
+    setSearchQuery(monthName);
+    fetchTrends(monthName);
+  };
+
+  const copyKeywords = (keywords: string[], keyId: string) => {
+    navigator.clipboard.writeText(keywords.join(', '));
+    setCopiedKey(keyId);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   return (
@@ -127,29 +167,67 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage }:
         </button>
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-emerald-400" /> Adobe Stock Trends
+            <TrendingUp className="w-6 h-6 text-emerald-400" /> Adobe Stock Trends & Month Insights
           </h2>
-          <p className="text-sm text-slate-400">Discover what's selling right now and what to shoot next.</p>
+          <p className="text-sm text-slate-400">Discover what's selling right now, monthly buyer demand, and what to shoot next.</p>
         </div>
       </div>
 
-      <div className="bg-slate-950/80 backdrop-blur border border-slate-800 p-6 rounded-2xl shadow-xl">
-        <form onSubmit={handleSearch} className="flex gap-3">
+      <div className="bg-slate-950/80 backdrop-blur border border-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl">
+        <form onSubmit={handleSearch} className="flex gap-2 sm:gap-3">
           <div className="relative flex-1">
             <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search specific niches (e.g., healthcare, AI technology, autumn)..."
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+              placeholder="Search month (e.g. October, March) or topic (e.g. AI, Healthcare, Travel)..."
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-sm sm:text-base"
             />
           </div>
-          <button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold px-6 py-3 rounded-xl transition flex items-center gap-2">
+          <button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold px-4 sm:px-6 py-3 rounded-xl transition flex items-center gap-2 shrink-0">
             {isLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-            Analyze
+            <span className="hidden sm:inline">Search</span>
           </button>
         </form>
+
+        {/* Quick Month Filter Bar */}
+        <div className="mt-4 pt-3 border-t border-slate-800/80">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+              <CalendarDays className="w-3.5 h-3.5 text-indigo-400" />
+              Quick Month Filter (মাসের নাম সিলেক্ট করুন):
+            </span>
+            {searchQuery && (
+              <button 
+                type="button" 
+                onClick={() => { setSearchQuery(''); fetchTrends(''); }}
+                className="text-[11px] text-indigo-400 hover:text-indigo-300 underline"
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-800">
+            {MONTHS_LIST.map(m => {
+              const isSelected = searchQuery.toLowerCase().includes(m.name.toLowerCase()) || searchQuery.toLowerCase() === m.label.toLowerCase();
+              return (
+                <button
+                  key={m.name}
+                  type="button"
+                  onClick={() => selectMonth(m.name)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap shrink-0 border ${
+                    isSelected 
+                      ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/30' 
+                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white hover:border-slate-700'
+                  }`}
+                >
+                  {m.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -163,25 +241,107 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage }:
            <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 0.5 }} className="text-6xl drop-shadow-xl" style={{ transform: 'scaleX(-1)' }}>
              🏍️💨
            </motion.div>
-           <p className="text-indigo-400 font-bold animate-pulse text-lg tracking-wide">Scouting trends on the marketplace...</p>
+           <p className="text-indigo-400 font-bold animate-pulse text-lg tracking-wide">
+             {searchQuery ? `Analyzing trends and production ideas for "${searchQuery}"...` : 'Scouting top market trends on Adobe Stock...'}
+           </p>
         </div>
       )}
 
       {!isLoading && trends && (
         <div className="space-y-8">
+          {/* Actionable Month Production Guide Banner (কী নিয়ে কাজ করা দরকার) */}
+          {(trends.whatToCreate && trends.whatToCreate.length > 0 || trends.monthOverview) && (
+            <div className="bg-gradient-to-br from-indigo-950/60 via-slate-900 to-purple-950/40 border border-indigo-500/30 p-5 sm:p-6 rounded-2xl shadow-xl">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                    <Lightbulb className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                      {trends.monthName ? `${trends.monthName} Production Strategy` : 'Monthly Production Strategy'}
+                      <span className="text-[10px] uppercase tracking-wider font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                        What to Shoot & Design
+                      </span>
+                    </h3>
+                    <p className="text-xs text-indigo-300/80">কী বিষয় নিয়ে কাজ করা দরকার ও বায়ারদের সর্বোচ্চ চাহিদা</p>
+                  </div>
+                </div>
+              </div>
+
+              {trends.monthOverview && (
+                <p className="text-sm text-slate-300 leading-relaxed mb-4 bg-slate-950/50 p-3.5 rounded-xl border border-slate-800">
+                  {trends.monthOverview}
+                </p>
+              )}
+
+              {trends.whatToCreate && trends.whatToCreate.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2.5 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" /> কী বিষয় নিয়ে কাজ করবেন (Production Checklist):
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {trends.whatToCreate.map((item, idx) => (
+                      <div key={idx} className="flex items-start gap-2.5 bg-slate-900/80 border border-slate-800/90 p-3 rounded-xl hover:border-slate-700 transition">
+                        <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">
+                          {idx + 1}
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+                          {item}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-400">
-              <TrendingUp className="w-5 h-5" /> Currently Trending
+              <TrendingUp className="w-5 h-5" /> Currently Trending (বর্তমান ট্রেন্ডস)
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {trends.currentTrends.map((trend, i) => (
-                <div key={i} className="bg-slate-900/80 border border-emerald-900/30 p-5 rounded-2xl shadow-lg">
-                  <h4 className="text-lg font-bold text-slate-100 mb-2">{trend.topic}</h4>
-                  <p className="text-sm text-slate-400 mb-4">{trend.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {trend.keywords.map(kw => (
-                      <span key={kw} className="bg-emerald-950/50 text-emerald-400 border border-emerald-800/50 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">{kw}</span>
-                    ))}
+                <div key={i} className="bg-slate-900/80 border border-emerald-900/30 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <h4 className="text-lg font-bold text-slate-100">{trend.topic}</h4>
+                      {trend.bestFor && (
+                        <span className="bg-slate-800 text-slate-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-slate-700 shrink-0">
+                          {trend.bestFor}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-400 mb-3">{trend.description}</p>
+                    
+                    {trend.actionGuide && (
+                      <div className="mb-4 p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                        <div className="text-[11px] font-bold text-amber-400 mb-1 flex items-center gap-1">
+                          <Lightbulb className="w-3 h-3" /> কী তৈরি করবেন (Action Guide):
+                        </div>
+                        <p className="text-xs text-slate-300 leading-relaxed">{trend.actionGuide}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] text-slate-400 font-semibold">High-Demand Keywords:</span>
+                      <button 
+                        type="button"
+                        onClick={() => copyKeywords(trend.keywords, `curr-${i}`)}
+                        className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition"
+                      >
+                        {copiedKey === `curr-${i}` ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedKey === `curr-${i}` ? 'Copied!' : 'Copy All'}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {trend.keywords.map(kw => (
+                        <span key={kw} className="bg-emerald-950/50 text-emerald-400 border border-emerald-800/50 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">{kw}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -190,21 +350,57 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage }:
 
           <div>
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-indigo-400">
-              <CalendarDays className="w-5 h-5" /> Upcoming Needs (Shoot Now)
+              <CalendarDays className="w-5 h-5" /> Upcoming Needs - Shoot Now (ভবিষ্যতের চাহিদা)
             </h3>
             <div className="relative">
               <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${planType === "free" ? "filter blur-md opacity-50 select-none" : ""}`}>
                 {trends.upcomingTrends.map((trend, i) => (
-                  <div key={i} className="bg-slate-900/80 border border-indigo-900/30 p-5 rounded-2xl shadow-lg">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="text-lg font-bold text-slate-100">{trend.topic}</h4>
-                      {trend.targetMonth && <span className="bg-indigo-500/20 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-full">{trend.targetMonth}</span>}
+                  <div key={i} className="bg-slate-900/80 border border-indigo-900/30 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start gap-2 mb-2">
+                        <h4 className="text-lg font-bold text-slate-100">{trend.topic}</h4>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {trend.bestFor && (
+                            <span className="bg-slate-800 text-slate-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-slate-700">
+                              {trend.bestFor}
+                            </span>
+                          )}
+                          {trend.targetMonth && (
+                            <span className="bg-indigo-500/20 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-full border border-indigo-500/30">
+                              {trend.targetMonth}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-400 mb-3">{trend.description}</p>
+
+                      {trend.actionGuide && (
+                        <div className="mb-4 p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                          <div className="text-[11px] font-bold text-amber-400 mb-1 flex items-center gap-1">
+                            <Lightbulb className="w-3 h-3" /> কী তৈরি করবেন (Action Guide):
+                          </div>
+                          <p className="text-xs text-slate-300 leading-relaxed">{trend.actionGuide}</p>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-sm text-slate-400 mb-4">{trend.description}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {trend.keywords.map(kw => (
-                        <span key={kw} className="bg-indigo-950/50 text-indigo-400 border border-indigo-800/50 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">{kw}</span>
-                      ))}
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] text-slate-400 font-semibold">Forecast Keywords:</span>
+                        <button 
+                          type="button"
+                          onClick={() => copyKeywords(trend.keywords, `up-${i}`)}
+                          className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition"
+                        >
+                          {copiedKey === `up-${i}` ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                          {copiedKey === `up-${i}` ? 'Copied!' : 'Copy All'}
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {trend.keywords.map(kw => (
+                          <span key={kw} className="bg-indigo-950/50 text-indigo-400 border border-indigo-800/50 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md">{kw}</span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -275,6 +471,9 @@ const CompetitorDashboard = ({ onBack, customApiKey }: { onBack: () => void; cus
               canvas.height = height;
               const ctx = canvas.getContext('2d');
               if (!ctx) return reject(new Error('Canvas context unavailable'));
+              // Fill clean white background for transparent PNG/vector previews to prevent black background artifacts
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillRect(0, 0, width, height);
               ctx.drawImage(img, 0, 0, width, height);
               resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
             };
@@ -293,7 +492,7 @@ const CompetitorDashboard = ({ onBack, customApiKey }: { onBack: () => void; cus
           },
           body: JSON.stringify({
             imageBase64: base64Data,
-            mimeType: file.type || 'image/jpeg',
+            mimeType: 'image/jpeg',
             marketplace: 'adobe_stock',
             tier: 'pro',
             language: 'English',
@@ -301,7 +500,7 @@ const CompetitorDashboard = ({ onBack, customApiKey }: { onBack: () => void; cus
           })
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(data.error || 'Failed to analyze competitor image.');
         }
@@ -408,9 +607,10 @@ const CompetitorDashboard = ({ onBack, customApiKey }: { onBack: () => void; cus
 }
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [credits, setCredits] = useState<number>(0);
-  const [isPro, setIsPro] = useState<boolean>(false);
-  const [planType, setPlanType] = useState<string>("free");
+  const [credits, setCredits] = useState<number>(999999);
+  const [isPro, setIsPro] = useState<boolean>(true);
+  const [planType, setPlanType] = useState<string>("premium");
+  const [proDaysLeft, setProDaysLeft] = useState<number>(30);
   const [chatUsage, setChatUsage] = useState<number>(0);
   const [trendsUsage, setTrendsUsage] = useState<number>(0);
   const [showProModal, setShowProModal] = useState<boolean>(false);
@@ -418,7 +618,10 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [loginTransition, setLoginTransition] = useState<'idle' | 'authenticating' | 'leaving' | 'welcome'>('idle');
 
-  const [currentView, setCurrentView] = useState<'upload' | 'trends' | 'competitor'>('upload');
+  const [currentView, setCurrentView] = useState<'upload' | 'trends' | 'competitor' | 'prompts' | 'calendar'>('upload');
+  const [showMultiCsvModal, setShowMultiCsvModal] = useState<boolean>(false);
+  const [trendSearchPreload, setTrendSearchPreload] = useState<string>('');
+  const [promptStudioPreloadConcept, setPromptStudioPreloadConcept] = useState<string>('');
 
   const [items, setItems] = useState<BulkItem[]>([]);
 
@@ -450,6 +653,32 @@ export default function App() {
   const [customBgUrl, setCustomBgUrl] = useState<string | null>(localStorage.getItem('custom_bg') || null);
   const [isDragging, setIsDragging] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Live Buyer Mockup & Shortcuts Modals
+  const [mockupItem, setMockupItem] = useState<BulkItem | null>(null);
+  const [showShortcutsModal, setShowShortcutsModal] = useState<boolean>(false);
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        setShowShortcutsModal((prev) => !prev);
+      } else if (e.key === 'Escape') {
+        setShowShortcutsModal(false);
+        setMockupItem(null);
+        setShowMultiCsvModal(false);
+        setEditingItemId(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Prevent accidental page reload if there are items
   useEffect(() => {
@@ -579,35 +808,52 @@ export default function App() {
         try {
           const isFounder = currentUser.email === 'ratulsorker266@gmail.com';
           const now = Date.now();
+          const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
           const userDocRef = doc(db, 'users', currentUser.uid);
           const userDoc = await getDoc(userDocRef);
           
           if (!userDoc.exists()) {
+            const proTrialExpiresAt = now + ONE_MONTH_MS;
             await setDoc(userDocRef, {
               email: currentUser.email,
-              credits: isFounder ? 999999 : 5,
+              credits: 999999,
               dailyUsage: 0,
               chatUsage: 0,
               trendsUsage: 0,
-              planType: isFounder ? "premium" : "free",
+              planType: "premium",
               lastResetDate: now,
-              isPro: isFounder,
+              isPro: true,
+              proTrialExpiresAt: proTrialExpiresAt,
               createdAt: serverTimestamp()
             });
-            setCredits(isFounder ? 999999 : 5);
+            setCredits(999999);
             setDailyUsage(0);
             setChatUsage(0);
             setTrendsUsage(0);
-            setPlanType(isFounder ? "premium" : "free");
-            setIsPro(isFounder);
+            setPlanType("premium");
+            setIsPro(true);
+            setProDaysLeft(30);
           } else {
             const data = userDoc.data();
-            const currentCredits = typeof data.credits === 'number' ? data.credits : 5;
-            const currentPro = isFounder || data.isPro === true;
+            let proTrialExpiresAt = data.proTrialExpiresAt;
+            // If existing user has no trial timestamp, grant 30 days from now
+            if (!proTrialExpiresAt) {
+              proTrialExpiresAt = now + ONE_MONTH_MS;
+              await updateDoc(userDocRef, {
+                proTrialExpiresAt,
+                isPro: true,
+                planType: "premium",
+                credits: 999999
+              });
+            }
+
+            const isTrialActive = isFounder || now < proTrialExpiresAt;
+            const daysLeft = Math.max(1, Math.ceil((proTrialExpiresAt - now) / (1000 * 60 * 60 * 24)));
+            setProDaysLeft(daysLeft);
+
             let currentDailyUsage = data.dailyUsage || 0;
             let currentChatUsage = data.chatUsage || 0;
             let currentTrendsUsage = data.trendsUsage || 0;
-            let currentPlanType = isFounder ? "premium" : (data.planType || (currentPro ? "premium" : "free"));
             let lastReset = data.lastResetDate || now;
             if (now - lastReset > 86400000) {
                currentDailyUsage = 0;
@@ -615,30 +861,31 @@ export default function App() {
                await updateDoc(userDocRef, { dailyUsage: 0,
               chatUsage: 0,
               trendsUsage: 0,
-              planType: isFounder ? "premium" : "free", lastResetDate: now });
+              lastResetDate: now });
             }
             
-            if (isFounder && !data.isPro) {
-               await updateDoc(userDocRef, { isPro: true, credits: 999999, planType: "premium" });
+            if (isTrialActive) {
                setCredits(999999);
                setIsPro(true);
-               setDailyUsage(0);
-               setChatUsage(0);
-               setTrendsUsage(0);
-               setPlanType("premium");
-            } else {
-               setCredits(currentCredits);
-               setIsPro(currentPro);
                setDailyUsage(currentDailyUsage);
                setChatUsage(currentChatUsage);
                setTrendsUsage(currentTrendsUsage);
-               setPlanType(currentPlanType);
+               setPlanType("premium");
+            } else {
+               setCredits(typeof data.credits === 'number' ? data.credits : 5);
+               setIsPro(false);
+               setDailyUsage(currentDailyUsage);
+               setChatUsage(currentChatUsage);
+               setTrendsUsage(currentTrendsUsage);
+               setPlanType(data.planType || "free");
             }
           }
         } catch(error) {
            console.error("Error loading profile:", error);
-           setCredits(currentUser.email === 'ratulsorker266@gmail.com' ? 999999 : 0);
-           setIsPro(currentUser.email === 'ratulsorker266@gmail.com');
+           setCredits(999999);
+           setIsPro(true);
+           setPlanType("premium");
+           setProDaysLeft(30);
         }
 
         // Load history from Firestore
@@ -865,6 +1112,9 @@ export default function App() {
             const ctx = canvas.getContext('2d');
             if (!ctx) return reject(new Error('Canvas ctx null'));
             
+            // Fill clean white background for transparent PNG/vector previews to prevent black background artifacts
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height);
             ctx.drawImage(img, 0, 0, width, height);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             resolve(dataUrl.split(',')[1]);
@@ -891,7 +1141,7 @@ export default function App() {
           },
           body: JSON.stringify({
             imageBase64: base64Data,
-            mimeType: item.file.type || 'image/jpeg',
+            mimeType: 'image/jpeg',
             marketplace: targetMarketplace,
             tier: planType,
             assetType: assetType,
@@ -917,11 +1167,11 @@ export default function App() {
              
              // Extract retry delay from Gemini message if present
              let waitTime = 12000;
-             const retryMatch = errMsg.match(/retry in ([\d\.]+)s/i);
+             const retryMatch = errMsg.match(/(?:retry in|wait)\s*([\d\.]+)\s*s/i);
              if (retryMatch && retryMatch[1]) {
-               waitTime = Math.min((parseFloat(retryMatch[1]) * 1000) + 1500, 20000);
+               waitTime = Math.min((parseFloat(retryMatch[1]) * 1000) + 1500, 25000);
              } else {
-               waitTime = attempt * 5000;
+               waitTime = Math.max(attempt * 6000, 10000);
              }
 
              setItems((prev) =>
@@ -973,8 +1223,9 @@ export default function App() {
         return false; // Success, not a hard error
       } catch (err: any) {
         const isHardQuota = err?.message?.includes("System API Quota Exceeded") || err?.message?.includes("System Quota Exceeded") || err?.message?.includes("Settings");
+        const isNetworkRateLimit = err?.message?.toLowerCase().includes("rate limit") || err?.message?.toLowerCase().includes("quota");
         
-        if (attempt < maxRetries - 1 && err?.message?.includes("Rate Limit")) {
+        if (attempt < maxRetries - 1 && isNetworkRateLimit) {
            attempt++;
            setItems((prev) =>
              prev.map((i) => (i.id === item.id ? { ...i, error: `Rate limited. Retrying in 20s (Attempt ${attempt}/${maxRetries - 1})...` } : i))
@@ -1045,7 +1296,7 @@ export default function App() {
 
   const exportBatchCSV = () => {
     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-    if (planType !== "premium" && !customApiKey) {
+    if (planType === "free" && !customApiKey) {
       showToast("CSV Export is a PRO feature. Upgrade to unlock bulk exports.");
       return;
     }
@@ -1096,11 +1347,12 @@ export default function App() {
          const title = item.result.recommendedTitle || '';
          const keywords = item.result.keywords || [];
          const blob = await embedJpegMetadata(item.file, title, keywords);
-         zip.file(`meta_${item.file.name}`, blob);
+         const cleanBase = item.file.name.replace(/\.[^/.]+$/, "");
+         zip.file(`${cleanBase}.jpg`, blob);
          
          // Sidecar metadata file
          const sidecar = `Title: ${title}\nDescription: ${item.result.shortDescription || title}\nKeywords: ${keywords.join(', ')}`;
-         zip.file(`sidecar_${item.file.name}.txt`, sidecar);
+         zip.file(`${cleanBase}_metadata.txt`, sidecar);
       }
       
       const content = await zip.generateAsync({ type: 'blob' });
@@ -1132,12 +1384,12 @@ export default function App() {
     // Optimistic UI update
     setItems((prev) => prev.filter(item => item.id !== id));
     
-    // Delete from Firestore if it's a history item and user is logged in
-    if (isHistory && user) {
+    // Delete from Firestore if user is logged in
+    if (user && (isHistory || itemToDel?.status === 'completed')) {
       try {
         await deleteDoc(doc(db, 'users', user.uid, 'assets', id));
       } catch (err) {
-        console.error("Failed to delete history item:", err);
+        console.error("Failed to delete asset from Firestore:", err);
       }
     }
   };
@@ -1156,15 +1408,10 @@ export default function App() {
     setShowClearConfirm(false);
 
     if (user) {
-      for (const item of itemsToDelete) {
-        if (item.isHistory) {
-          try {
-            await deleteDoc(doc(db, 'users', user.uid, 'assets', item.id));
-          } catch (err) {
-            console.error("Failed to delete history item:", err);
-          }
-        }
-      }
+      const deletePromises = itemsToDelete
+        .filter(item => item.isHistory || item.status === 'completed')
+        .map(item => deleteDoc(doc(db, 'users', user.uid, 'assets', item.id)).catch(() => {}));
+      await Promise.allSettled(deletePromises);
     }
   };
 
@@ -1174,16 +1421,21 @@ export default function App() {
     setEditingTitle(item.result?.recommendedTitle || '');
   };
 
-  const saveKeywords = () => {
+  const saveKeywords = async () => {
+    if (!editingItemId) return;
+    const targetId = editingItemId;
+    const updatedKeywords = [...editingKeywords];
+    const updatedTitle = editingTitle;
+
     setItems((prev) =>
       prev.map((i) => {
-        if (i.id === editingItemId && i.result) {
+        if (i.id === targetId && i.result) {
           return {
             ...i,
             result: {
               ...i.result,
-              keywords: editingKeywords,
-              recommendedTitle: editingTitle,
+              keywords: updatedKeywords,
+              recommendedTitle: updatedTitle,
             },
           };
         }
@@ -1191,6 +1443,19 @@ export default function App() {
       })
     );
     setEditingItemId(null);
+
+    // Sync edited metadata with Firestore if user is signed in
+    if (user) {
+      try {
+        const docRef = doc(collection(db, 'users', user.uid, 'assets'), targetId);
+        await updateDoc(docRef, {
+          'result.keywords': updatedKeywords,
+          'result.recommendedTitle': updatedTitle,
+        });
+      } catch (firestoreErr) {
+        console.warn("Could not sync keyword updates to Firestore:", firestoreErr);
+      }
+    }
   };
 
   const moveKwUp = (index: number) => {
@@ -1292,9 +1557,20 @@ export default function App() {
                AdobeMeta <span className="text-indigo-400">Pro</span>
              </h1>
              
-             <p className="text-slate-400 text-sm mb-10">
+             <p className="text-slate-400 text-sm mb-4">
                The Ultimate Bulk Asset Metadata & Compliance Platform for Stock Contributors.
              </p>
+
+             {/* 1-Month Free Unlimited Pro Announcement */}
+             <div className="mb-6 bg-gradient-to-r from-amber-500/15 via-indigo-500/15 to-purple-500/15 border border-amber-500/30 rounded-2xl p-3.5 text-center">
+               <div className="flex items-center justify-center gap-1.5 text-amber-400 text-xs font-black uppercase tracking-wider mb-1">
+                 <Sparkles className="w-3.5 h-3.5" />
+                 <span>Launch Offer: 1 Month FREE</span>
+               </div>
+               <p className="text-xs text-slate-200 font-medium leading-relaxed">
+                 Enjoy <strong className="text-amber-300">100% Unlimited Pro Version</strong> free for your first 30 days! No credit card needed.
+               </p>
+             </div>
              
              <motion.button
                whileHover={{ scale: 1.03 }}
@@ -1473,19 +1749,33 @@ export default function App() {
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="text-right flex flex-col justify-center bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-800/80 shadow-inner">
               <div className="flex items-center justify-end gap-2 mb-0.5">
-                <span className="text-[9px] uppercase tracking-[0.2em] text-indigo-400 font-bold">
-                  {user?.email === "ratulsorker266@gmail.com" ? "Founder" : isPro ? "Pro Plan" : "Free Plan"}
+                <span className="text-[9px] uppercase tracking-[0.15em] text-amber-400 font-bold flex items-center gap-1">
+                  <Sparkles className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                  {user?.email === "ratulsorker266@gmail.com" 
+                    ? "Founder (VIP)" 
+                    : isPro 
+                    ? `1-Month Free Pro (${proDaysLeft}d left)`
+                    : "Free Plan"}
                 </span>
-                {!isPro && (
-                  <button onClick={() => setShowProModal(true)} className="text-[9px] uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-0.5 rounded transition">Upgrade</button>
-                )}
+                <button 
+                  onClick={() => setShowProModal(true)} 
+                  className="text-[9px] uppercase tracking-wider bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded transition font-bold"
+                >
+                  {isPro ? "PRO Pass" : "Upgrade"}
+                </button>
               </div>
               <div className="flex items-center justify-end gap-2">
                  <span className="text-sm font-black tracking-wide text-slate-100">
                    {user?.displayName || user?.email?.split("@")[0] || "User"}
                  </span>
                  {isPro ? (
-                    <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 text-[10px] font-bold px-1.5 py-0.5 rounded" title="Unlimited AI Processing">PRO</span>
+                    <span 
+                      onClick={() => setShowProModal(true)}
+                      className="bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded cursor-pointer shadow-sm flex items-center gap-1 hover:brightness-110 transition" 
+                      title="1-Month Free Unlimited AI Processing Active"
+                    >
+                      <Sparkles className="w-3 h-3 text-slate-950" /> UNLIMITED PRO
+                    </span>
                  ) : (
                     <span className="text-xs font-bold text-slate-300 bg-slate-800 px-2 rounded-md" title="Max 100 per day">{100 - dailyUsage} left today</span>
                  )}
@@ -1543,61 +1833,99 @@ export default function App() {
             )}
 
             <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-              {currentView === 'upload' ? (
-                <>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                      if (planType === "free") {
-                        showToast("Trends is a Pro feature.");
-                        setShowProModal(true);
-                        return;
-                      }
-                      if (planType === "pro_1m" && trendsUsage >= 1) {
-                        showToast("1-Month Pro limit: 1 Trend search per day.");
-                        return;
-                      }
-                      if (planType === "pro_3m" && trendsUsage >= 3) {
-                        showToast("3-Month Pro limit: 3 Trend searches per day.");
-                        return;
-                      }
-                      setCurrentView("trends");
-                    }}
-                    className="shrink-0 whitespace-nowrap bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
-                  >
-                    <TrendingUp className="w-4 h-4" /> Discover Trends
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                      if (planType !== "premium" && planType !== "pro_1m" && planType !== "pro_3m" && !customApiKey) {
-                        showToast("Competitor Spy is a Premium feature.");
-                        setShowProModal(true);
-                        return;
-                      }
-                      setCurrentView("competitor");
-                    }}
-                    className="shrink-0 whitespace-nowrap bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
-                  >
-                    <Search className="w-4 h-4" /> 
-                    <span>Competitor Spy</span>
-                    {planType !== "premium" && planType !== "pro_1m" && planType !== "pro_3m" && !customApiKey && <span className="bg-amber-500 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded ml-1">PRO</span>}
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={exportBatchCSV}
-                    disabled={!items.some((i) => i.result)}
-                    className="shrink-0 whitespace-nowrap bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:shadow-none text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg"
-                  >
-                    <Download className="w-4 h-4" /> 
-                    <span>Export Batch CSV</span>
-                    {planType !== "premium" && !customApiKey && <span className="bg-amber-500 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded ml-1">PRO</span>}
-                  </motion.button>
-                </>
-              ) : null}
+              {currentView !== 'upload' && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setCurrentView('upload')}
+                  className="shrink-0 whitespace-nowrap bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 border border-slate-700 shadow-md"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 text-indigo-400" /> Studio
+                </motion.button>
+              )}
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  if (planType === "free") {
+                    showToast("Trends is a Pro feature.");
+                    setShowProModal(true);
+                    return;
+                  }
+                  if (planType === "pro_1m" && trendsUsage >= 1) {
+                    showToast("1-Month Pro limit: 1 Trend search per day.");
+                    return;
+                  }
+                  if (planType === "pro_3m" && trendsUsage >= 3) {
+                    showToast("3-Month Pro limit: 3 Trend searches per day.");
+                    return;
+                  }
+                  setCurrentView("trends");
+                }}
+                className={`shrink-0 whitespace-nowrap ${currentView === 'trends' ? 'bg-indigo-600 ring-2 ring-indigo-400' : 'bg-indigo-600/90 hover:bg-indigo-500'} text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md`}
+              >
+                <TrendingUp className="w-3.5 h-3.5" /> Trends
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setCurrentView("prompts")}
+                className={`shrink-0 whitespace-nowrap ${currentView === 'prompts' ? 'bg-blue-600 ring-2 ring-blue-400' : 'bg-blue-600/90 hover:bg-blue-500'} text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md`}
+              >
+                <Wand2 className="w-3.5 h-3.5 text-blue-200" /> AI Prompts
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setCurrentView("calendar")}
+                className={`shrink-0 whitespace-nowrap ${currentView === 'calendar' ? 'bg-amber-600 ring-2 ring-amber-400' : 'bg-amber-600/90 hover:bg-amber-500'} text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md`}
+              >
+                <CalendarDays className="w-3.5 h-3.5 text-amber-200" /> Calendar
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  if (planType !== "premium" && planType !== "pro_1m" && planType !== "pro_3m" && !customApiKey) {
+                    showToast("Competitor Spy is a Premium feature.");
+                    setShowProModal(true);
+                    return;
+                  }
+                  setCurrentView("competitor");
+                }}
+                className={`shrink-0 whitespace-nowrap ${currentView === 'competitor' ? 'bg-purple-600 ring-2 ring-purple-400' : 'bg-purple-600/90 hover:bg-purple-500'} text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md`}
+              >
+                <Search className="w-3.5 h-3.5" /> 
+                <span>Competitor Spy</span>
+                {planType !== "premium" && planType !== "pro_1m" && planType !== "pro_3m" && !customApiKey && <span className="bg-amber-500 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded ml-1">PRO</span>}
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowMultiCsvModal(true)}
+                disabled={!items.some((i) => i.result)}
+                className="shrink-0 whitespace-nowrap bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:shadow-none text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md"
+                title="Export for Adobe Stock, Shutterstock, Freepik, or Bulk Rename"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" /> 
+                <span>Multi-CSV & Rename</span>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowShortcutsModal(true)}
+                className="shrink-0 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 border border-slate-700 shadow-sm"
+                title="Keyboard Shortcuts (?)"
+              >
+                <Keyboard className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="hidden md:inline">Hotkeys</span>
+              </motion.button>
               
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -1727,9 +2055,41 @@ export default function App() {
 
         <AnimatePresence mode="wait">
           {currentView === 'trends' ? (
-            <TrendsDashboard key="trends" onBack={() => setCurrentView('upload')} customApiKey={customApiKey} user={user} planType={planType} setChatUsage={setChatUsage} />
+            <TrendsDashboard
+              key="trends"
+              onBack={() => setCurrentView('upload')}
+              customApiKey={customApiKey}
+              user={user}
+              planType={planType}
+              setChatUsage={setChatUsage}
+              initialSearchQuery={trendSearchPreload}
+            />
           ) : currentView === 'competitor' ? (
             <CompetitorDashboard key="competitor" onBack={() => setCurrentView('upload')} customApiKey={customApiKey} />
+          ) : currentView === 'prompts' ? (
+            <PromptStudioDashboard
+              key="prompts"
+              onBack={() => {
+                setPromptStudioPreloadConcept('');
+                setCurrentView('upload');
+              }}
+              customApiKey={customApiKey}
+              showToast={showToast}
+              initialConcept={promptStudioPreloadConcept}
+            />
+          ) : currentView === 'calendar' ? (
+            <SeasonalCalendarDashboard
+              key="calendar"
+              onBack={() => setCurrentView('upload')}
+              onExploreTrends={(q) => {
+                setTrendSearchPreload(q);
+                setCurrentView('trends');
+              }}
+              onOpenPromptStudioWithIdea={(idea) => {
+                setPromptStudioPreloadConcept(idea);
+                setCurrentView('prompts');
+              }}
+            />
           ) : (
             <motion.div
               key="upload"
@@ -1775,6 +2135,9 @@ export default function App() {
                 </motion.div>
               </motion.div>
 
+              {/* Contributor Milestone Goal Widget */}
+              <ContributorGoalWidget completedCount={items.filter((i) => i.result).length} />
+
               <motion.div variants={containerVariants} className="space-y-4 pb-32">
                 <AnimatePresence>
                   {items.map((item) => (
@@ -1819,57 +2182,26 @@ export default function App() {
                       </div>
 
                       {item.result ? (
-                        <div className="flex-1 px-4 space-y-1.5 min-w-[300px]">
-                          <p className="text-sm font-bold text-indigo-300 truncate">{item.result.recommendedTitle}</p>
-                          <p className="text-xs text-slate-400 truncate leading-relaxed bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-800/50">{item.result.keywords.join(', ')}</p>
+                        <div className="flex-1 px-2 sm:px-4 space-y-3 min-w-[300px]">
+                          {/* Recommended Title */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[11px] text-slate-400">
+                              <span className="font-semibold uppercase tracking-wider text-[10px] text-indigo-400">Commercial Title</span>
+                              <span>{(item.result.recommendedTitle || '').length} characters</span>
+                            </div>
+                            <p className="text-sm font-bold text-slate-100 leading-snug">{item.result.recommendedTitle}</p>
+                          </div>
+
+                          {/* Commercial Readiness Score Gauge */}
+                          <CommercialReadinessGauge result={item.result} />
+
+                          {/* Semantic Color-Coded Keywords with Top 10 High-Ranking Badges */}
+                          <SemanticKeywordBadges keywords={item.result.keywords} showToast={showToast} />
                           
-                          {/* AI Vision Rejection Predictor Feature */}
-                          {(planType === "premium" || customApiKey) ? (
-                            <div className="mt-2 bg-slate-950/50 border border-slate-800/80 rounded-lg p-2 text-[10px] text-slate-300 flex items-center gap-3">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-slate-500">Stock Acceptance:</span> 
-                                {(planType === "premium" || customApiKey) ? (
-                                  <span className={(item.result.acceptanceProbability || 85) >= 70 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold flex items-center gap-1'}>
-                                    {(item.result.acceptanceProbability || 85)}%
-                                    {(item.result.acceptanceProbability || 85) < 70 && <AlertCircle className="w-3 h-3" />}
-                                  </span>
-                                ) : (
-                                  <span className="text-amber-500/50 font-bold flex items-center gap-1 text-[9px] blur-[1px]">
-                                    <Lock className="w-3 h-3" /> PRO
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1.5 border-l border-slate-700 pl-3 ml-1">
-                                <span className="font-bold text-slate-500">Sales Potential:</span>
-                                {(planType === "premium" || customApiKey) ? (
-                                  <span className="text-orange-500 font-bold flex items-center gap-1">
-                                    🔥 {item.result.salesPotentialScore || Math.floor(Math.random() * 20 + 80)}%
-                                  </span>
-                                ) : (
-                                  <span className="text-amber-500/50 font-bold flex items-center gap-1 text-[9px] blur-[1px]">
-                                    <Lock className="w-3 h-3" /> PRO
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-slate-500">Rejection Flags:</span> 
-                                {(planType === "premium" || customApiKey) ? (
-                                  <span className={(!item.result.rejectionFlags || item.result.rejectionFlags.length === 0) ? 'text-emerald-400' : 'text-red-400 font-bold'}>
-                                    {(!item.result.rejectionFlags || item.result.rejectionFlags.length === 0) ? "Clean" : item.result.rejectionFlags.join(', ')}
-                                  </span>
-                                ) : (
-                                  <span className="text-amber-500/50 font-bold flex items-center gap-1 text-[9px] blur-[1px]">
-                                    <Lock className="w-3 h-3" /> PRO
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="mt-2 bg-slate-900/30 border border-amber-500/10 rounded-lg p-2 text-[10px] text-amber-500/70 flex items-center gap-2 cursor-pointer hover:bg-slate-900/50 transition">
-                              <Key className="w-3 h-3" />
-                              <span className="font-semibold">Upgrade to PRO to view AI Vision Rejection Predictor & Defects Analysis</span>
-                            </div>
-                          )}
+                          {/* Rejection Shield & AI Vision Defect Predictor */}
+                          <div className="mt-1">
+                            <RejectionShieldBadge item={item} />
+                          </div>
                         </div>
                       ) : (
                         <div className="flex-1 px-4 text-sm font-medium text-slate-500 flex items-center gap-2">
@@ -1912,42 +2244,55 @@ export default function App() {
                       )}
 
                       {item.result && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setMockupItem(item)}
+                            className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+                            title="Preview as real Adobe Stock / Shutterstock Buyer Page"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>Mockup</span>
+                          </motion.button>
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => openEditor(item)}
-                            className="bg-slate-900 border border-slate-700 hover:bg-slate-800 px-3.5 py-2 rounded-lg text-slate-300 text-xs font-semibold flex items-center gap-2 transition"
+                            className="bg-slate-900 border border-slate-700 hover:bg-slate-800 px-3 py-2 rounded-lg text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition"
                           >
-                            <Edit3 className="w-4 h-4 text-amber-400" /> Edit
+                            <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Edit</span>
                           </motion.button>
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => copyMetadata(item.result!.recommendedTitle, item.result!.keywords, item.id)}
-                            className="bg-slate-900 border border-slate-700 hover:bg-slate-800 px-3.5 py-2 rounded-lg text-slate-300 text-xs font-semibold flex items-center gap-2 transition"
+                            className="bg-slate-900 border border-slate-700 hover:bg-slate-800 px-3 py-2 rounded-lg text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition"
                           >
-                            {copiedId === item.id ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-slate-400" />}
-                            Copy
+                            {copiedId === item.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+                            <span>Copy</span>
                           </motion.button>
                           {!item.isHistory && (
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={() => downloadEmbeddedCopy(item)}
-                              className="bg-slate-900 border border-slate-700 hover:bg-slate-800 px-3.5 py-2 rounded-lg text-slate-300 text-xs font-semibold flex items-center gap-2 transition"
+                              className="bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-600/50 px-3 py-2 rounded-lg text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                              title="Directly download JPEG with embedded EXIF/IPTC Title & Keywords"
                             >
-                              <Download className="w-4 h-4 text-indigo-400" /> Embedded JPG
+                              <Download className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Tagged JPG</span>
                             </motion.button>
                           )}
                           <motion.button
                             whileHover={{ scale: 1.05, backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => deleteItem(item.id, item.isHistory)}
-                            className="bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-slate-400 hover:text-red-400 transition ml-2"
+                            className="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded-lg text-slate-400 hover:text-red-400 transition"
                             title="Delete Item"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </motion.button>
                         </div>
                       )}
@@ -2010,13 +2355,16 @@ export default function App() {
                         body: JSON.stringify({ title: editingTitle, description: "", keywords: editingKeywords, marketplace: targetMarketplace,
             tier: planType, language })
                       });
-                      const data = await res.json();
-                      if (data.keywords) {
+                      const data = await res.json().catch(() => ({}));
+                      if (!res.ok) throw new Error(data.error || "Failed to generate long-tail keywords");
+                      if (Array.isArray(data.keywords) && data.keywords.length > 0) {
                          const uniqueNew = data.keywords.filter((k: string) => !editingKeywords.includes(k));
                          setEditingKeywords([...editingKeywords, ...uniqueNew]);
                          showToast(`Added ${uniqueNew.length} long-tail keywords!`);
+                      } else {
+                         showToast("No new long-tail keywords suggested");
                       }
-                    } catch (e) { showToast("Failed to generate long-tail keywords"); }
+                    } catch (e: any) { showToast(e?.message || "Failed to generate long-tail keywords"); }
                   }} className="text-xs bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" /> Auto-Generate Long-tail SEO
                   </button>
@@ -2311,6 +2659,12 @@ export default function App() {
                 )}
                 
                 {items.filter(i => i.result).length > 0 && (
+                  <button onClick={() => setShowMultiCsvModal(true)} className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-2" title="Multi-Marketplace CSV & Rename">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> <span className="hidden sm:inline">Multi-CSV</span>
+                  </button>
+                )}
+
+                {items.filter(i => i.result).length > 0 && (
                   <button onClick={exportBatchCSV} className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-2">
                     <FileDown className="w-4 h-4 text-emerald-400" /> <span className="hidden sm:inline">CSV</span>
                   </button>
@@ -2348,12 +2702,23 @@ export default function App() {
               <button onClick={() => setShowProModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 p-2 rounded-full transition">
                 <X className="w-5 h-5" />
               </button>
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-amber-500 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-lg">
-                  <Sparkles className="w-8 h-8 text-white" />
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-tr from-amber-500 to-amber-400 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-lg shadow-amber-500/20">
+                  <Sparkles className="w-8 h-8 text-slate-950" />
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-2">Upgrade to Pro</h2>
-                <p className="text-slate-400">You ran out of free credits. Upgrade your account or buy a credit pack to continue analyzing your images.</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                  {isPro ? "Unlimited Pro Pass Active" : "Upgrade to Pro"}
+                </h2>
+                {isPro ? (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-sm text-amber-200">
+                    <p className="font-semibold mb-1">🎉 You have 1-Month Free Unlimited Pro Access!</p>
+                    <p className="text-xs text-slate-300">
+                      You have <strong className="text-amber-400 font-bold">{proDaysLeft} days remaining</strong> of unlimited AI generation, Competitor Spy, Trends discovery, CSV bulk export & Dual-Agent Vision scanning.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-slate-400 text-sm">You ran out of free credits. Upgrade your account or choose a subscription to continue analyzing your images.</p>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                 <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-5 text-center hover:border-amber-500 transition cursor-pointer"
@@ -2398,6 +2763,29 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Multi-Marketplace CSV & Rename Modal */}
+      <MultiCsvExportModal
+        isOpen={showMultiCsvModal}
+        onClose={() => setShowMultiCsvModal(false)}
+        items={items}
+        showToast={showToast}
+      />
+
+      {/* Live Marketplace Buyer Mockup Modal */}
+      <MarketplaceMockupModal
+        isOpen={Boolean(mockupItem)}
+        onClose={() => setMockupItem(null)}
+        item={mockupItem}
+        showToast={showToast}
+      />
+
+      {/* Keyboard Shortcuts Reference Modal */}
+      <KeyboardShortcutsModal
+        isOpen={showShortcutsModal}
+        onClose={() => setShowShortcutsModal(false)}
+      />
+
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
