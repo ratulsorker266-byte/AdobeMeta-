@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard } from 'lucide-react';
+import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle } from 'lucide-react';
 import { BulkItem, TargetMarketplace, TrendData } from './types';
-import { embedJpegMetadata } from './lib/metadataEmbedder';
+import { embedJpegMetadata, generateXmpSidecarXml } from './lib/metadataEmbedder';
 import ratulLogo from './assets/images/ratul_logo_1789373833240.jpg';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, signInWithPopup, googleProvider, signOut, db } from './lib/firebase';
@@ -18,6 +18,7 @@ import { CommercialReadinessGauge } from './components/CommercialReadinessGauge'
 import { SemanticKeywordBadges } from './components/SemanticKeywordBadges';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { ContributorGoalWidget } from './components/ContributorGoalWidget';
+import { InteractiveTourModal } from './components/InteractiveTourModal';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   useEffect(() => {
@@ -88,7 +89,7 @@ const MONTHS_LIST = [
   { name: 'December', label: 'Dec' }
 ];
 
-const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage, initialSearchQuery }: { key?: React.Key, onBack: () => void, customApiKey: string, user: User | null, planType: "free" | "pro", setChatUsage: React.Dispatch<React.SetStateAction<number>>, initialSearchQuery?: string }) => {
+const TrendsDashboard = ({ onBack, customApiKey, user, planType, setTrendsUsage, initialSearchQuery }: { key?: React.Key, onBack: () => void, customApiKey: string, user: User | null, planType: "free" | "pro", setTrendsUsage?: React.Dispatch<React.SetStateAction<number>>, initialSearchQuery?: string }) => {
   const [trends, setTrends] = useState<TrendData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
@@ -117,10 +118,10 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage, i
       if (planType === "free" && user) {
         try {
           const userRef = doc(db, "users", user.uid);
-          await updateDoc(userRef, { chatUsage: increment(1) });
-          setChatUsage(prev => prev + 1);
+          await setDoc(userRef, { trendsUsage: increment(1) }, { merge: true });
+          if (setTrendsUsage) setTrendsUsage(prev => prev + 1);
         } catch (e) {
-          console.warn("Could not update chat usage:", e);
+          console.warn("Could not update trends usage:", e);
         }
       }
     } catch (err: any) {
@@ -196,7 +197,7 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage, i
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
               <CalendarDays className="w-3.5 h-3.5 text-indigo-400" />
-              Quick Month Filter (মাসের নাম সিলেক্ট করুন):
+              Quick Month Filter (Select Month):
             </span>
             {searchQuery && (
               <button 
@@ -249,7 +250,7 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage, i
 
       {!isLoading && trends && (
         <div className="space-y-8">
-          {/* Actionable Month Production Guide Banner (কী নিয়ে কাজ করা দরকার) */}
+          {/* Actionable Month Production Guide Banner (High-Demand Production Strategy) */}
           {(trends.whatToCreate && trends.whatToCreate.length > 0 || trends.monthOverview) && (
             <div className="bg-gradient-to-br from-indigo-950/60 via-slate-900 to-purple-950/40 border border-indigo-500/30 p-5 sm:p-6 rounded-2xl shadow-xl">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
@@ -264,7 +265,7 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage, i
                         What to Shoot & Design
                       </span>
                     </h3>
-                    <p className="text-xs text-indigo-300/80">কী বিষয় নিয়ে কাজ করা দরকার ও বায়ারদের সর্বোচ্চ চাহিদা</p>
+                    <p className="text-xs text-indigo-300/80">High-demand commercial topics & buyer search priorities</p>
                   </div>
                 </div>
               </div>
@@ -278,7 +279,7 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage, i
               {trends.whatToCreate && trends.whatToCreate.length > 0 && (
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2.5 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" /> কী বিষয় নিয়ে কাজ করবেন (Production Checklist):
+                    <Sparkles className="w-3.5 h-3.5" /> High-Priority Production Checklist:
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                     {trends.whatToCreate.map((item, idx) => (
@@ -299,7 +300,7 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage, i
 
           <div>
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-400">
-              <TrendingUp className="w-5 h-5" /> Currently Trending (বর্তমান ট্রেন্ডস)
+              <TrendingUp className="w-5 h-5" /> Currently Trending Topics
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {trends.currentTrends.map((trend, i) => (
@@ -318,7 +319,7 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage, i
                     {trend.actionGuide && (
                       <div className="mb-4 p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
                         <div className="text-[11px] font-bold text-amber-400 mb-1 flex items-center gap-1">
-                          <Lightbulb className="w-3 h-3" /> কী তৈরি করবেন (Action Guide):
+                          <Lightbulb className="w-3 h-3" /> Creative Production Guide:
                         </div>
                         <p className="text-xs text-slate-300 leading-relaxed">{trend.actionGuide}</p>
                       </div>
@@ -350,7 +351,7 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage, i
 
           <div>
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-indigo-400">
-              <CalendarDays className="w-5 h-5" /> Upcoming Needs - Shoot Now (ভবিষ্যতের চাহিদা)
+              <CalendarDays className="w-5 h-5" /> Upcoming Seasonal Demand - Shoot & Design Now
             </h3>
             <div className="relative">
               <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${planType === "free" ? "filter blur-md opacity-50 select-none" : ""}`}>
@@ -377,7 +378,7 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setChatUsage, i
                       {trend.actionGuide && (
                         <div className="mb-4 p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
                           <div className="text-[11px] font-bold text-amber-400 mb-1 flex items-center gap-1">
-                            <Lightbulb className="w-3 h-3" /> কী তৈরি করবেন (Action Guide):
+                            <Lightbulb className="w-3 h-3" /> Creative Production Guide:
                           </div>
                           <p className="text-xs text-slate-300 leading-relaxed">{trend.actionGuide}</p>
                         </div>
@@ -626,7 +627,7 @@ export default function App() {
   const [items, setItems] = useState<BulkItem[]>([]);
 
   const [targetMarketplace, setTargetMarketplace] = useState<TargetMarketplace>('adobe_stock');
-  const [assetType, setAssetType] = useState<string>("Photo");
+  const [assetType, setAssetType] = useState<string>("Photo / JPG");
   const [language, setLanguage] = useState<string>("English");
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [chatMessages, setChatMessages] = useState<any[]>([{ role: "model", parts: [{ text: "Hello! I am your StockMeta AI assistant. How can I help you with your microstock keywords, titles, or portfolio strategy today?" }] }]);
@@ -634,6 +635,7 @@ export default function App() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const [isAiGenerated, setIsAiGenerated] = useState<boolean>(false);
+  const [isTurboMode, setIsTurboMode] = useState<boolean>(() => localStorage.getItem('turbo_mode') !== 'false');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState<boolean>(false);
@@ -650,6 +652,7 @@ export default function App() {
   const [showReferModal, setShowReferModal] = useState(false);
   const [referralCount, setReferralCount] = useState(parseInt(localStorage.getItem('referral_count') || '14'));
   const [customApiKey, setCustomApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
+  const [excludedKeywords, setExcludedKeywords] = useState<string>(localStorage.getItem('stockmeta_excluded_keywords') || '');
   const [customBgUrl, setCustomBgUrl] = useState<string | null>(localStorage.getItem('custom_bg') || null);
   const [isDragging, setIsDragging] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -657,6 +660,8 @@ export default function App() {
   // Live Buyer Mockup & Shortcuts Modals
   const [mockupItem, setMockupItem] = useState<BulkItem | null>(null);
   const [showShortcutsModal, setShowShortcutsModal] = useState<boolean>(false);
+  const [showTourModal, setShowTourModal] = useState<boolean>(false);
+  const [tourStep, setTourStep] = useState<number>(0);
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -766,9 +771,13 @@ export default function App() {
     }, 250);
   };
 
-  const handleSaveApiKey = (key: string) => {
+  const handleSaveApiKey = (key: string, excluded?: string) => {
     setCustomApiKey(key);
     localStorage.setItem('gemini_api_key', key);
+    const keywordsToSave = excluded !== undefined ? excluded : excludedKeywords;
+    setExcludedKeywords(keywordsToSave);
+    localStorage.setItem('stockmeta_excluded_keywords', keywordsToSave);
+    showToast("✓ Settings saved successfully!");
     setShowSettings(false);
   };
 
@@ -1058,21 +1067,106 @@ export default function App() {
       }
     }
 
-    // Process one by one with a smart interval to never overload Gemini free tier RPM
-    for (let index = 0; index < queue.length; index++) {
-      const currentItem = queue[index];
-      const hasHardError = await processSingleFile(currentItem);
-      
-      if (hasHardError) {
-        showToast("Processing stopped.");
-        break;
+    // Smart Concurrent Pool Processor
+    // Default concurrency: 2 in Turbo mode, 3 with custom API key, 1 in safe standard mode
+    const concurrency = customApiKey ? 3 : (isTurboMode ? 2 : 1);
+    const delayBetweenBatches = customApiKey ? 400 : (isTurboMode ? 800 : 2000);
+
+    let stopped = false;
+    let nextIdx = 0;
+
+    const worker = async () => {
+      while (nextIdx < queue.length && !stopped) {
+        const itemIdx = nextIdx++;
+        const currentItem = queue[itemIdx];
+        if (!currentItem) break;
+
+        const hasHardError = await processSingleFile(currentItem);
+        if (hasHardError) {
+          stopped = true;
+          showToast("Processing stopped.");
+          break;
+        }
+
+        if (nextIdx < queue.length && delayBetweenBatches > 0) {
+          await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+        }
       }
-      
-      // Delay between images: 1.5s if custom key, 2.5s for default key
-      if (index < queue.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, customApiKey ? 1500 : 2500));
+    };
+
+    const workers = [];
+    const activeWorkers = Math.min(concurrency, queue.length);
+    for (let w = 0; w < activeWorkers; w++) {
+      workers.push(worker());
+      if (w < activeWorkers - 1) {
+        // Stagger worker launches slightly to prevent burst 429 spikes
+        await new Promise(r => setTimeout(r, 350));
       }
     }
+
+    await Promise.all(workers);
+    setIsProcessing(false);
+  };
+
+  const retryFailedItems = async () => {
+    if (isProcessing) return;
+    const failedItems = items.filter(i => i.status === 'error');
+    if (failedItems.length === 0) {
+      showToast("No failed items to retry.");
+      return;
+    }
+
+    showToast(`Retrying ${failedItems.length} failed file${failedItems.length > 1 ? 's' : ''}...`);
+    setIsProcessing(true);
+
+    // Set failed items to pending state visually
+    setItems(prev => prev.map(i => i.status === 'error' ? { ...i, status: 'pending', error: undefined } : i));
+
+    const concurrency = customApiKey ? 3 : (isTurboMode ? 2 : 1);
+    const delayBetweenBatches = customApiKey ? 400 : (isTurboMode ? 800 : 2000);
+
+    let stopped = false;
+    let nextIdx = 0;
+
+    const worker = async () => {
+      while (nextIdx < failedItems.length && !stopped) {
+        const itemIdx = nextIdx++;
+        const currentItem = failedItems[itemIdx];
+        if (!currentItem) break;
+
+        const hasHardError = await processSingleFile(currentItem);
+        if (hasHardError) {
+          stopped = true;
+          showToast("Retry stopped due to API quota.");
+          break;
+        }
+
+        if (nextIdx < failedItems.length && delayBetweenBatches > 0) {
+          await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+        }
+      }
+    };
+
+    const workers = [];
+    const activeWorkers = Math.min(concurrency, failedItems.length);
+    for (let w = 0; w < activeWorkers; w++) {
+      workers.push(worker());
+      if (w < activeWorkers - 1) {
+        await new Promise(r => setTimeout(r, 350));
+      }
+    }
+
+    await Promise.all(workers);
+    setIsProcessing(false);
+  };
+
+  const retrySingleFile = async (item: BulkItem) => {
+    if (isProcessing) {
+      showToast("Batch processing in progress. Please wait.");
+      return;
+    }
+    setIsProcessing(true);
+    await processSingleFile(item);
     setIsProcessing(false);
   };
 
@@ -1085,44 +1179,171 @@ export default function App() {
     let attempt = 0;
 
     const compressImageForAI = async (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
+      // Helper to generate a clean preview canvas for formats browser <img> cannot decode (EPS, AI, RAW, corrupted headers)
+      const createFallbackPreview = (fileName: string, typeLabel: string): string => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 512;
+          canvas.height = 512;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return '';
+
+          // Studio gradient background
+          const grad = ctx.createLinearGradient(0, 0, 512, 512);
+          grad.addColorStop(0, '#1e1b4b');
+          grad.addColorStop(1, '#0f172a');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, 512, 512);
+
+          // Card outline
+          ctx.fillStyle = 'rgba(99, 102, 241, 0.15)';
+          ctx.strokeStyle = '#6366f1';
+          ctx.lineWidth = 4;
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(40, 60, 432, 392, 20);
+          } else {
+            ctx.rect(40, 60, 432, 392);
+          }
+          ctx.fill();
+          ctx.stroke();
+
+          // Title & Type
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 30px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(typeLabel.toUpperCase(), 256, 170);
+
+          ctx.fillStyle = '#818cf8';
+          ctx.font = 'bold 18px sans-serif';
+          ctx.fillText('STOCK ASSET SUBMISSION', 256, 215);
+
+          // File name
+          ctx.fillStyle = '#e2e8f0';
+          ctx.font = '16px monospace';
+          const cleanName = fileName.length > 28 ? fileName.substring(0, 25) + '...' : fileName;
+          ctx.fillText(cleanName, 256, 280);
+
+          // File Size
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '14px sans-serif';
+          ctx.fillText(`Size: ${(file.size / (1024 * 1024)).toFixed(2)} MB`, 256, 320);
+
+          return canvas.toDataURL('image/jpeg', 0.85).split(',')[1] || '';
+        } catch (_) {
+          return '';
+        }
+      };
+
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      const isVectorOrRaw = ['eps', 'ai', 'cdr', 'psd', 'tif', 'tiff', 'raw', 'cr2', 'nef', 'dng'].includes(ext);
+
+      // If file is an EPS or vector format that browsers cannot decode via <img>, generate high-contrast asset badge
+      if (isVectorOrRaw) {
+        const preview = createFallbackPreview(file.name, `${ext} Vector`);
+        if (preview) return preview;
+      }
+
+      // Method 1: Try modern createImageBitmap for fast, low-memory decoding
+      if (typeof createImageBitmap === 'function') {
+        try {
+          const bitmap = await createImageBitmap(file);
+          const MAX_SIZE = isTurboMode ? 400 : 512;
+          let width = bitmap.width;
+          let height = bitmap.height;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height = Math.round(height * (MAX_SIZE / width));
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width = Math.round(width * (MAX_SIZE / height));
+              height = MAX_SIZE;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(bitmap, 0, 0, width, height);
+            const base64 = canvas.toDataURL('image/jpeg', isTurboMode ? 0.75 : 0.82).split(',')[1];
+            if (bitmap.close) bitmap.close();
+            if (base64) return base64;
+          }
+          if (bitmap.close) bitmap.close();
+        } catch (bitmapErr) {
+          console.warn(`createImageBitmap fallback for ${file.name}:`, bitmapErr);
+        }
+      }
+
+      // Method 2: Standard FileReader + Image() with safety timeout and fallback
+      return new Promise((resolve) => {
         const reader = new FileReader();
+
+        const safetyTimer = setTimeout(() => {
+          console.warn(`Image loading timed out for ${file.name}, using fallback asset badge.`);
+          resolve(createFallbackPreview(file.name, ext ? `${ext} Asset` : 'Image Asset'));
+        }, 7000);
+
         reader.onload = (e) => {
           const img = new Image();
           img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_SIZE = 512; // Compress preview size further to drastically save bandwidth/memory for AI while retaining enough context for tagging
-            let width = img.width;
-            let height = img.height;
-    
-            if (width > height) {
-              if (width > MAX_SIZE) {
-                height = Math.round(height * (MAX_SIZE / width));
-                width = MAX_SIZE;
+            clearTimeout(safetyTimer);
+            try {
+              const canvas = document.createElement('canvas');
+              const MAX_SIZE = isTurboMode ? 400 : 512;
+              let width = img.width || 512;
+              let height = img.height || 512;
+
+              if (width > height) {
+                if (width > MAX_SIZE) {
+                  height = Math.round(height * (MAX_SIZE / width));
+                  width = MAX_SIZE;
+                }
+              } else {
+                if (height > MAX_SIZE) {
+                  width = Math.round(width * (MAX_SIZE / height));
+                  height = MAX_SIZE;
+                }
               }
-            } else {
-              if (height > MAX_SIZE) {
-                width = Math.round(width * (MAX_SIZE / height));
-                height = MAX_SIZE;
+
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) {
+                return resolve(createFallbackPreview(file.name, 'Stock Asset'));
               }
+
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillRect(0, 0, width, height);
+              ctx.drawImage(img, 0, 0, width, height);
+              const dataUrl = canvas.toDataURL('image/jpeg', isTurboMode ? 0.75 : 0.82);
+              resolve(dataUrl.split(',')[1] || createFallbackPreview(file.name, 'Stock Asset'));
+            } catch (canvasErr) {
+              console.warn(`Canvas draw failed for ${file.name}:`, canvasErr);
+              resolve(createFallbackPreview(file.name, 'Stock Asset'));
             }
-            
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return reject(new Error('Canvas ctx null'));
-            
-            // Fill clean white background for transparent PNG/vector previews to prevent black background artifacts
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, width, height);
-            ctx.drawImage(img, 0, 0, width, height);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            resolve(dataUrl.split(',')[1]);
           };
-          img.onerror = reject;
+
+          img.onerror = () => {
+            clearTimeout(safetyTimer);
+            console.warn(`Image decode failed for ${file.name}, generating smart asset preview.`);
+            resolve(createFallbackPreview(file.name, ext ? `${ext} Asset` : 'Stock Asset'));
+          };
+
           img.src = e.target?.result as string;
         };
-        reader.onerror = reject;
+
+        reader.onerror = () => {
+          clearTimeout(safetyTimer);
+          resolve(createFallbackPreview(file.name, ext ? `${ext} Asset` : 'Stock Asset'));
+        };
+
         reader.readAsDataURL(file);
       });
     };
@@ -1147,6 +1368,7 @@ export default function App() {
             assetType: assetType,
             language: language,
             isAiGenerated,
+            fastMode: isTurboMode,
           }) 
         });
         
@@ -1155,14 +1377,15 @@ export default function App() {
         try {
           data = JSON.parse(text);
         } catch (e) {
-          throw new Error(`Server error: ${res.status} - ${text.substring(0, 100)}`);
+          throw new Error(`Server response error (${res.status}). Please retry.`);
         }
 
         if (!res.ok) {
-          const errMsg = data.error || 'Failed';
+          const errMsg = data.error || `Server returned error (${res.status})`;
           const isRateLimit = res.status === 429 || res.status === 503 || errMsg.toLowerCase().includes('rate limit') || errMsg.toLowerCase().includes('quota');
+          const isOverloaded = res.status === 503 || errMsg.toLowerCase().includes('overloaded') || errMsg.toLowerCase().includes('busy');
           
-          if (isRateLimit && attempt < maxRetries - 1) {
+          if ((isRateLimit || isOverloaded) && attempt < maxRetries - 1) {
              attempt++;
              
              // Extract retry delay from Gemini message if present
@@ -1171,20 +1394,35 @@ export default function App() {
              if (retryMatch && retryMatch[1]) {
                waitTime = Math.min((parseFloat(retryMatch[1]) * 1000) + 1500, 25000);
              } else {
-               waitTime = Math.max(attempt * 6000, 10000);
+               waitTime = isRateLimit ? Math.max(attempt * 6000, 10000) : 4000;
              }
 
              setItems((prev) =>
                prev.map((i) => (i.id === item.id ? { 
                  ...i, 
                  status: 'processing',
-                 error: `Free Tier rate limit cooling down... auto-resuming in ${Math.round(waitTime/1000)}s (Attempt ${attempt}/${maxRetries - 1})` 
+                 error: `${isRateLimit ? 'Rate limit cooling down' : 'Model busy'}... auto-resuming in ${Math.round(waitTime/1000)}s (Attempt ${attempt}/${maxRetries - 1})` 
                } : i))
              );
              await new Promise(resolve => setTimeout(resolve, waitTime));
              continue; // Retry the loop
           }
           throw new Error(errMsg);
+        }
+
+        // Client-side blacklist filter & safety cleanup
+        if (data && Array.isArray(data.keywords)) {
+          const blacklist = excludedKeywords
+            .toLowerCase()
+            .split(',')
+            .map((k) => k.trim())
+            .filter(Boolean);
+          if (blacklist.length > 0) {
+            data.keywords = data.keywords.filter((kw: string) => !blacklist.includes(kw.toLowerCase().trim()));
+            if (Array.isArray(data.priorityKeywords)) {
+              data.priorityKeywords = data.priorityKeywords.filter((kw: string) => !blacklist.includes(kw.toLowerCase().trim()));
+            }
+          }
         }
 
         setItems((prev) =>
@@ -1212,7 +1450,7 @@ export default function App() {
             });
             if (!isPro) {
               const userRef = doc(db, 'users', user.uid);
-              await updateDoc(userRef, { dailyUsage: increment(1) });
+              await setDoc(userRef, { dailyUsage: increment(1) }, { merge: true });
               setDailyUsage(prev => prev + 1);
             }
           } catch (firestoreErr) {
@@ -1222,26 +1460,35 @@ export default function App() {
         
         return false; // Success, not a hard error
       } catch (err: any) {
-        const isHardQuota = err?.message?.includes("System API Quota Exceeded") || err?.message?.includes("System Quota Exceeded") || err?.message?.includes("Settings");
-        const isNetworkRateLimit = err?.message?.toLowerCase().includes("rate limit") || err?.message?.toLowerCase().includes("quota");
+        let errMsg = "Analysis encountered an error. Please click Retry.";
+        if (typeof err === 'string') errMsg = err;
+        else if (err instanceof Error) errMsg = err.message;
+        else if (err?.message) errMsg = err.message;
+        else if (err?.error?.message) errMsg = err.error.message;
+        else if (err?.error && typeof err.error === 'string') errMsg = err.error;
+
+        const isHardQuota = errMsg.includes("System API Quota Exceeded") || errMsg.includes("System Quota Exceeded") || errMsg.includes("Settings");
+        const isNetworkRateLimit = errMsg.toLowerCase().includes("rate limit") || errMsg.toLowerCase().includes("quota") || errMsg.toLowerCase().includes("429");
+        const isOverloaded = errMsg.toLowerCase().includes("overloaded") || errMsg.toLowerCase().includes("busy") || errMsg.toLowerCase().includes("503");
         
-        if (attempt < maxRetries - 1 && isNetworkRateLimit) {
+        if (attempt < maxRetries - 1 && (isNetworkRateLimit || isOverloaded)) {
            attempt++;
+           const waitTime = isNetworkRateLimit ? 15000 : 5000;
            setItems((prev) =>
-             prev.map((i) => (i.id === item.id ? { ...i, error: `Rate limited. Retrying in 20s (Attempt ${attempt}/${maxRetries - 1})...` } : i))
+             prev.map((i) => (i.id === item.id ? { ...i, error: `${isNetworkRateLimit ? 'Rate limit reached' : 'AI service busy'}. Retrying in ${waitTime/1000}s (Attempt ${attempt}/${maxRetries - 1})...` } : i))
            );
-           await new Promise(resolve => setTimeout(resolve, 20000));
+           await new Promise(resolve => setTimeout(resolve, waitTime));
            continue;
         }
         
         setItems((prev) =>
-          prev.map((i) => (i.id === item.id ? { ...i, status: 'error', error: err?.message || 'Unknown error' } : i))
+          prev.map((i) => (i.id === item.id ? { ...i, status: 'error', error: errMsg } : i))
         );
         
         if (isHardQuota) {
            return true; // Signal bulk processor to stop
         }
-        return false; // Failed completely, exit loop but don't stop bulk process
+        return false; // Failed, exit loop but don't stop remaining files
       }
     }
     return false;
@@ -1353,6 +1600,10 @@ export default function App() {
          // Sidecar metadata file
          const sidecar = `Title: ${title}\nDescription: ${item.result.shortDescription || title}\nKeywords: ${keywords.join(', ')}`;
          zip.file(`${cleanBase}_metadata.txt`, sidecar);
+
+         // Adobe standard XMP sidecar
+         const xmpContent = generateXmpSidecarXml(title, keywords, item.result.shortDescription);
+         zip.file(`${cleanBase}.xmp`, xmpContent);
       }
       
       const content = await zip.generateAsync({ type: 'blob' });
@@ -1705,7 +1956,7 @@ export default function App() {
                       handleSendChat();
                     }
                   }}
-                  placeholder="Ask anything in English, বাংলা, etc..."
+                  placeholder="Ask anything about stock metadata, AI prompts, or marketplace guidelines..."
                   className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
                 />
                 <button
@@ -1790,11 +2041,21 @@ export default function App() {
                     <label className="text-xs text-slate-400 block mb-1 font-medium">Asset Type</label>
                     <select
                       value={assetType}
-                      onChange={(e) => setAssetType(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setAssetType(val);
+                        if (val.includes('Generative AI')) {
+                          setIsAiGenerated(true);
+                        }
+                      }}
                       className="w-full bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
                     >
-                      <option value="Photo">Photo</option>
-                      <option value="Illustration">Illustration</option>
+                      <option value="Photo / JPG">Photo / JPG</option>
+                      <option value="PNG (Transparent)">PNG (Transparent Background)</option>
+                      <option value="Vector / EPS">Vector / EPS (Scalable)</option>
+                      <option value="Illustration">Illustration / Clipart</option>
+                      <option value="3D Render">3D Render / CGI</option>
+                      <option value="Generative AI">Generative AI Art</option>
                     </select>
                   </div>
                   <div className="w-full">
@@ -1804,13 +2065,13 @@ export default function App() {
                       onChange={(e) => setLanguage(e.target.value)}
                       className="w-full bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
                     >
-                      <option value="English">English</option>
-                      <option value="Spanish">Spanish</option>
-                      <option value="French">French</option>
-                      <option value="German">German</option>
-                      <option value="Italian">Italian</option>
-                      <option value="Vector / EPS">Vector / EPS</option>
-                      <option value="3D Render">3D Render</option>
+                      <option value="English">English (Global Default)</option>
+                      <option value="Spanish">Spanish (Español)</option>
+                      <option value="French">French (Français)</option>
+                      <option value="German">German (Deutsch)</option>
+                      <option value="Italian">Italian (Italiano)</option>
+                      <option value="Portuguese">Portuguese (Português)</option>
+                      <option value="Japanese">Japanese (日本語)</option>
                     </select>
                   </div>
                   <div className="col-span-2 sm:col-span-1 w-full">
@@ -1820,12 +2081,13 @@ export default function App() {
                       onChange={(e) => setTargetMarketplace(e.target.value as TargetMarketplace)}
                       className="w-full bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
                     >
-                      <option value="adobe_stock">Adobe Stock (Max 49 KW)</option>
-                      <option value="shutterstock">Shutterstock (Warning Rules)</option>
-                      <option value="freepik">Freepik (AI Tags)</option>
-                      <option value="123rf">123RF</option>
-                      <option value="dreamstime">Dreamstime</option>
-                      <option value="vecteezy">Vecteezy</option>
+                      <option value="adobe_stock">Adobe Stock (Top 10 Ranked, 49 KW)</option>
+                      <option value="shutterstock">Shutterstock (5+ Words Title, 50 KW)</option>
+                      <option value="freepik">Freepik (Design Tags, 30 Max)</option>
+                      <option value="vecteezy">Vecteezy (Vector & Art Focus, 35 KW)</option>
+                      <option value="getty">Getty Images / iStock (35 KW)</option>
+                      <option value="123rf">123RF (45 KW)</option>
+                      <option value="dreamstime">Dreamstime (45 KW)</option>
                     </select>
                   </div>
                 </div>
@@ -1914,6 +2176,20 @@ export default function App() {
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" /> 
                 <span>Multi-CSV & Rename</span>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setTourStep(0);
+                  setShowTourModal(true);
+                }}
+                className="shrink-0 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-sm"
+                title="Interactive Guide & Tour"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="hidden md:inline">Tour</span>
               </motion.button>
 
               <motion.button
@@ -2061,7 +2337,7 @@ export default function App() {
               customApiKey={customApiKey}
               user={user}
               planType={planType}
-              setChatUsage={setChatUsage}
+              setTrendsUsage={setTrendsUsage}
               initialSearchQuery={trendSearchPreload}
             />
           ) : currentView === 'competitor' ? (
@@ -2137,6 +2413,45 @@ export default function App() {
 
               {/* Contributor Milestone Goal Widget */}
               <ContributorGoalWidget completedCount={items.filter((i) => i.result).length} />
+
+              {/* Dedicated Failed Items Retry Banner - ONLY shows when there are failed files */}
+              <AnimatePresence>
+                {items.some(i => i.status === 'error') && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                    className="bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-red-500/15 border border-amber-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl shadow-amber-950/20"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
+                        <AlertCircle className="w-5 h-5 text-amber-400" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-slate-100">
+                            {items.filter(i => i.status === 'error').length} file(s) failed during analysis
+                          </h4>
+                          <span className="text-[11px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+                            {items.filter(i => i.status === 'error').length} Failed
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-300 mt-0.5">
+                          Temporary rate limit or network issue occurred. Click the button to automatically retry all failed files with backoff.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={retryFailedItems}
+                      disabled={isProcessing}
+                      className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold text-xs px-5 py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 shrink-0 cursor-pointer"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                      {isProcessing ? 'Retrying in progress...' : `Retry Failed Files (${items.filter(i => i.status === 'error').length})`}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <motion.div variants={containerVariants} className="space-y-4 pb-32">
                 <AnimatePresence>
@@ -2227,16 +2542,19 @@ export default function App() {
                               )}
                             </div>
                           ) : item.status === 'error' ? (
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full bg-red-950/20 border border-red-500/20 rounded-lg p-2">
-                              <div className="flex items-center gap-1.5 text-red-400 text-xs font-medium">
-                                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                                <span className="line-clamp-2">{item.error}</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full bg-red-950/25 border border-red-500/30 rounded-xl p-2.5">
+                              <div className="flex items-center gap-2 text-red-300 text-xs font-medium">
+                                <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                                <span className="line-clamp-2 leading-tight">{item.error}</span>
                               </div>
                               <button
-                                onClick={() => processSingleFile(item)}
-                                className="shrink-0 bg-red-500/20 hover:bg-red-500/30 text-red-300 px-2.5 py-1 rounded text-[11px] font-semibold flex items-center gap-1 transition self-start sm:self-auto"
+                                onClick={() => retrySingleFile(item)}
+                                disabled={isProcessing}
+                                className="shrink-0 bg-red-500/20 hover:bg-red-500/30 disabled:opacity-50 text-red-200 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition self-start sm:self-auto cursor-pointer shadow-sm hover:shadow-red-500/10"
+                                title="Retry this file"
                               >
-                                <RefreshCw className="w-3 h-3" /> Retry
+                                <RefreshCw className={`w-3.5 h-3.5 ${isProcessing && item.status === 'processing' ? 'animate-spin' : ''}`} />
+                                <span>Retry File</span>
                               </button>
                             </div>
                           ) : 'Ready in queue...'}
@@ -2542,6 +2860,25 @@ export default function App() {
                     Enter your personal Gemini API key to avoid rate limits. It is saved locally in your browser and sent securely to generate metadata. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">Get a free key here</a>.
                   </p>
                 </div>
+
+                <hr className="border-slate-800" />
+
+                {/* Keyword Blacklist & Exclusion Section */}
+                <div>
+                  <label className="text-sm font-semibold text-slate-300 block mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-400" /> Custom Banned / Excluded Keywords
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={excludedKeywords}
+                    onChange={(e) => setExcludedKeywords(e.target.value)}
+                    placeholder="e.g., editorial, fake, adult, sample, banned-brand"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-3.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-sm resize-none"
+                  />
+                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                    Comma-separated words you never want in your generated metadata (e.g. competitor brands, restricted terms).
+                  </p>
+                </div>
               </div>
 
               <div className="p-5 border-t border-slate-800 bg-slate-950/50 flex justify-end gap-3">
@@ -2554,10 +2891,10 @@ export default function App() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => handleSaveApiKey(customApiKey)}
+                  onClick={() => handleSaveApiKey(customApiKey, excludedKeywords)}
                   className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg"
                 >
-                  <Save className="w-4 h-4" /> Save Key
+                  <Save className="w-4 h-4" /> Save Settings
                 </motion.button>
               </div>
             </motion.div>
@@ -2616,7 +2953,7 @@ export default function App() {
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-4xl px-4 pointer-events-none"
           >
             <div className="pointer-events-auto bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-3 rounded-2xl flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4 pl-2">
+              <div className="flex items-center gap-3 pl-2 flex-wrap">
                 <div className="flex items-center gap-3 bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700/50">
                   <input
                     type="checkbox"
@@ -2631,6 +2968,30 @@ export default function App() {
                     <span className="sm:hidden">AI</span>
                   </label>
                 </div>
+
+                {/* Instant Turbo Speed Mode Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !isTurboMode;
+                    setIsTurboMode(next);
+                    localStorage.setItem('turbo_mode', String(next));
+                    showToast(next ? "⚡ Turbo Speed Mode: ON (Instant parallel processing enabled)" : "🐢 Safe Mode: ON (Sequential processing)");
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                    isTurboMode
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/20'
+                      : 'bg-slate-800/60 text-slate-400 border-slate-700 hover:text-slate-200'
+                  }`}
+                  title={isTurboMode ? "Turbo Mode is active: Fast parallel metadata generation with optimized token payload" : "Click to enable Turbo Mode"}
+                >
+                  <Zap className={`w-3.5 h-3.5 ${isTurboMode ? 'text-amber-400 fill-amber-400 animate-pulse' : 'text-slate-500'}`} />
+                  <span>Turbo Speed</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-black uppercase ${isTurboMode ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-700 text-slate-400'}`}>
+                    {isTurboMode ? '2x Fast' : 'Off'}
+                  </span>
+                </button>
+
                 <span className="text-sm font-bold text-indigo-300 bg-indigo-900/30 px-3 py-1.5 rounded-lg border border-indigo-500/20">
                   {items.length} Files
                 </span>
@@ -2670,10 +3031,23 @@ export default function App() {
                   </button>
                 )}
                 
+                {/* Retry Failed button - ONLY shows when there are failed items */}
+                {items.some(i => i.status === 'error') && (
+                  <button
+                    onClick={retryFailedItems}
+                    disabled={isProcessing}
+                    className="bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-amber-500/25 animate-pulse cursor-pointer shrink-0"
+                    title="Retry all failed files"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                    <span>Retry Failed ({items.filter(i => i.status === 'error').length})</span>
+                  </button>
+                )}
+
                 <button
                   onClick={startBulkProcessing}
-                  disabled={isProcessing || items.every(i => i.status === 'completed' || i.status === 'error')}
-                  className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-sm font-bold px-6 py-2 rounded-xl transition flex items-center gap-2 shadow-lg shadow-indigo-600/25"
+                  disabled={isProcessing || !items.some(i => i.status === 'pending' || i.status === 'error')}
+                  className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-sm font-bold px-6 py-2 rounded-xl transition flex items-center gap-2 shadow-lg shadow-indigo-600/25 cursor-pointer"
                 >
                   {isProcessing ? <RefreshCw className="animate-spin w-4 h-4" /> : <Layers className="w-4 h-4" />}
                   {isProcessing ? 'Processing...' : 'Generate AI'}
@@ -2784,6 +3158,15 @@ export default function App() {
       <KeyboardShortcutsModal
         isOpen={showShortcutsModal}
         onClose={() => setShowShortcutsModal(false)}
+      />
+
+      {/* Interactive Contributor Guide Tour Modal */}
+      <InteractiveTourModal
+        isOpen={showTourModal}
+        onClose={() => setShowTourModal(false)}
+        currentStep={tourStep}
+        onNext={() => setTourStep((prev) => Math.min(prev + 1, 4))}
+        onPrev={() => setTourStep((prev) => Math.max(prev - 1, 0))}
       />
 
       {/* Toast Notification */}

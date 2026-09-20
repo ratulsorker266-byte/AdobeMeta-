@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { X, Download, Copy, Check, FileSpreadsheet, Package, Sparkles, AlertCircle } from 'lucide-react';
 import { BulkItem } from '../types';
 import JSZip from 'jszip';
-import { embedJpegMetadata } from '../lib/metadataEmbedder';
+import { embedJpegMetadata, generateXmpSidecarXml } from '../lib/metadataEmbedder';
 
 interface MultiCsvExportModalProps {
   isOpen: boolean;
@@ -198,6 +198,16 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
         }
 
         zip.file(finalSeoName, finalBlob);
+
+        // Also generate Adobe-compliant XMP sidecar file (.xmp) for Illustrator / Bridge / Lightroom
+        const xmpBaseName = finalSeoName.replace(/\.[^/.]+$/, '');
+        const xmpContent = generateXmpSidecarXml(
+          item.result.recommendedTitle || '',
+          item.result.keywords || [],
+          item.result.shortDescription
+        );
+        zip.file(`${xmpBaseName}.xmp`, xmpContent);
+
         count++;
         setRenameProgress(Math.round((count / completedItems.length) * 100));
       }

@@ -1,4 +1,4 @@
-export type TargetMarketplace = 'adobe_stock' | 'shutterstock' | 'freepik' | '123rf' | 'dreamstime' | 'vecteezy';
+export type TargetMarketplace = 'adobe_stock' | 'shutterstock' | 'freepik' | '123rf' | 'dreamstime' | 'vecteezy' | 'getty';
 
 export type MetadataResult = {
   recommendedTitle: string;

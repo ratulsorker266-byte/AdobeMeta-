@@ -12,10 +12,15 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-  // Basic security headers
+  // Enterprise Cyber-Security & Defensive Headers
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    // Rate limit header signaling
+    res.setHeader("X-RateLimit-Policy", "stockmeta-anti-abuse-v1");
     next();
   });
 
@@ -43,9 +48,11 @@ async function startServer() {
   const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours
 
   // Helper function to call Gemini with automatic fallback across reliable models
-  async function generateWithFallback(ai: GoogleGenAI, options: any) {
-    // gemini-3.8-flash is the primary flagship, with reliable fast fallbacks
-    const candidateModels = ["gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash"];
+  // Prioritizes the fastest lightweight models while falling back to flagship flash models
+  async function generateWithFallback(ai: GoogleGenAI, options: any, fastFirst: boolean = false) {
+    const candidateModels = fastFirst
+      ? ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-2.5-flash"]
+      : ["gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash"];
     let lastError: any = null;
 
     for (const model of candidateModels) {
@@ -182,22 +189,46 @@ async function startServer() {
   }
 
   function cleanErrorMessage(err: any): string {
-    if (!err) return "Unknown error occurred";
-    let msg = err.message || String(err);
+    if (!err) return "Service temporarily unavailable. Please retry.";
+    let msg = "";
+    if (typeof err === "string") {
+      msg = err;
+    } else if (err.message && typeof err.message === "string") {
+      msg = err.message;
+    } else if (err.error?.message && typeof err.error.message === "string") {
+      msg = err.error.message;
+    } else if (err.statusText && typeof err.statusText === "string") {
+      msg = err.statusText;
+    } else {
+      try {
+        msg = JSON.stringify(err);
+      } catch (_) {
+        msg = String(err);
+      }
+    }
+
+    if (!msg || msg === "{}" || msg === "[object Object]") {
+      msg = "Service temporarily unavailable or model busy. Please retry in a few moments.";
+    }
+
     try {
       if (msg.startsWith("{") && msg.endsWith("}")) {
         const parsed = JSON.parse(msg);
-        if (parsed.error && parsed.error.message) {
+        if (parsed.error?.message) {
           msg = parsed.error.message;
         }
       }
     } catch (_) {}
 
     // Convert raw Google API rate limit errors into helpful user messages
-    if (msg.includes("Quota exceeded") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("rate-limits")) {
+    if (msg.includes("Quota exceeded") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("rate-limits") || msg.includes("429")) {
       const retryMatch = msg.match(/retry in ([\d\.]+)s/i);
-      const retrySec = retryMatch ? Math.round(parseFloat(retryMatch[1])) : 30;
+      const retrySec = retryMatch ? Math.round(parseFloat(retryMatch[1])) : 25;
       return `Gemini API Free Tier rate limit reached. Auto-pausing; please wait ${retrySec}s or add your own free API Key in Settings (⚙️) for unlimited speed.`;
+    }
+
+    if (msg.includes("overloaded") || msg.includes("503") || msg.includes("UNAVAILABLE")) {
+      return "AI service temporarily busy or overloaded. Please click Retry.";
     }
 
     return msg;
@@ -261,7 +292,7 @@ async function startServer() {
       const isGeneral = !searchQuery || searchQuery.trim() === '';
       const matchedMonth = searchQuery ? findMonthlyTrends(searchQuery) : null;
 
-      // If user searches for any calendar month (e.g. October, December, জানুয়ারি), return verified rich trends immediately!
+      // If user searches for any calendar month (e.g. October, December, January), return verified rich trends immediately!
       if (matchedMonth) {
         return res.json(matchedMonth);
       }
@@ -281,6 +312,18 @@ async function startServer() {
         return res.json(MONTHLY_TRENDS_KNOWLEDGE[nowMonth] || FALLBACK_TRENDS);
       }
       
+      const prompt = `
+      You are an elite Stock Market Photography and Creative Content Trend Forecaster for Adobe Stock, Shutterstock, Freepik, and Getty.
+      Topic/Query: "${searchQuery || 'High-Demand Seasonal Stock Trends'}".
+      Reference Period: "${date || new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' })}".
+
+      Analyze commercial buyer demand, seasonal purchasing cycles, and content gaps:
+      1. Provide monthName and monthOverview summarizing market demand.
+      2. whatToCreate: 5 concrete, actionable concepts commercial buyers actively purchase.
+      3. currentTrends: 4 top trending topics right now with actionGuide, bestFor, and 6-8 search keywords each.
+      4. upcomingTrends: 4 upcoming trends for the next 2-4 months with targetMonth, actionGuide, bestFor, and 6-8 search keywords each.
+      `;
+
       const data = await callGeminiUnified(clientApiKey, async (ai) => {
         const response = await generateWithFallback(ai, {
           contents: prompt,
@@ -365,9 +408,175 @@ async function startServer() {
     }
   });
 
+  function getMarketplaceSEOConfig(marketplace: string = 'adobe_stock') {
+    const norm = (marketplace || '').toLowerCase().trim();
+    switch (norm) {
+      case 'shutterstock':
+        return {
+          id: 'shutterstock',
+          name: 'Shutterstock',
+          targetKeywordCount: '35 to 49',
+          maxKeywords: 50,
+          minKeywords: 25,
+          titleDirectives: `
+          - SHUTTERSTOCK MANDATORY RULE: Title MUST be a detailed, descriptive narrative sentence of at least 5 words (ideally 8 to 15 words).
+          - Must answer: Who is in it, what is happening, where is it located, and the conceptual environment.
+          - Never use promotional buzzwords ("best", "amazing", "unique") or camera names.
+          - Capitalize the first letter of the sentence, do not end with a period.`,
+          keywordDirectives: `
+          - Provide between 35 and 48 highly relevant keywords (Shutterstock max is 50, min is 7).
+          - Include specific literal nouns, actions, broad categories, and emotional/business themes.
+          - Include singular and plural forms for core subjects.`,
+          descriptionDirectives: `
+          - Detailed caption sentence (10-25 words) that tells the complete narrative of the scene for commercial/editorial buyers.`
+        };
+      case 'freepik':
+        return {
+          id: 'freepik',
+          name: 'Freepik',
+          targetKeywordCount: '20 to 30',
+          maxKeywords: 30,
+          minKeywords: 18,
+          titleDirectives: `
+          - FREEPIK MANDATORY RULE: Clean, succinct commercial title (4 to 8 words).
+          - Focus on visual style, graphic utility, and theme (e.g., "Modern abstract geometric vector background" or "Minimalist corporate business team illustration").
+          - Avoid long conversational narratives; keep it commercial and design-focused.`,
+          keywordDirectives: `
+          - FREEPIK STRICT RULE: Exactly 20 to 30 highly targeted tags. DO NOT exceed 30 tags (Freepik penalizes tag spam).
+          - Focus on graphic design tags, layout, colors, format, and commercial application.
+          - For vectors/graphics, prioritize tags like: vector, template, banner, background, graphic, flat, modern.`,
+          descriptionDirectives: `
+          - Brief 1-sentence design summary highlighting style, color palette, and format.`
+        };
+      case 'vecteezy':
+        return {
+          id: 'vecteezy',
+          name: 'Vecteezy',
+          targetKeywordCount: '25 to 35',
+          maxKeywords: 35,
+          minKeywords: 20,
+          titleDirectives: `
+          - VECTEEZY MANDATORY RULE: High-clarity title (5 to 10 words) explicitly stating the graphic medium, style, and theme.
+          - Example: "Vintage hand drawn botanical floral pattern vector illustration".`,
+          keywordDirectives: `
+          - Provide 25 to 35 targeted keywords focusing on artistic style, vector/cutout properties, patterns, colors, and print utility.`,
+          descriptionDirectives: `
+          - Concise description stating the asset type, license suitability, and creative use cases.`
+        };
+      case 'getty':
+      case 'istock':
+        return {
+          id: 'getty',
+          name: 'Getty Images / iStock',
+          targetKeywordCount: '20 to 35',
+          maxKeywords: 35,
+          minKeywords: 20,
+          titleDirectives: `
+          - GETTY / ISTOCK MANDATORY RULE: Factual, journalistic or commercial headline (6 to 12 words).
+          - Clear, dignified, objective. No hyperbolic sales buzzwords or repetitive words.`,
+          keywordDirectives: `
+          - Use precise, vocabulary-controlled conceptual keywords (20 to 35 tags).
+          - Group by: literal subject (age, gender, ethnicity if people), environment, conceptual emotion, and technical composition.
+          - Avoid near-duplicate synonyms or keyword stuffing.`,
+          descriptionDirectives: `
+          - Clear journalistic caption stating who, what, where, and mood.`
+        };
+      case '123rf':
+      case 'dreamstime':
+        return {
+          id: norm,
+          name: norm.toUpperCase(),
+          targetKeywordCount: '30 to 45',
+          maxKeywords: 45,
+          minKeywords: 25,
+          titleDirectives: `
+          - Clear commercial stock title (6 to 12 words) describing the main subject and setting naturally.`,
+          keywordDirectives: `
+          - Provide 30 to 45 keywords balancing primary objects, actions, background, and conceptual themes.`,
+          descriptionDirectives: `
+          - Complete descriptive caption detailing the scene.`
+        };
+      case 'adobe_stock':
+      default:
+        return {
+          id: 'adobe_stock',
+          name: 'Adobe Stock',
+          targetKeywordCount: '45 to 49',
+          maxKeywords: 49,
+          minKeywords: 35,
+          titleDirectives: `
+          - ADOBE STOCK MANDATORY RULE: Natural, commercially compelling title (7 to 14 words).
+          - Must describe: Main subject + specific action/state + environment/background + lighting/mood.
+          - NO keyword stuffing in title. Capitalize first letter of sentence naturally. NO trailing period.
+          - Avoid filler words like "image of", "photo of", "isolated on background".`,
+          keywordDirectives: `
+          - ADOBE STOCK ALGORITHM PRIORITY: Maximum 49 keywords.
+          - CRITICAL: The first 10 keywords MUST be the absolute most critical search terms. Adobe's search algorithm heavily weights the top 10 keywords for search ranking!
+          - Next keywords include secondary elements, lighting style, perspective, and conceptual emotions.`,
+          descriptionDirectives: `
+          - Natural 1-2 sentence commercial summary.`
+        };
+    }
+  }
+
+  function getAssetTypeSEOConfig(assetType: string = 'Photo') {
+    const norm = (assetType || '').toLowerCase().trim();
+    if (norm.includes('vector') || norm.includes('eps')) {
+      return {
+        name: 'Vector / EPS',
+        directive: `
+        - ASSET TYPE: Scalable Vector Graphic (EPS / AI / SVG).
+        - TITLE: Must denote graphic or vector style (e.g., "...vector illustration", "...graphic template", "...vector banner").
+        - KEYWORDS: MUST include vector terminology: "vector, eps, scalable, illustration, graphic, editable, design element, flat design, modern graphic".
+        - FORBIDDEN: NEVER include camera or photo terms (e.g., no "dslr, shot, photo, camera, lens, bokeh, depth of field").`
+      };
+    } else if (norm.includes('png') || norm.includes('transparent')) {
+      return {
+        name: 'PNG (Transparent Background)',
+        directive: `
+        - ASSET TYPE: Transparent PNG cutout / Isolated object.
+        - TITLE: Explicitly describe the isolated subject (e.g. "...isolated on transparent background").
+        - KEYWORDS: MUST include: "transparent background, png, cutout, isolated, isolated on transparent, no background, alpha channel, clip art, graphic element, object".`
+      };
+    } else if (norm.includes('3d') || norm.includes('render')) {
+      return {
+        name: '3D Render / CGI',
+        directive: `
+        - ASSET TYPE: 3D Digital Render / CGI.
+        - TITLE: Highlight the 3D aesthetic (e.g. "...3D render illustration", "...isometric 3D scene").
+        - KEYWORDS: MUST include: "3d render, cgi, three dimensional, 3d illustration, digital render, isometric, 3d modeling, modern 3d, realistic 3d, digital art".`
+      };
+    } else if (norm.includes('generative') || norm.includes('ai')) {
+      return {
+        name: 'Generative AI Art',
+        directive: `
+        - ASSET TYPE: Generative AI Artwork.
+        - TITLE: High-concept, imaginative description of the scene.
+        - KEYWORDS: In compliance with microstock transparency policies (Adobe Stock, Freepik), MUST include: "generative ai, ai generated, digital concept, ai art, synthetic image, conceptual illustration".`
+      };
+    } else if (norm.includes('illustration') || norm.includes('clipart')) {
+      return {
+        name: 'Illustration / Clipart',
+        directive: `
+        - ASSET TYPE: Illustration / Digital Art.
+        - TITLE: Characterize the illustration subject and artistic style (flat, hand drawn, watercolor, retro, minimalist).
+        - KEYWORDS: MUST include: "illustration, digital art, graphic, drawing, artwork, creative, decorative, clip art" and specific artistic style terms.`
+      };
+    } else {
+      return {
+        name: 'Photo / JPG',
+        directive: `
+        - ASSET TYPE: Photography (JPG / RAW).
+        - TITLE: Authentic photographic description of the real-world subject, moment, and environment.
+        - KEYWORDS: Focus on authentic photography elements: lighting (natural light, golden hour, softbox), composition, focus, real people, authentic lifestyle.
+        - FORBIDDEN: Do NOT include vector or clipart tags.`
+      };
+    }
+  }
+
   app.post("/api/analyze", async (req, res) => {
     try {
-      const { imageBase64, mimeType, marketplace, isAiGenerated, tier, assetType, language } = req.body;
+      const { imageBase64, mimeType, marketplace, isAiGenerated, tier, assetType, language, fastMode } = req.body;
       const clientApiKey = req.headers['x-api-key'] as string;
       
       if (!imageBase64 || typeof imageBase64 !== "string" || !mimeType) {
@@ -383,27 +592,62 @@ async function startServer() {
         safeMimeType = "image/jpeg";
       }
 
-      // Single unified Gemini analysis call to avoid doubling quota consumption
+      const marketConfig = getMarketplaceSEOConfig(marketplace);
+      const assetConfig = getAssetTypeSEOConfig(assetType);
+
+      // Unified Gemini analysis call tailored strictly to target marketplace and asset format
       const prompt = `
-      You are an Elite Stock Photography SEO Specialist, Intellectual Property Scanner, and Visual Reviewer.
-      Target Marketplace: ${marketplace?.toUpperCase() || 'ADOBE_STOCK'}.
-      Asset Type: ${assetType || 'Photo'}.
+      You are a World-Class Microstock Contributor SEO Director and Senior ${marketConfig.name} Inspector.
+      Target Marketplace: ${marketConfig.name.toUpperCase()} (Strict adherence to ${marketConfig.name} rules required).
+      Asset Type: ${assetConfig.name}.
       AI Generated: ${isAiGenerated ? 'Yes' : 'No'}.
-      MUST write Title, Description, and Keywords in ${language || "English"}.
+      Language Requirement: MUST write Title, Description, and Keywords strictly in ${language || "English"}.
       
-      PRO-LEVEL SEO & METADATA RULES:
-      1. TITLE: Highly descriptive, commercially viable title (5 to 15 words) identifying subject, context, and mood.
-      2. KEYWORDS: Generate 40 to 48 highly relevant, high-volume search keywords (mixture of specific subjects, actions, concepts, and styles).
-      3. PRIORITY KEYWORDS: Top 10 most critical search terms.
-      4. STRICT ADOBE STOCK MODERATOR SIMULATION: Calculate "acceptanceProbability" (0-100%). Identify realistic "rejectionFlags" (e.g. Intellectual Property, Artifacts, Out of Focus, Noise, or Clean).
-      5. TRADEMARK & INTELLECTUAL PROPERTY SHIELD:
-         - Inspect image for brand names, logos, emblems, stylized apparel logos (Nike swoosh, Apple logo, car logos, copyrighted characters, famous modern architecture).
-         - List detected trademarks in "detectedTrademarks" or ["None detected"].
-         - Set "trademarkRisk" to "none" | "low" | "medium" | "high".
-      6. MODEL & PROPERTY RELEASE REQUIREMENT:
-         - "modelReleaseRequired": true if any recognizable human face or identifiable person is present.
-         - "propertyReleaseRequired": true if private property, modern architectural landmark, recognizable private vehicle, or interior of private venue is present.
-         - "releaseExplanation": short guidance on required releases or Photoshop edits needed before submission.
+      STRICT COMMERCIAL METADATA DIRECTIVES FOR ${marketConfig.name.toUpperCase()}:
+      
+      1. TITLE REQUIREMENTS FOR ${marketConfig.name.toUpperCase()}:
+         ${marketConfig.titleDirectives}
+         - Must explicitly describe: Main subject + specific action/state + environment/background + lighting/mood.
+         - NO keyword spamming in title. NO repetitive words.
+      
+      2. KEYWORD PRECISION FOR ${marketConfig.name.toUpperCase()} (${marketConfig.targetKeywordCount} unique keywords):
+         ${marketConfig.keywordDirectives}
+         - Include:
+           * Direct subject terms (singular and common plural)
+           * Descriptive visual elements (color, composition, perspective, lighting style)
+           * Conceptual & emotional business themes (e.g., success, serenity, technology, wellness, lifestyle)
+           * Broad categorical tags (e.g., background, copyspace, modern, professional)
+         - STRICT PROHIBITIONS:
+           * NO trademarked brand names (e.g. no "iPhone", "Photoshop", "Instagram", "Sony", "Nike") unless explicitly historical/editorial.
+           * NO duplicate or near-identical keyword spam.
+           * NO camera equipment terms (e.g., no "Canon 5D", "iso 100", "f/1.8").
+           * Each keyword must be clean lowercase single or 2-word phrase.
+      
+      3. ASSET TYPE SPECIFIC RULES (${assetConfig.name.toUpperCase()}):
+         ${assetConfig.directive}
+
+      4. SHORT DESCRIPTION FOR ${marketConfig.name.toUpperCase()}:
+         ${marketConfig.descriptionDirectives}
+      
+      5. PRIORITY KEYWORDS:
+         - Provide the top 10 core search terms from your list that a buyer on ${marketConfig.name} will actually type in the search bar.
+      
+      6. MODERATION SIMULATION FOR ${marketConfig.name.toUpperCase()}:
+         - "acceptanceProbability": Realistic score (0-100%) based on composition, commercial appeal, sharpness, and clean background.
+         - "rejectionFlags": Check for common microstock rejection reasons:
+           "Quality Issues" | "Technical Problems (Noise/Blur)" | "Intellectual Property / Trademarks" | "Similar Submissions" | "Model/Property Release Needed" | "Clean (Ready to Submit)"
+         - "salesPotentialScore": 0-100 commercial buyer demand score on ${marketConfig.name}.
+         - "technicalQualityScore": 0-100 evaluation of focus, lighting balance, exposure, and clean artifact-free pixels.
+      
+      7. TRADEMARK & INTELLECTUAL PROPERTY SHIELD:
+         - Check apparel, footwear, tech gadgets, car grills, recognizable building silhouettes.
+         - "detectedTrademarks": list any detected logos/trademarks or ["None detected"].
+         - "trademarkRisk": "none" | "low" | "medium" | "high".
+      
+      8. LEGAL RELEASE COMPLIANCE:
+         - "modelReleaseRequired": true if any recognizable human face, profile, or distinctive body feature is present.
+         - "propertyReleaseRequired": true if private property, modern architectural landmark, recognizable interior, or vehicle is present.
+         - "releaseExplanation": Clear, actionable advice for contributor.
       `;
 
       const response = await callGeminiUnified(clientApiKey, async (ai) => {
@@ -443,14 +687,69 @@ async function startServer() {
               },
             },
           },
-        });
+        }, Boolean(fastMode));
       });
 
       const parsed = safeParseJson(response.text, {});
-      // Ensure defaults so frontend never encounters null/undefined properties
-      parsed.recommendedTitle = parsed.recommendedTitle || "Commercial Stock Visual";
-      parsed.keywords = Array.isArray(parsed.keywords) ? parsed.keywords.map((k: any) => String(k).trim()).filter(Boolean) : [];
-      parsed.priorityKeywords = Array.isArray(parsed.priorityKeywords) ? parsed.priorityKeywords.map((k: any) => String(k).trim()).filter(Boolean) : parsed.keywords.slice(0, 10);
+      
+      // Clean and sanitize Title
+      let cleanTitle = String(parsed.recommendedTitle || "Commercial Stock Visual").trim();
+      // Remove trailing periods and double spaces often rejected by stock agencies
+      cleanTitle = cleanTitle.replace(/\.+$/, '').replace(/\s+/g, ' ');
+      // Ensure Title case or clean capitalization
+      if (cleanTitle.length > 0) {
+        cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
+      }
+
+      // If Shutterstock is selected, enforce minimum 5 words rule strictly
+      if (marketConfig.id === 'shutterstock') {
+        const words = cleanTitle.split(/\s+/).filter(Boolean);
+        if (words.length < 5 && sanitizedKeywords.length > 0) {
+          const extraWords = sanitizedKeywords.slice(0, 5 - words.length).join(' ');
+          cleanTitle = `${cleanTitle} with ${extraWords}`;
+        }
+      }
+      parsed.recommendedTitle = cleanTitle;
+
+      // Clean, filter and strictly deduplicate keywords preserving case-insensitive order
+      const rawKeywords = Array.isArray(parsed.keywords) ? parsed.keywords : [];
+      const seenKeywords = new Set<string>();
+      const sanitizedKeywords: string[] = [];
+
+      for (const k of rawKeywords) {
+        if (!k) continue;
+        const norm = String(k)
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '') // remove punctuations
+          .trim();
+        
+        // Exclude empty, single-character, or banned strings
+        if (norm.length > 1 && !seenKeywords.has(norm)) {
+          seenKeywords.add(norm);
+          sanitizedKeywords.push(norm);
+        }
+      }
+
+      // Enforce target marketplace specific keyword limits (e.g. 30 for Freepik, 49 for Adobe Stock, 50 for Shutterstock)
+      parsed.keywords = sanitizedKeywords.slice(0, marketConfig.maxKeywords);
+
+      // Clean priority keywords
+      const rawPriority = Array.isArray(parsed.priorityKeywords) && parsed.priorityKeywords.length > 0 
+        ? parsed.priorityKeywords 
+        : parsed.keywords.slice(0, 10);
+
+      const seenPriority = new Set<string>();
+      const sanitizedPriority: string[] = [];
+      for (const pk of rawPriority) {
+        if (!pk) continue;
+        const norm = String(pk).toLowerCase().replace(/[^\w\s-]/g, '').trim();
+        if (norm.length > 1 && !seenPriority.has(norm)) {
+          seenPriority.add(norm);
+          sanitizedPriority.push(norm);
+        }
+      }
+      parsed.priorityKeywords = sanitizedPriority.slice(0, 10);
+
       parsed.shortDescription = parsed.shortDescription || parsed.recommendedTitle;
       parsed.acceptanceProbability = typeof parsed.acceptanceProbability === "number" ? Math.min(100, Math.max(0, parsed.acceptanceProbability)) : 85;
       parsed.salesPotentialScore = typeof parsed.salesPotentialScore === "number" ? Math.min(100, Math.max(0, parsed.salesPotentialScore)) : 80;

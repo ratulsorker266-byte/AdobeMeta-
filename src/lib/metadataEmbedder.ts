@@ -126,3 +126,58 @@ function dataURLtoBlob(dataurl: string): Blob {
   }
   return new Blob([u8arr], { type: mime });
 }
+
+/**
+ * Generates an industry-standard Adobe XMP Sidecar XML file
+ * Fully compatible with Adobe Photoshop, Lightroom, Illustrator, and Adobe Bridge.
+ */
+export function generateXmpSidecarXml(title: string, keywords: string[], description?: string): string {
+  const escapeXml = (unsafe: string) => {
+    return (unsafe || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
+
+  const safeTitle = escapeXml(title.trim());
+  const safeDesc = escapeXml((description || title).trim());
+  const keywordTags = (keywords || [])
+    .filter(Boolean)
+    .map(k => `        <rdf:li>${escapeXml(k.trim())}</rdf:li>`)
+    .join('\n');
+
+  return `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/"
+    xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+    xmlns:Iptc4xmpCore="http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/">
+   <dc:title>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">${safeTitle}</rdf:li>
+    </rdf:Alt>
+   </dc:title>
+   <dc:description>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">${safeDesc}</rdf:li>
+    </rdf:Alt>
+   </dc:description>
+   <dc:subject>
+    <rdf:Bag>
+${keywordTags}
+    </rdf:Bag>
+   </dc:subject>
+   <photoshop:Headline>${safeTitle}</photoshop:Headline>
+   <photoshop:Credit>Stock Contributor</photoshop:Credit>
+   <photoshop:Source>StockMeta Pro AI</photoshop:Source>
+   <xmp:CreatorTool>StockMeta Pro Suite</xmp:CreatorTool>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>
+<?xpacket end="w"?>`;
+}
+
