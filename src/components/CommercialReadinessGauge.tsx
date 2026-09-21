@@ -5,9 +5,10 @@ import { MetadataResult } from '../types';
 
 interface CommercialReadinessGaugeProps {
   result: MetadataResult;
+  onAutoFix?: () => void;
 }
 
-export const CommercialReadinessGauge: React.FC<CommercialReadinessGaugeProps> = ({ result }) => {
+export const CommercialReadinessGauge: React.FC<CommercialReadinessGaugeProps> = ({ result, onAutoFix }) => {
   const [showBreakdown, setShowBreakdown] = useState(false);
 
   // 1. Title Score (max 25)
@@ -105,14 +106,27 @@ export const CommercialReadinessGauge: React.FC<CommercialReadinessGaugeProps> =
           </div>
         </div>
 
-        <button
-          onClick={() => setShowBreakdown(!showBreakdown)}
-          className="text-xs font-medium text-slate-400 hover:text-indigo-400 transition flex items-center gap-1 shrink-0 p-1.5 rounded-lg hover:bg-slate-800"
-          title="View 4-Pillar Score Breakdown"
-        >
-          <span className="text-[11px]">{showBreakdown ? 'Hide' : 'Details'}</span>
-          {showBreakdown ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {onAutoFix && totalScore < 90 && (
+            <button
+              onClick={onAutoFix}
+              className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition shadow-sm hover:scale-105 active:scale-95"
+              title="Auto-balance title length, optimize top 10 tags, and remove spam keywords"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span>1-Click Auto-Fix</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowBreakdown(!showBreakdown)}
+            className="text-xs font-medium text-slate-400 hover:text-indigo-400 transition flex items-center gap-1 shrink-0 p-1.5 rounded-lg hover:bg-slate-800"
+            title="View 4-Pillar Score Breakdown"
+          >
+            <span className="text-[11px]">{showBreakdown ? 'Hide' : 'Details'}</span>
+            {showBreakdown ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
       </div>
 
       {/* Expandable Breakdown Drawer */}

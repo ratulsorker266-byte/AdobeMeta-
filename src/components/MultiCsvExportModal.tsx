@@ -122,6 +122,20 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
     return csv;
   };
 
+  // 5. Getty Images / iStock CSV format: Filename,Title,Description,Keywords
+  const getGettyCsv = (forceRenamed?: boolean) => {
+    let csv = '\uFEFFFilename,Title,Description,Keywords\n';
+    completedItems.forEach((item) => {
+      if (!item.result) return;
+      const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
+      const title = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+      const desc = (item.result.shortDescription || item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+      const keywords = (item.result.keywords || []).slice(0, 35).map((k) => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+      csv += `"${filename}","${title}","${desc}","${keywords}"\n`;
+    });
+    return csv;
+  };
+
   const downloadCsv = (content: string, filename: string) => {
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -142,7 +156,7 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
     setTimeout(() => setCopiedFormat(null), 2000);
   };
 
-  // 5. Download All CSVs in 1 ZIP
+  // 6. Download All CSVs in 1 ZIP
   const downloadAllCsvsZip = async () => {
     try {
       const zip = new JSZip();
@@ -150,6 +164,7 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
       zip.file(`${prefix}Adobe_Stock_Metadata.csv`, getAdobeStockCsv());
       zip.file(`${prefix}Shutterstock_Metadata.csv`, getShutterstockCsv());
       zip.file(`${prefix}Freepik_Metadata.csv`, getFreepikCsv());
+      zip.file(`${prefix}Getty_iStock_Metadata.csv`, getGettyCsv());
       zip.file(`${prefix}Universal_Vecteezy_Metadata.csv`, getUniversalCsv());
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -216,6 +231,7 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
       zip.file('Adobe_Stock_Renamed.csv', getAdobeStockCsv(true));
       zip.file('Shutterstock_Renamed.csv', getShutterstockCsv(true));
       zip.file('Freepik_Renamed.csv', getFreepikCsv(true));
+      zip.file('Getty_iStock_Renamed.csv', getGettyCsv(true));
       zip.file('Universal_Catalog_Renamed.csv', getUniversalCsv(true));
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -263,6 +279,15 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
       desc: 'Header: File name, Title, Tags (comma delimited tags up to 30)',
       getFile: getFreepikCsv,
       filename: `freepik_${Date.now()}.csv`,
+    },
+    {
+      id: 'getty',
+      name: 'Getty Images / iStock',
+      badge: '35 KW Max',
+      color: 'amber',
+      desc: 'Standard ESP portal metadata (Filename, Title, Description, Keywords)',
+      getFile: getGettyCsv,
+      filename: `getty_istock_${Date.now()}.csv`,
     },
     {
       id: 'universal',
@@ -319,7 +344,7 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
                   className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold p-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition"
                 >
                   <Package className="w-4 h-4" />
-                  <span>Download All 4 CSVs in 1 ZIP</span>
+                  <span>Download All 5 Agency CSVs in 1 ZIP</span>
                 </button>
 
                 <button

@@ -692,25 +692,6 @@ async function startServer() {
 
       const parsed = safeParseJson(response.text, {});
       
-      // Clean and sanitize Title
-      let cleanTitle = String(parsed.recommendedTitle || "Commercial Stock Visual").trim();
-      // Remove trailing periods and double spaces often rejected by stock agencies
-      cleanTitle = cleanTitle.replace(/\.+$/, '').replace(/\s+/g, ' ');
-      // Ensure Title case or clean capitalization
-      if (cleanTitle.length > 0) {
-        cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
-      }
-
-      // If Shutterstock is selected, enforce minimum 5 words rule strictly
-      if (marketConfig.id === 'shutterstock') {
-        const words = cleanTitle.split(/\s+/).filter(Boolean);
-        if (words.length < 5 && sanitizedKeywords.length > 0) {
-          const extraWords = sanitizedKeywords.slice(0, 5 - words.length).join(' ');
-          cleanTitle = `${cleanTitle} with ${extraWords}`;
-        }
-      }
-      parsed.recommendedTitle = cleanTitle;
-
       // Clean, filter and strictly deduplicate keywords preserving case-insensitive order
       const rawKeywords = Array.isArray(parsed.keywords) ? parsed.keywords : [];
       const seenKeywords = new Set<string>();
@@ -732,6 +713,25 @@ async function startServer() {
 
       // Enforce target marketplace specific keyword limits (e.g. 30 for Freepik, 49 for Adobe Stock, 50 for Shutterstock)
       parsed.keywords = sanitizedKeywords.slice(0, marketConfig.maxKeywords);
+
+      // Clean and sanitize Title
+      let cleanTitle = String(parsed.recommendedTitle || "Commercial Stock Visual").trim();
+      // Remove trailing periods and double spaces often rejected by stock agencies
+      cleanTitle = cleanTitle.replace(/\.+$/, '').replace(/\s+/g, ' ');
+      // Ensure Title case or clean capitalization
+      if (cleanTitle.length > 0) {
+        cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
+      }
+
+      // If Shutterstock is selected, enforce minimum 5 words rule strictly
+      if (marketConfig.id === 'shutterstock') {
+        const words = cleanTitle.split(/\s+/).filter(Boolean);
+        if (words.length < 5 && sanitizedKeywords.length > 0) {
+          const extraWords = sanitizedKeywords.slice(0, 5 - words.length).join(' ');
+          cleanTitle = `${cleanTitle} with ${extraWords}`;
+        }
+      }
+      parsed.recommendedTitle = cleanTitle;
 
       // Clean priority keywords
       const rawPriority = Array.isArray(parsed.priorityKeywords) && parsed.priorityKeywords.length > 0 
@@ -830,6 +830,77 @@ async function startServer() {
       res.json(parsed);
     } catch (error: any) {
       console.error("Stock prompt generation error:", error);
+      res.status(500).json({ error: cleanErrorMessage(error) });
+    }
+  });
+
+  app.post("/api/reverse-image-prompt", async (req, res) => {
+    try {
+      const { imageBase64, mimeType } = req.body;
+      const clientApiKey = req.headers['x-api-key'] as string;
+
+      if (!imageBase64 || typeof imageBase64 !== "string" || !mimeType) {
+        return res.status(400).json({ error: "Missing or invalid image base64 data." });
+      }
+
+      const rawBase64 = (imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64).replace(/\s+/g, '');
+      let safeMimeType = String(mimeType || "image/jpeg").toLowerCase().trim();
+      if (safeMimeType === "image/jpg" || safeMimeType === "jpg") {
+        safeMimeType = "image/jpeg";
+      }
+
+      const reversePromptSystem = `
+      You are an elite Computer Vision and Generative AI Prompt Engineer specializing in commercial stock image synthesis (Midjourney v6, Adobe Firefly Image 3, and Flux.1).
+      Analyze this image meticulously:
+      1. midjourneyPrompt: Midjourney v6.1 prompt that would recreate this aesthetic, composition, subject pose, and lighting. Include parameter flags (--ar 16:9 --style raw --v 6.1).
+      2. fireflyPrompt: Clean, natural descriptive prompt for Adobe Firefly Image 3 describing the photographic or illustration quality.
+      3. fluxPrompt: Hyper-detailed prompt for Flux.1 / SDXL specifying camera lens focal length, aperture, exact lighting setup, and materials.
+      4. negativePrompt: Stock rejection deterrent terms (e.g. bad hands, extra digits, watermark, blur, brand logo, text, distorted anatomy).
+      5. styleBreakdown: Summary of the artistic style (e.g., editorial portrait, high-key commercial, flat vector, 3D isometric).
+      6. lightingAndLens: Exact lighting conditions and camera specs (e.g., 85mm f/1.4 lens, soft diffused studio strobe, golden hour rim light).
+      7. commercialReplicationTips: 2-3 sentences on how to recreate similar high-selling stock assets while avoiding copyright infringement.
+      `;
+
+      const response = await callGeminiUnified(clientApiKey, async (ai) => {
+        return await generateWithFallback(ai, {
+          contents: [
+            {
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: safeMimeType,
+                    data: rawBase64
+                  }
+                },
+                {
+                  text: reversePromptSystem
+                }
+              ]
+            }
+          ],
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                midjourneyPrompt: { type: Type.STRING },
+                fireflyPrompt: { type: Type.STRING },
+                fluxPrompt: { type: Type.STRING },
+                negativePrompt: { type: Type.STRING },
+                styleBreakdown: { type: Type.STRING },
+                lightingAndLens: { type: Type.STRING },
+                commercialReplicationTips: { type: Type.STRING }
+              },
+              required: ["midjourneyPrompt", "fireflyPrompt", "fluxPrompt", "negativePrompt", "styleBreakdown", "lightingAndLens", "commercialReplicationTips"]
+            }
+          }
+        });
+      });
+
+      const parsed = safeParseJson(response.text, {});
+      res.json(parsed);
+    } catch (error: any) {
+      console.error("Reverse prompt generation error:", error);
       res.status(500).json({ error: cleanErrorMessage(error) });
     }
   });
