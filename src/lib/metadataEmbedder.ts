@@ -181,3 +181,130 @@ ${keywordTags}
 <?xpacket end="w"?>`;
 }
 
+/**
+ * Writes internal PostScript DSC comments and embeds an Adobe XMP packet into an EPS file.
+ * Microstock platforms (Adobe Stock, Shutterstock, Freepik, iStock/Getty) parse %%Title, %%Keywords,
+ * and the embedded %begin_xmp_code ... %end_xmp_code block directly inside the EPS vector.
+ */
+export async function embedMetadataIntoEps(
+  file: File,
+  title: string,
+  keywords: string[],
+  description?: string
+): Promise<Blob> {
+  const safeTitle = (title || '').replace(/[\r\n]/g, ' ').trim();
+  const safeDesc = (description || title || '').replace(/[\r\n]/g, ' ').trim();
+  const safeKeywords = (keywords || []).map(k => k.replace(/[\r\n,]/g, '').trim()).filter(Boolean);
+
+  const arrayBuffer = await file.arrayBuffer();
+  const uint8 = new Uint8Array(arrayBuffer);
+
+  // Check if EPS has a binary 30-byte DOS EPS header (0xC5D0D3C6)
+  const isDosBinaryEps =
+    uint8.length > 30 &&
+    uint8[0] === 0xc5 &&
+    uint8[1] === 0xd0 &&
+    uint8[2] === 0xd3 &&
+    uint8[3] === 0xc6;
+
+  let psStart = 0;
+  let psLength = uint8.length;
+
+  if (isDosBinaryEps) {
+    // Little-endian offset to PostScript section
+    const view = new DataView(arrayBuffer);
+    psStart = view.getUint32(4, true);
+    psLength = view.getUint32(8, true);
+  }
+
+  // Decode the PostScript portion to text
+  const decoder = new TextDecoder('latin1');
+  const psText = decoder.decode(uint8.subarray(psStart, psStart + psLength));
+
+  // Generate valid XMP block
+  const xmpXml = generateXmpSidecarXml(safeTitle, safeKeywords, safeDesc);
+
+  // Create standard PostScript DSC metadata headers
+  const dscTitle = `%%Title: ${safeTitle}`;
+  const dscKeywords = `%%Keywords: ${safeKeywords.join(', ')}`;
+  const dscSubject = `%%Subject: ${safeDesc}`;
+  const dscNotice = `%%Notice: Metadata injected by StockMeta Pro AI`;
+
+  // Create standard embedded XMP packet for PostScript
+  const embeddedXmpBlock = `\n%begin_xmp_code\n${xmpXml}\n%end_xmp_code\n`;
+
+  let updatedPsText = psText;
+
+  // 1. Update or inject %%Title:
+  if (/%%Title:[^\r\n]*/i.test(updatedPsText)) {
+    updatedPsText = updatedPsText.replace(/%%Title:[^\r\n]*/i, dscTitle);
+  } else if (/^%![^\r\n]*/m.test(updatedPsText)) {
+    updatedPsText = updatedPsText.replace(/^%![^\r\n]*/m, (match) => `${match}\n${dscTitle}`);
+  } else {
+    updatedPsText = `${dscTitle}\n${updatedPsText}`;
+  }
+
+  // 2. Update or inject %%Keywords:
+  if (/%%Keywords:[^\r\n]*/i.test(updatedPsText)) {
+    updatedPsText = updatedPsText.replace(/%%Keywords:[^\r\n]*/i, dscKeywords);
+  } else {
+    updatedPsText = updatedPsText.replace(
+      new RegExp(dscTitle.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i'),
+      (match) => `${match}\n${dscKeywords}\n${dscSubject}\n${dscNotice}`
+    );
+  }
+
+  // 3. Remove existing embedded XMP if present
+  updatedPsText = updatedPsText.replace(/%begin_xmp_code[\s\S]*?%end_xmp_code/gi, '');
+
+  // 4. Inject fresh XMP right after %%EndComments if present, or before EOF
+  if (/%%EndComments/i.test(updatedPsText)) {
+    updatedPsText = updatedPsText.replace(/%%EndComments/i, `%%EndComments${embeddedXmpBlock}`);
+  } else {
+    updatedPsText = `${embeddedXmpBlock}\n${updatedPsText}`;
+  }
+
+  const encoder = new TextEncoder();
+  const updatedPsBytes = encoder.encode(updatedPsText);
+
+  if (isDosBinaryEps) {
+    // If it was DOS binary EPS, rebuild DOS header with new PS length
+    const view = new DataView(arrayBuffer);
+    const wmfStart = view.getUint32(20, true);
+    const wmfLength = view.getUint32(24, true);
+    const tiffStart = view.getUint32(12, true);
+    const tiffLength = view.getUint32(16, true);
+
+    const newHeader = new Uint8Array(30);
+    newHeader.set(uint8.subarray(0, 30));
+    const newView = new DataView(newHeader.buffer);
+
+    const newPsLength = updatedPsBytes.length;
+    newView.setUint32(8, newPsLength, true); // update PS byte count
+
+    // If TIFF preview existed after PS, shift its offset
+    if (tiffLength > 0 && tiffStart >= psStart + psLength) {
+      const newTiffStart = psStart + newPsLength;
+      newView.setUint32(12, newTiffStart, true);
+    }
+    if (wmfLength > 0 && wmfStart >= psStart + psLength) {
+      const newWmfStart = psStart + newPsLength;
+      newView.setUint32(20, newWmfStart, true);
+    }
+
+    const prePs = uint8.subarray(0, psStart);
+    const postPs = uint8.subarray(psStart + psLength);
+
+    const merged = new Uint8Array(prePs.length + updatedPsBytes.length + postPs.length);
+    merged.set(prePs, 0);
+    merged.set(newHeader, 0);
+    merged.set(updatedPsBytes, psStart);
+    merged.set(postPs, psStart + updatedPsBytes.length);
+
+    return new Blob([merged], { type: 'application/postscript' });
+  }
+
+  return new Blob([updatedPsBytes], { type: 'application/postscript' });
+}
+
+

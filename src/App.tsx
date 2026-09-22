@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck } from 'lucide-react';
+import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode } from 'lucide-react';
 import { BulkItem, TargetMarketplace, TrendData } from './types';
-import { embedJpegMetadata, generateXmpSidecarXml } from './lib/metadataEmbedder';
+import { embedJpegMetadata, generateXmpSidecarXml, embedMetadataIntoEps } from './lib/metadataEmbedder';
 import ratulLogo from './assets/images/ratul_logo_1789373833240.jpg';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, signInWithPopup, googleProvider, signOut, db } from './lib/firebase';
@@ -29,6 +29,7 @@ import { LiveRankPredictorModal } from './components/LiveRankPredictorModal';
 import { NicheRadarModal } from './components/NicheRadarModal';
 import { ReleaseInspectorModal } from './components/ReleaseInspectorModal';
 import { SearchSimulatorModal } from './components/SearchSimulatorModal';
+import { VectorMetadataStudioModal } from './components/VectorMetadataStudioModal';
 import { GoogleAdSenseBanner } from './components/GoogleAdSenseBanner';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
@@ -687,6 +688,7 @@ export default function App() {
   const [showNicheRadarModal, setShowNicheRadarModal] = useState<boolean>(false);
   const [showReleaseModal, setShowReleaseModal] = useState<boolean>(false);
   const [showSimulatorModal, setShowSimulatorModal] = useState<boolean>(false);
+  const [showVectorStudioModal, setShowVectorStudioModal] = useState<boolean>(false);
   const [simulatorActiveItem, setSimulatorActiveItem] = useState<{ title: string; keywords: string[]; thumbnailUrl?: string } | null>(null);
   const [trademarkActiveItem, setTrademarkActiveItem] = useState<{ title: string; keywords: string[] } | null>(null);
   const [rankActiveItem, setRankActiveItem] = useState<{ title: string; keywords: string[] } | null>(null);
@@ -717,6 +719,7 @@ export default function App() {
         setShowNicheRadarModal(false);
         setShowReleaseModal(false);
         setShowSimulatorModal(false);
+        setShowVectorStudioModal(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -996,13 +999,47 @@ export default function App() {
   const processFiles = (files: File[]) => {
     const selectedFiles = files.slice(0, 100);
 
-    const newItems: BulkItem[] = selectedFiles.map((f, i) => ({
-      id: `${Date.now()}-${i}`,
-      file: f,
-      previewUrl: URL.createObjectURL(f),
-      status: 'pending',
-      progress: 0,
-    }));
+    const newItems: BulkItem[] = selectedFiles.map((f, i) => {
+      const ext = f.name.split('.').pop()?.toLowerCase() || '';
+      const isVideo = f.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'].includes(ext);
+      const initialUrl = URL.createObjectURL(f);
+
+      const item: BulkItem = {
+        id: `${Date.now()}-${i}`,
+        file: f,
+        previewUrl: initialUrl,
+        status: 'pending',
+        progress: 0,
+      };
+
+      // Asynchronously extract video frame thumbnail for crisp visual UI
+      if (isVideo) {
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        v.muted = true;
+        v.playsInline = true;
+        v.src = initialUrl;
+        v.onloadeddata = () => {
+          v.currentTime = Math.min(1.5, (v.duration || 1) * 0.25);
+        };
+        v.onseeked = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 160;
+            canvas.height = 120;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(v, 0, 0, 160, 120);
+              const thumbUrl = canvas.toDataURL('image/jpeg', 0.8);
+              setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, previewUrl: thumbUrl } : it));
+            }
+          } catch (_) {}
+          v.remove();
+        };
+      }
+
+      return item;
+    });
 
     setItems((prev) => [...prev, ...newItems].slice(0, 100));
   };
@@ -1075,7 +1112,11 @@ export default function App() {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files) {
-      processFiles(Array.from(e.dataTransfer.files).filter((f: any) => f.type.startsWith('image/') || f.name.endsWith('.svg') || f.name.endsWith('.eps')) as File[]);
+      const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'svg', 'eps', 'ai', 'mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'];
+      processFiles(Array.from(e.dataTransfer.files).filter((f: any) => {
+        const ext = f.name.split('.').pop()?.toLowerCase() || '';
+        return f.type.startsWith('image/') || f.type.startsWith('video/') || allowedExts.includes(ext);
+      }) as File[]);
     }
   };
 
@@ -1273,12 +1314,96 @@ export default function App() {
       };
 
       const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      const isVideo = file.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'].includes(ext);
       const isVectorOrRaw = ['eps', 'ai', 'cdr', 'psd', 'tif', 'tiff', 'raw', 'cr2', 'nef', 'dng'].includes(ext);
 
-      // If file is an EPS or vector format that browsers cannot decode via <img>, generate high-contrast asset badge
-      if (isVectorOrRaw) {
-        const preview = createFallbackPreview(file.name, `${ext} Vector`);
-        if (preview) return preview;
+      // Method 0: Video frame extractor - capture frame at 1.5s for AI analysis
+      if (isVideo) {
+        try {
+          const videoFrame = await new Promise<string>((resolve) => {
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.muted = true;
+            video.playsInline = true;
+            const videoUrl = URL.createObjectURL(file);
+            video.src = videoUrl;
+
+            const cleanUp = () => {
+              URL.revokeObjectURL(videoUrl);
+              video.remove();
+            };
+
+            const timeout = setTimeout(() => {
+              cleanUp();
+              resolve(createFallbackPreview(file.name, 'Stock Video 4K'));
+            }, 8000);
+
+            video.onloadeddata = () => {
+              // Seek to 1.5 seconds or 20% of duration
+              video.currentTime = Math.min(1.5, (video.duration || 1) * 0.25);
+            };
+
+            video.onseeked = () => {
+              clearTimeout(timeout);
+              try {
+                const canvas = document.createElement('canvas');
+                const MAX_SIZE = isTurboMode ? 400 : 512;
+                let width = video.videoWidth || 512;
+                let height = video.videoHeight || 512;
+
+                if (width > height) {
+                  if (width > MAX_SIZE) {
+                    height = Math.round(height * (MAX_SIZE / width));
+                    width = MAX_SIZE;
+                  }
+                } else {
+                  if (height > MAX_SIZE) {
+                    width = Math.round(width * (MAX_SIZE / height));
+                    height = MAX_SIZE;
+                  }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(video, 0, 0, width, height);
+                  const base64 = canvas.toDataURL('image/jpeg', 0.82).split(',')[1];
+                  cleanUp();
+                  return resolve(base64 || createFallbackPreview(file.name, 'Stock Video 4K'));
+                }
+              } catch (_) {}
+              cleanUp();
+              resolve(createFallbackPreview(file.name, 'Stock Video 4K'));
+            };
+
+            video.onerror = () => {
+              clearTimeout(timeout);
+              cleanUp();
+              resolve(createFallbackPreview(file.name, 'Stock Video 4K'));
+            };
+          });
+
+          if (videoFrame) return videoFrame;
+        } catch (_) {}
+      }
+
+      // If file is an EPS, inspect EPS ASCII content for embedded preview or generate high-contrast vector badge
+      if (ext === 'eps' || isVectorOrRaw) {
+        try {
+          // Attempt to extract text header or TIFF/WMF binary preview from EPS
+          const textChunk = await file.slice(0, 16384).text();
+          let titleHint = '';
+          const titleMatch = textChunk.match(/%%Title:\s*(.+)/i);
+          if (titleMatch && titleMatch[1]) {
+            titleHint = titleMatch[1].trim();
+          }
+          const preview = createFallbackPreview(file.name, titleHint ? `EPS: ${titleHint.substring(0, 20)}` : `${ext.toUpperCase()} Vector`);
+          if (preview) return preview;
+        } catch (_) {
+          const preview = createFallbackPreview(file.name, `${ext.toUpperCase()} Vector`);
+          if (preview) return preview;
+        }
       }
 
       // Method 1: Try modern createImageBitmap for fast, low-memory decoding
@@ -1392,6 +1517,17 @@ export default function App() {
         // The original 30MB+ high-res file is kept locally on the browser to embed the metadata later!
         const base64Data = await compressImageForAI(item.file);
 
+        const fileExt = item.file.name.split('.').pop()?.toLowerCase() || '';
+        const isItemVideo = item.file.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'].includes(fileExt);
+        const isItemVector = fileExt === 'eps' || fileExt === 'ai' || fileExt === 'svg';
+        
+        let effectiveAssetType = assetType;
+        if (isItemVideo) {
+          effectiveAssetType = 'Stock Video / Footage (4K / HD)';
+        } else if (isItemVector && assetType === 'Photo / JPG') {
+          effectiveAssetType = 'Vector / EPS';
+        }
+
         const res = await fetch('/api/analyze', { 
           method: 'POST', 
           headers: {
@@ -1403,7 +1539,7 @@ export default function App() {
             mimeType: 'image/jpeg',
             marketplace: targetMarketplace,
             tier: planType,
-            assetType: assetType,
+            assetType: effectiveAssetType,
             language: language,
             isAiGenerated,
             fastMode: isTurboMode,
@@ -1547,17 +1683,42 @@ export default function App() {
 
   const downloadEmbeddedCopy = async (item: BulkItem) => {
     if (!item.result) return;
+    const ext = item.file.name.split('.').pop()?.toLowerCase() || '';
+    const isVideo = item.file.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'].includes(ext);
+    const isVector = ext === 'eps' || ext === 'ai';
+    const title = item.result.recommendedTitle || '';
+    const keywords = item.result.keywords || [];
+    const baseName = item.file.name.replace(/\.[^/.]+$/, "");
+
+    // For Video and Vector/EPS assets, provide the standard industry Adobe XMP & CSV/TXT sidecars
+    if (isVideo || isVector) {
+      try {
+        showToast(`Generating Adobe XMP sidecar for ${isVector ? 'EPS Vector' : 'Video Footage'}...`);
+        const xmpContent = generateXmpSidecarXml(title, keywords, item.result.shortDescription);
+        const blob = new Blob([xmpContent], { type: 'application/rdf+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${baseName}.xmp`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast(`✓ Adobe XMP metadata sidecar downloaded for ${item.file.name}`);
+        return;
+      } catch (err) {
+        console.error("Sidecar export error:", err);
+      }
+    }
+
     try {
       showToast("Embedding EXIF/IPTC metadata...");
-      const title = item.result.recommendedTitle || '';
-      const keywords = item.result.keywords || [];
       const blob = await embedJpegMetadata(item.file, title, keywords);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const baseName = item.file.name.replace(/\.[^/.]+$/, "");
-      const ext = item.file.name.match(/\.png$/i) ? '.jpg' : (item.file.name.substring(item.file.name.lastIndexOf('.')) || '.jpg');
-      a.download = `stockmeta_${baseName}${ext}`;
+      const downloadExt = item.file.name.match(/\.png$/i) ? '.jpg' : (item.file.name.substring(item.file.name.lastIndexOf('.')) || '.jpg');
+      a.download = `stockmeta_${baseName}${downloadExt}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1631,15 +1792,25 @@ export default function App() {
          if (!item.result) continue;
          const title = item.result.recommendedTitle || '';
          const keywords = item.result.keywords || [];
-         const blob = await embedJpegMetadata(item.file, title, keywords);
          const cleanBase = item.file.name.replace(/\.[^/.]+$/, "");
-         zip.file(`${cleanBase}.jpg`, blob);
+         const ext = item.file.name.split('.').pop()?.toLowerCase() || '';
+         const isVideo = item.file.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'].includes(ext);
+         const isVector = ext === 'eps' || ext === 'ai';
+
+         if (isVideo || isVector) {
+           // Include original file in ZIP
+           zip.file(item.file.name, item.file);
+         } else {
+           // For images, embed EXIF/IPTC directly into JPEG
+           const blob = await embedJpegMetadata(item.file, title, keywords);
+           zip.file(`${cleanBase}.jpg`, blob);
+         }
          
-         // Sidecar metadata file
+         // Standard metadata text sidecar
          const sidecar = `Title: ${title}\nDescription: ${item.result.shortDescription || title}\nKeywords: ${keywords.join(', ')}`;
          zip.file(`${cleanBase}_metadata.txt`, sidecar);
 
-         // Adobe standard XMP sidecar
+         // Adobe standard XMP sidecar (industry standard for Photoshop, Premiere, After Effects, Illustrator)
          const xmpContent = generateXmpSidecarXml(title, keywords, item.result.shortDescription);
          zip.file(`${cleanBase}.xmp`, xmpContent);
       }
@@ -2155,6 +2326,7 @@ export default function App() {
                       className="w-full bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
                     >
                       <option value="Photo / JPG">Photo / JPG</option>
+                      <option value="Stock Video / Footage (4K / HD)">Stock Video / Footage (4K / HD)</option>
                       <option value="PNG (Transparent)">PNG (Transparent Background)</option>
                       <option value="Vector / EPS">Vector / EPS (Scalable)</option>
                       <option value="Illustration">Illustration / Clipart</option>
@@ -2268,6 +2440,18 @@ export default function App() {
                 <Search className="w-3.5 h-3.5" /> 
                 <span>Competitor Spy</span>
                 {planType !== "premium" && planType !== "pro_1m" && planType !== "pro_3m" && !customApiKey && <span className="bg-amber-500 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded ml-1">PRO</span>}
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowVectorStudioModal(true)}
+                className="shrink-0 whitespace-nowrap bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md border border-amber-300/40"
+                title="EPS & AI Vector Metadata Studio: Direct Input, XMP Sidecar & Embedded PostScript DSC"
+              >
+                <FileCode className="w-3.5 h-3.5 text-slate-950" />
+                <span>Vector Studio</span>
+                <span className="bg-black/80 text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded ml-0.5">EPS/AI</span>
               </motion.button>
 
               <motion.button
@@ -2601,7 +2785,7 @@ export default function App() {
                     type="file"
                     multiple
                     onChange={handleFilesSelect}
-                    accept="image/*,.svg,.eps"
+                    accept="image/*,video/*,.svg,.eps,.ai,.mp4,.mov,.webm,.m4v,.avi"
                     className="hidden"
                     id="bulkInput"
                   />
@@ -2613,12 +2797,38 @@ export default function App() {
                       <Upload className="w-8 h-8 text-indigo-400" />
                     </motion.div>
                     <h3 className="text-xl font-bold text-slate-100">
-                      {isDragging ? 'Drop images here!' : 'Drag & Drop files or Click to select'}
+                      {isDragging ? 'Drop files here!' : 'Drag & Drop files or Click to select'}
                     </h3>
                     <p className="text-base font-bold text-slate-300">Selected: <span className="text-indigo-400">{items.length}</span>/100 Files</p>
-                    <p className="text-xs text-slate-500 font-medium">Supports JPG, PNG, WEBP, SVG previews up to 45MB each</p>
+                    <p className="text-xs text-slate-400 font-medium">Supports Photos (JPG/PNG), Vectors (EPS/AI/SVG), and 4K Videos (MP4/MOV)</p>
                   </label>
                 </motion.div>
+
+                {/* Direct Vector EPS/AI Metadata Studio Shortcut Banner */}
+                <div className="bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-slate-900 border border-amber-500/30 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                      <FileCode className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span>EPS & AI Vector Metadata Studio</span>
+                        <span className="text-[9px] bg-amber-500/30 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 rounded font-black">DIRECT TOOL</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Upload individual EPS/AI files to directly edit titles, tags, export .XMP sidecars, or write internal PostScript DSC metadata.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowVectorStudioModal(true)}
+                    className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm"
+                  >
+                    <FileCode className="w-3.5 h-3.5" />
+                    <span>Open Vector Studio</span>
+                  </button>
+                </div>
               </motion.div>
 
               {/* Contributor Milestone Goal Widget */}
@@ -2677,12 +2887,22 @@ export default function App() {
                       <div className="flex items-center gap-4">
                         <div className="relative">
                           <div className="w-16 h-16 rounded-lg overflow-hidden border border-slate-800 shadow-inner bg-slate-900 flex items-center justify-center">
-                            {item.previewUrl ? (
+                            {item.previewUrl && !item.file.name.match(/\.(eps|ai)$/i) ? (
                               <img src={item.previewUrl} alt="preview" className="w-full h-full object-cover" />
+                            ) : item.file.name.match(/\.(eps|ai)$/i) ? (
+                              <div className="w-full h-full bg-gradient-to-br from-amber-600/30 via-slate-900 to-indigo-900/40 flex flex-col items-center justify-center p-1">
+                                <FileCode className="w-6 h-6 text-amber-400 mb-0.5" />
+                                <span className="text-[9px] font-black uppercase text-amber-300 tracking-wider">VECTOR</span>
+                              </div>
                             ) : (
                               <Layers className="w-6 h-6 text-slate-700" />
                             )}
                           </div>
+                          {item.file.type.startsWith('video/') || item.file.name.match(/\.(mp4|mov|webm|m4v|avi)$/i) ? (
+                            <span className="absolute bottom-1 right-1 bg-black/80 text-indigo-400 p-0.5 rounded shadow text-[9px] flex items-center">
+                              <Video className="w-3 h-3" />
+                            </span>
+                          ) : null}
                           {item.status === 'processing' && (
                             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center rounded-lg">
                                <RefreshCw className="w-5 h-5 text-indigo-400 animate-spin" />
@@ -2854,16 +3074,55 @@ export default function App() {
                             <span>Copy</span>
                           </motion.button>
                           {!item.isHistory && (
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => downloadEmbeddedCopy(item)}
-                              className="bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-600/50 px-3 py-2 rounded-lg text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
-                              title="Directly download JPEG with embedded EXIF/IPTC Title & Keywords"
-                            >
-                              <Download className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>Tagged JPG</span>
-                            </motion.button>
+                            <>
+                              {(item.file.name.match(/\.eps$/i)) && (
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={async () => {
+                                    try {
+                                      showToast("Injecting DSC metadata directly into EPS vector...");
+                                      const blob = await embedMetadataIntoEps(
+                                        item.file,
+                                        item.result!.recommendedTitle,
+                                        item.result!.keywords,
+                                        item.result!.shortDescription
+                                      );
+                                      const url = URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      const base = item.file.name.replace(/\.eps$/i, '');
+                                      a.download = `${base}_tagged.eps`;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      document.body.removeChild(a);
+                                      setTimeout(() => URL.revokeObjectURL(url), 1000);
+                                      showToast(`✓ Downloaded ${base}_tagged.eps with embedded metadata!`);
+                                    } catch (err: any) {
+                                      console.error("EPS embedding error:", err);
+                                      showToast("Error injecting into EPS: " + (err?.message || "Unknown error"));
+                                    }
+                                  }}
+                                  className="bg-amber-950/70 hover:bg-amber-900/80 border border-amber-600/50 px-3 py-2 rounded-lg text-amber-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                                  title="Write PostScript DSC & XMP metadata directly into EPS vector file"
+                                >
+                                  <FileCode className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>Tagged EPS</span>
+                                </motion.button>
+                              )}
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => downloadEmbeddedCopy(item)}
+                                className="bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-600/50 px-3 py-2 rounded-lg text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                                title={item.file.type.startsWith('video/') || item.file.name.match(/\.(mp4|mov|webm|eps|ai)$/i)
+                                  ? "Download industry standard Adobe XMP sidecar file"
+                                  : "Directly download JPEG with embedded EXIF/IPTC Title & Keywords"}
+                              >
+                                <Download className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>{item.file.type.startsWith('video/') || item.file.name.match(/\.(mp4|mov|webm|eps|ai)$/i) ? 'Export XMP' : 'Tagged JPG'}</span>
+                              </motion.button>
+                            </>
                           )}
                           <motion.button
                             whileHover={{ scale: 1.05, backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
@@ -3494,6 +3753,15 @@ export default function App() {
         }}
         sampleItem={simulatorActiveItem}
         showToast={showToast}
+      />
+
+      {/* Vector EPS & AI Metadata Studio Modal */}
+      <VectorMetadataStudioModal
+        isOpen={showVectorStudioModal}
+        onClose={() => setShowVectorStudioModal(false)}
+        onToast={showToast}
+        customApiKey={customApiKey}
+        isPro={isPro}
       />
 
       {/* Live Marketplace Buyer Mockup Modal */}

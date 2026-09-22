@@ -48,11 +48,11 @@ async function startServer() {
   const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours
 
   // Helper function to call Gemini with automatic fallback across reliable models
-  // Prioritizes the fastest lightweight models while falling back to flagship flash models
+  // Prioritizes high-quota, resilient models if quota limit or overload occurs
   async function generateWithFallback(ai: GoogleGenAI, options: any, fastFirst: boolean = false) {
     const candidateModels = fastFirst
-      ? ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-2.5-flash"]
-      : ["gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash"];
+      ? ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"]
+      : ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"];
     let lastError: any = null;
 
     for (const model of candidateModels) {
@@ -561,6 +561,15 @@ async function startServer() {
         - ASSET TYPE: Illustration / Digital Art.
         - TITLE: Characterize the illustration subject and artistic style (flat, hand drawn, watercolor, retro, minimalist).
         - KEYWORDS: MUST include: "illustration, digital art, graphic, drawing, artwork, creative, decorative, clip art" and specific artistic style terms.`
+      };
+    } else if (norm.includes('video') || norm.includes('footage') || norm.includes('motion') || norm.includes('mp4') || norm.includes('mov')) {
+      return {
+        name: 'Stock Video / Footage (4K / HD)',
+        directive: `
+        - ASSET TYPE: Stock Video Footage / Motion Clip (MP4 / MOV / ProRes).
+        - TITLE: Action-oriented, cinematic description specifying camera motion, lighting, and scene action (e.g. "...slow motion panning shot of...", "...aerial drone view of...", "...cinematic 4K close-up of...").
+        - KEYWORDS: MUST include cinematic & video keywords: "video footage, stock video, 4k, cinematic, slow motion, b-roll, motion clip, real time, camera movement, high definition" along with specific action verbs and pacing descriptors.
+        - FORBIDDEN: Do NOT use static print terms like "poster, isolated on white, clipart".`
       };
     } else {
       return {
