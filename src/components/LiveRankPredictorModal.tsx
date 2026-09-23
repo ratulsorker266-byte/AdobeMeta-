@@ -18,9 +18,19 @@ export const LiveRankPredictorModal = ({
   marketplace?: TargetMarketplace;
   showToast: (msg: string) => void;
 }) => {
-  const [title, setTitle] = useState(initialTitle);
-  const [keywordsText, setKeywordsText] = useState(initialKeywords.join(', '));
+  const sampleTitle = 'Modern Renewable Energy Engineers Auditing Solar Panel Array at Sunset';
+  const sampleKeywords = 'solar energy, engineers, renewable power, solar panel, clean electricity, photovoltaic cells, green technology, sustainable industry, solar farm, technicians, audit, inspection, teamwork, alternative energy, modern facility';
+
+  const [title, setTitle] = useState(initialTitle || sampleTitle);
+  const [keywordsText, setKeywordsText] = useState(
+    initialKeywords && initialKeywords.length > 0 ? initialKeywords.join(', ') : sampleKeywords
+  );
   const [selectedMarketplace, setSelectedMarketplace] = useState<TargetMarketplace>(marketplace);
+
+  React.useEffect(() => {
+    if (initialTitle) setTitle(initialTitle);
+    if (initialKeywords && initialKeywords.length > 0) setKeywordsText(initialKeywords.join(', '));
+  }, [initialTitle, initialKeywords]);
 
   if (!isOpen) return null;
 

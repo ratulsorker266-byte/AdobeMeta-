@@ -25,7 +25,40 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
 
   if (!isOpen) return null;
 
-  const completedItems = items.filter((i) => i.result);
+  const realCompletedItems = items.filter((i) => i.result);
+  const isSampleDemo = realCompletedItems.length === 0;
+
+  // Provide realistic microstock demo data so users can test and explore formats before uploading
+  const sampleDemoItems: any[] = [
+    {
+      id: 'demo-sample-1',
+      file: { name: 'solar_energy_technicians.jpg' },
+      result: {
+        recommendedTitle: 'Engineers Inspecting High-Efficiency Solar Panel Array in Renewable Energy Plant',
+        shortDescription: 'Modern renewable clean energy facility with technical team auditing solar cells at sunrise',
+        keywords: [
+          'solar energy', 'renewable energy', 'engineers', 'photovoltaic', 'solar panels',
+          'clean power', 'technician', 'sustainable', 'green technology', 'environment',
+          'alternative energy', 'eco friendly', 'industrial inspection', 'clean electricity', 'innovation'
+        ]
+      }
+    },
+    {
+      id: 'demo-sample-2',
+      file: { name: 'creative_ai_workspace.jpg' },
+      result: {
+        recommendedTitle: 'Diverse Tech Startup Team Developing Machine Learning Models in Creative Office',
+        shortDescription: 'Contemporary workspace with diverse software developers working on neural network algorithms',
+        keywords: [
+          'artificial intelligence', 'machine learning', 'tech startup', 'collaboration', 'software developer',
+          'neural network', 'data science', 'diverse team', 'creative agency', 'digital workflow',
+          'modern workplace', 'computer technology', 'innovation'
+        ]
+      }
+    }
+  ];
+
+  const completedItems = isSampleDemo ? sampleDemoItems : realCompletedItems;
 
   // Helper to generate a collision-safe map of SEO slugs
   const getSeoFilenameMap = () => {
@@ -185,6 +218,10 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
 
   // 6. Bulk Rename Files to SEO Slug & Download Embedded ZIP
   const downloadRenamedImagesZip = async () => {
+    if (isSampleDemo) {
+      showToast('Drag & drop your files in the Studio first to batch rename real images!');
+      return;
+    }
     if (completedItems.length === 0) return;
     setIsRenamingZip(true);
     setRenameProgress(0);
@@ -329,15 +366,19 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
 
         {/* Content */}
         <div className="p-5 overflow-y-auto space-y-4">
-          {completedItems.length === 0 ? (
-            <div className="p-6 text-center text-slate-400 bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
-              <AlertCircle className="w-8 h-8 text-amber-400 mx-auto mb-2 opacity-80" />
-              <p className="text-sm font-semibold text-slate-300">No completed items found</p>
-              <p className="text-xs text-slate-500 mt-1">Upload and analyze images first to generate metadata.</p>
+          {isSampleDemo && (
+            <div className="p-3.5 bg-gradient-to-r from-indigo-950/80 to-purple-950/80 border border-indigo-500/40 rounded-xl text-xs text-indigo-200 flex items-center justify-between gap-3 shadow-inner">
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+                <span>
+                  <strong>Interactive Agency Format Preview:</strong> Displaying sample commercial stock assets. You can test and inspect each format below, or drop your files in the Studio to export real metadata!
+                </span>
+              </div>
             </div>
-          ) : (
-            <>
-              {/* Quick Actions Bar */}
+          )}
+
+          <>
+            {/* Quick Actions Bar */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   onClick={downloadAllCsvsZip}
@@ -446,7 +487,6 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
                 </p>
               </div>
             </>
-          )}
         </div>
       </motion.div>
     </div>

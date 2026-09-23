@@ -239,7 +239,7 @@ async function startServer() {
       const { messages, tier } = req.body;
       const clientApiKey = typeof req.headers["x-api-key"] === "string" ? req.headers["x-api-key"].trim() : "";
       const contentsToUse = sanitizeChatMessages(messages);
-      const systemInstruction = "You are StockMeta Pro AI Assistant, an expert consultant in commercial stock photography, microstock SEO (Adobe Stock, Shutterstock, Getty/iStock, Freepik, Vecteezy), keywording, titles, metadata standards, and stock portfolio growth. Always provide direct, helpful, and actionable responses. Answer in the same language as the user's message.";
+      const systemInstruction = "You are AdobeMeta Pro AI Assistant, an elite authority and consultant in microstock SEO (Adobe Stock, Shutterstock, Getty/iStock, Freepik, Vecteezy), keywording, titles, metadata standards, and stock portfolio growth. Always provide direct, helpful, and actionable responses. Answer in the same language as the user's message.";
 
       const response = await callGeminiUnified(clientApiKey, async (ai) => {
         return await generateWithFallback(ai, {
@@ -585,7 +585,7 @@ async function startServer() {
 
   app.post("/api/analyze", async (req, res) => {
     try {
-      const { imageBase64, mimeType, marketplace, isAiGenerated, tier, assetType, language, fastMode } = req.body;
+      const { imageBase64, mimeType, marketplace, isAiGenerated, tier, assetType, language, fastMode, vectorMetadataHint, fileName } = req.body;
       const clientApiKey = req.headers['x-api-key'] as string;
       
       if (!imageBase64 || typeof imageBase64 !== "string" || !mimeType) {
@@ -604,6 +604,19 @@ async function startServer() {
       const marketConfig = getMarketplaceSEOConfig(marketplace);
       const assetConfig = getAssetTypeSEOConfig(assetType);
 
+      let extraContextDirectives = "";
+      if (fileName) {
+        extraContextDirectives += `\nFILE NAME: "${fileName}".`;
+      }
+      if (vectorMetadataHint && typeof vectorMetadataHint === "object") {
+        extraContextDirectives += `\nVECTOR / EPS GROUND-TRUTH METADATA EXTRACTED FROM FILE HEADER:
+- Original Title/Theme: ${vectorMetadataHint.title || "Not specified in header"}
+- Pre-existing Tags: ${(vectorMetadataHint.keywords || []).slice(0, 20).join(", ") || "None"}
+- Description: ${vectorMetadataHint.description || "None"}
+- Bounding Box Dimensions: ${vectorMetadataHint.boundingBox ? `${vectorMetadataHint.boundingBox.width}x${vectorMetadataHint.boundingBox.height} pt` : "Standard vector"}
+DIRECTIVE FOR VECTOR METADATA: Synthesize these hints with visual analysis to generate authentic, high-converting, strictly compliant commercial microstock metadata for ${marketConfig.name}. Upgrade and expand the keywords into high-ranking terms.`;
+      }
+
       // Unified Gemini analysis call tailored strictly to target marketplace and asset format
       const prompt = `
       You are a World-Class Microstock Contributor SEO Director and Senior ${marketConfig.name} Inspector.
@@ -611,6 +624,7 @@ async function startServer() {
       Asset Type: ${assetConfig.name}.
       AI Generated: ${isAiGenerated ? 'Yes' : 'No'}.
       Language Requirement: MUST write Title, Description, and Keywords strictly in ${language || "English"}.
+      ${extraContextDirectives}
       
       STRICT COMMERCIAL METADATA DIRECTIVES FOR ${marketConfig.name.toUpperCase()}:
       

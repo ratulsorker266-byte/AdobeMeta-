@@ -554,7 +554,7 @@ Return ONLY valid raw JSON.`
                 <div className="text-slate-400">%%Title: <span className="text-amber-300 font-bold">{title || '(untitled)'}</span></div>
                 <div className="text-slate-400">%%Keywords: <span className="text-emerald-300">{keywords.join(', ') || '(none)'}</span></div>
                 <div className="text-slate-400">%%Subject: <span className="text-indigo-300">{description || title || '(none)'}</span></div>
-                <div className="text-slate-400">%%Notice: <span className="text-slate-500">Metadata injected by StockMeta Pro AI</span></div>
+                <div className="text-slate-400">%%Notice: <span className="text-slate-500">Metadata injected by AdobeMeta Pro AI</span></div>
                 <div className="text-amber-500/80 pt-2 border-t border-slate-800">
                   %begin_xmp_code <br />
                   &nbsp;&nbsp;&lt;?xpacket begin="﻿" ... /&gt; (Full Adobe XMP metadata packet embedded) <br />

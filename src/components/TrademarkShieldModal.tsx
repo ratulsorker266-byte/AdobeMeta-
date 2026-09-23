@@ -60,8 +60,9 @@ export const TrademarkShieldModal = ({
   onApplyCleaned?: (cleanTitle: string, cleanKeywords: string[]) => void;
   showToast: (msg: string) => void;
 }) => {
+  const defaultSample = 'Young entrepreneur holding Apple iPhone 15 Pro wearing Nike sneakers drinking Starbucks coffee inside Tesla vehicle';
   const [inputText, setInputText] = useState(
-    initialTitle || initialKeywords?.join(', ') || ''
+    initialTitle || initialKeywords?.join(', ') || defaultSample
   );
   const [scanResult, setScanResult] = useState<{
     detectedTrademarks: { word: string; category: string; risk: 'critical' | 'high' | 'moderate'; safeAlternative: string; reason: string }[];
@@ -71,16 +72,22 @@ export const TrademarkShieldModal = ({
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  React.useEffect(() => {
+    const textToScan = initialTitle || initialKeywords?.join(', ') || defaultSample;
+    setInputText(textToScan);
+    runScanWithText(textToScan, false);
+  }, [initialTitle, initialKeywords, isOpen]);
+
   if (!isOpen) return null;
 
-  const runScan = () => {
-    if (!inputText.trim()) return;
+  const runScanWithText = (text: string, notify = true) => {
+    if (!text.trim()) return;
 
-    const words = inputText.split(/[\s,;]+/);
+    const words = text.split(/[\s,;]+/);
     const detected: { word: string; category: string; risk: 'critical' | 'high' | 'moderate'; safeAlternative: string; reason: string }[] = [];
     const seenWords = new Set<string>();
 
-    let safeReplaced = inputText;
+    let safeReplaced = text;
 
     words.forEach((w) => {
       const cleanW = w.toLowerCase().replace(/[^a-z0-9-]/g, '');
@@ -113,11 +120,17 @@ export const TrademarkShieldModal = ({
       strikeRiskLevel,
     });
 
-    if (detected.length === 0) {
-      showToast('100% Commercial Clean! No trademarks detected.');
-    } else {
-      showToast(`Warning: ${detected.length} trademarked terms detected!`);
+    if (notify) {
+      if (detected.length === 0) {
+        showToast('100% Commercial Clean! No trademarks detected.');
+      } else {
+        showToast(`Warning: ${detected.length} trademarked terms detected!`);
+      }
     }
+  };
+
+  const runScan = () => {
+    runScanWithText(inputText, true);
   };
 
   const handleApply = () => {

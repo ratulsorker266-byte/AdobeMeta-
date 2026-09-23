@@ -31,6 +31,13 @@ export interface BulkItem {
   error?: string;
   isHistory?: boolean;
   celebrated?: boolean;
+  epsHint?: {
+    title?: string;
+    keywords?: string[];
+    description?: string;
+    boundingBox?: any;
+    colorPalette?: string[];
+  };
 }
 
 export interface StockPromptResult {

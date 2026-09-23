@@ -29,7 +29,7 @@ export async function embedJpegMetadata(file: File, title: string, keywords: str
         const zeroth: Record<string, any> = {};
         
         zeroth[piexif.ImageIFD.ImageDescription] = safeTitle;
-        zeroth[piexif.ImageIFD.Software] = "StockMeta Pro AI";
+        zeroth[piexif.ImageIFD.Software] = "AdobeMeta Pro AI";
         zeroth[piexif.ImageIFD.XPKeywords] = encodeUTF16(safeKeywords.join('; '));
         zeroth[piexif.ImageIFD.XPTitle] = encodeUTF16(safeTitle);
         zeroth[piexif.ImageIFD.XPComment] = encodeUTF16(safeTitle);
@@ -38,12 +38,17 @@ export async function embedJpegMetadata(file: File, title: string, keywords: str
         const exifObj = { "0th": zeroth };
         const exifBytes = piexif.dump(exifObj);
 
-        let cleanJpeg = jpegDataDataURL;
+        let newJpegDataURL = jpegDataDataURL;
         try {
-          cleanJpeg = piexif.remove(jpegDataDataURL);
-        } catch (_) {}
-
-        const newJpegDataURL = piexif.insert(exifBytes, cleanJpeg);
+          let cleanJpeg = jpegDataDataURL;
+          try {
+            cleanJpeg = piexif.remove(jpegDataDataURL);
+          } catch (_) {}
+          newJpegDataURL = piexif.insert(exifBytes, cleanJpeg);
+        } catch (insertErr) {
+          console.warn('piexif insert error, falling back to original image bytes:', insertErr);
+          newJpegDataURL = jpegDataDataURL;
+        }
         
         const blob = dataURLtoBlob(newJpegDataURL);
         resolve(blob);
@@ -81,7 +86,7 @@ async function convertToJpegAndEmbed(file: File, title: string, keywords: string
         
         const zeroth: Record<string, any> = {};
         zeroth[piexif.ImageIFD.ImageDescription] = safeTitle;
-        zeroth[piexif.ImageIFD.Software] = "StockMeta Pro AI";
+        zeroth[piexif.ImageIFD.Software] = "AdobeMeta Pro AI";
         zeroth[piexif.ImageIFD.XPKeywords] = encodeUTF16(safeKeywords.join('; '));
         zeroth[piexif.ImageIFD.XPTitle] = encodeUTF16(safeTitle);
         zeroth[piexif.ImageIFD.XPComment] = encodeUTF16(safeTitle);
@@ -173,8 +178,8 @@ ${keywordTags}
    </dc:subject>
    <photoshop:Headline>${safeTitle}</photoshop:Headline>
    <photoshop:Credit>Stock Contributor</photoshop:Credit>
-   <photoshop:Source>StockMeta Pro AI</photoshop:Source>
-   <xmp:CreatorTool>StockMeta Pro Suite</xmp:CreatorTool>
+   <photoshop:Source>AdobeMeta Pro AI</photoshop:Source>
+   <xmp:CreatorTool>AdobeMeta Pro Suite</xmp:CreatorTool>
   </rdf:Description>
  </rdf:RDF>
 </x:xmpmeta>
@@ -228,7 +233,7 @@ export async function embedMetadataIntoEps(
   const dscTitle = `%%Title: ${safeTitle}`;
   const dscKeywords = `%%Keywords: ${safeKeywords.join(', ')}`;
   const dscSubject = `%%Subject: ${safeDesc}`;
-  const dscNotice = `%%Notice: Metadata injected by StockMeta Pro AI`;
+  const dscNotice = `%%Notice: Metadata injected by AdobeMeta Pro AI`;
 
   // Create standard embedded XMP packet for PostScript
   const embeddedXmpBlock = `\n%begin_xmp_code\n${xmpXml}\n%end_xmp_code\n`;

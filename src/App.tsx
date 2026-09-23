@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode } from 'lucide-react';
+import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe } from 'lucide-react';
 import { BulkItem, TargetMarketplace, TrendData } from './types';
 import { embedJpegMetadata, generateXmpSidecarXml, embedMetadataIntoEps } from './lib/metadataEmbedder';
 import ratulLogo from './assets/images/ratul_logo_1789373833240.jpg';
@@ -31,6 +31,8 @@ import { ReleaseInspectorModal } from './components/ReleaseInspectorModal';
 import { SearchSimulatorModal } from './components/SearchSimulatorModal';
 import { VectorMetadataStudioModal } from './components/VectorMetadataStudioModal';
 import { GoogleAdSenseBanner } from './components/GoogleAdSenseBanner';
+import { parseEpsFile, isEpsFile } from './lib/epsParser';
+import { StudioToolsHubModal } from './components/StudioToolsHubModal';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   useEffect(() => {
@@ -366,7 +368,7 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setTrendsUsage,
               <CalendarDays className="w-5 h-5" /> Upcoming Seasonal Demand - Shoot & Design Now
             </h3>
             <div className="relative">
-              <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${planType === "free" ? "filter blur-md opacity-50 select-none" : ""}`}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {trends.upcomingTrends.map((trend, i) => (
                   <div key={i} className="bg-slate-900/80 border border-indigo-900/30 p-5 rounded-2xl shadow-lg flex flex-col justify-between">
                     <div>
@@ -418,18 +420,6 @@ const TrendsDashboard = ({ onBack, customApiKey, user, planType, setTrendsUsage,
                   </div>
                 ))}
               </div>
-              {planType === "free" && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-6 text-center">
-                  <div className="bg-slate-900/90 border border-indigo-500/30 shadow-2xl p-6 rounded-2xl max-w-md">
-                    <Sparkles className="w-8 h-8 text-amber-400 mx-auto mb-3" />
-                    <h4 className="text-xl font-bold text-slate-100 mb-2">Unlock Upcoming Trends</h4>
-                    <p className="text-sm text-slate-400 mb-4">Pro users get exclusive access to 3-4 months advance forecasting to shoot and upload before the competition.</p>
-                    <button className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-2 px-6 rounded-xl shadow-lg hover:from-amber-400 hover:to-orange-400 transition w-full">
-                      Upgrade to PRO
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -642,7 +632,7 @@ export default function App() {
   const [assetType, setAssetType] = useState<string>("Photo / JPG");
   const [language, setLanguage] = useState<string>("English");
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
-  const [chatMessages, setChatMessages] = useState<any[]>([{ role: "model", parts: [{ text: "Hello! I am your StockMeta AI assistant. How can I help you with your microstock keywords, titles, or portfolio strategy today?" }] }]);
+  const [chatMessages, setChatMessages] = useState<any[]>([{ role: "model", parts: [{ text: "Hello! I am your AdobeMeta Pro AI assistant. How can I help you with your microstock keywords, titles, or portfolio strategy today?" }] }]);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -664,7 +654,7 @@ export default function App() {
   const [showReferModal, setShowReferModal] = useState(false);
   const [referralCount, setReferralCount] = useState(parseInt(localStorage.getItem('referral_count') || '14'));
   const [customApiKey, setCustomApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
-  const [excludedKeywords, setExcludedKeywords] = useState<string>(localStorage.getItem('stockmeta_excluded_keywords') || '');
+  const [excludedKeywords, setExcludedKeywords] = useState<string>(localStorage.getItem('adobemeta_excluded_keywords') || '');
   const [customBgUrl, setCustomBgUrl] = useState<string | null>(localStorage.getItem('custom_bg') || null);
   const [isDragging, setIsDragging] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -689,6 +679,7 @@ export default function App() {
   const [showReleaseModal, setShowReleaseModal] = useState<boolean>(false);
   const [showSimulatorModal, setShowSimulatorModal] = useState<boolean>(false);
   const [showVectorStudioModal, setShowVectorStudioModal] = useState<boolean>(false);
+  const [showToolsHubModal, setShowToolsHubModal] = useState<boolean>(false);
   const [simulatorActiveItem, setSimulatorActiveItem] = useState<{ title: string; keywords: string[]; thumbnailUrl?: string } | null>(null);
   const [trademarkActiveItem, setTrademarkActiveItem] = useState<{ title: string; keywords: string[] } | null>(null);
   const [rankActiveItem, setRankActiveItem] = useState<{ title: string; keywords: string[] } | null>(null);
@@ -706,6 +697,7 @@ export default function App() {
         setShowShortcutsModal((prev) => !prev);
       } else if (e.key === 'Escape') {
         setShowShortcutsModal(false);
+        setShowToolsHubModal(false);
         setMockupItem(null);
         setShowMultiCsvModal(false);
         setEditingItemId(null);
@@ -817,7 +809,7 @@ export default function App() {
     localStorage.setItem('gemini_api_key', key);
     const keywordsToSave = excluded !== undefined ? excluded : excludedKeywords;
     setExcludedKeywords(keywordsToSave);
-    localStorage.setItem('stockmeta_excluded_keywords', keywordsToSave);
+    localStorage.setItem('adobemeta_excluded_keywords', keywordsToSave);
     showToast("✓ Settings saved successfully!");
     setShowSettings(false);
   };
@@ -999,10 +991,28 @@ export default function App() {
   const processFiles = (files: File[]) => {
     const selectedFiles = files.slice(0, 100);
 
+    // Look for accompanying companion preview JPEGs (e.g., artwork.eps + artwork.jpg)
+    const jpgMap = new Map<string, File>();
+    selectedFiles.forEach((f) => {
+      const ext = f.name.split('.').pop()?.toLowerCase() || '';
+      if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+        const base = f.name.replace(/\.[^/.]+$/, '').toLowerCase();
+        jpgMap.set(base, f);
+      }
+    });
+
     const newItems: BulkItem[] = selectedFiles.map((f, i) => {
       const ext = f.name.split('.').pop()?.toLowerCase() || '';
       const isVideo = f.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'].includes(ext);
-      const initialUrl = URL.createObjectURL(f);
+      const isEps = isEpsFile(f);
+      const baseName = f.name.replace(/\.[^/.]+$/, '').toLowerCase();
+      const companionJpg = isEps ? jpgMap.get(baseName) : undefined;
+      
+      const initialUrl = companionJpg
+        ? URL.createObjectURL(companionJpg)
+        : isEps
+        ? ''
+        : URL.createObjectURL(f);
 
       const item: BulkItem = {
         id: `${Date.now()}-${i}`,
@@ -1012,8 +1022,28 @@ export default function App() {
         progress: 0,
       };
 
+      // Asynchronously parse EPS file to extract real preview thumbnail & DSC comments
+      if (isEps) {
+        parseEpsFile(f).then((epsData) => {
+          setItems((prev) =>
+            prev.map((it) =>
+              it.id === item.id
+                ? {
+                    ...it,
+                    // If companion JPG was provided, keep companion JPG preview, otherwise use parsed EPS canvas
+                    previewUrl: it.previewUrl || epsData.previewUrl,
+                    epsHint: epsData.metadata,
+                  }
+                : it
+            )
+          );
+        }).catch((err) => {
+          console.warn("EPS parse error:", err);
+        });
+      }
+
       // Asynchronously extract video frame thumbnail for crisp visual UI
-      if (isVideo) {
+      if (isVideo && initialUrl) {
         const v = document.createElement('video');
         v.preload = 'metadata';
         v.muted = true;
@@ -1388,22 +1418,50 @@ export default function App() {
         } catch (_) {}
       }
 
-      // If file is an EPS, inspect EPS ASCII content for embedded preview or generate high-contrast vector badge
-      if (ext === 'eps' || isVectorOrRaw) {
+      // If file is an EPS or AI vector, use parsed high-fidelity preview, companion preview, or parse directly
+      if (ext === 'eps' || ext === 'ai' || isEpsFile(file)) {
         try {
-          // Attempt to extract text header or TIFF/WMF binary preview from EPS
-          const textChunk = await file.slice(0, 16384).text();
-          let titleHint = '';
-          const titleMatch = textChunk.match(/%%Title:\s*(.+)/i);
-          if (titleMatch && titleMatch[1]) {
-            titleHint = titleMatch[1].trim();
+          if (item.previewUrl && item.previewUrl.startsWith('data:image/')) {
+            const b64 = item.previewUrl.split(',')[1];
+            if (b64) return b64;
           }
-          const preview = createFallbackPreview(file.name, titleHint ? `EPS: ${titleHint.substring(0, 20)}` : `${ext.toUpperCase()} Vector`);
-          if (preview) return preview;
-        } catch (_) {
-          const preview = createFallbackPreview(file.name, `${ext.toUpperCase()} Vector`);
-          if (preview) return preview;
+          if (item.previewUrl && item.previewUrl.startsWith('blob:')) {
+            try {
+              const res = await fetch(item.previewUrl);
+              const blob = await res.blob();
+              if (typeof createImageBitmap === 'function') {
+                const bmp = await createImageBitmap(blob);
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.min(bmp.width, 512);
+                canvas.height = Math.min(bmp.height, 512);
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.fillStyle = '#FFFFFF';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+                  const b64 = canvas.toDataURL('image/jpeg', 0.82).split(',')[1];
+                  if (bmp.close) bmp.close();
+                  if (b64) return b64;
+                }
+                if (bmp.close) bmp.close();
+              }
+            } catch (_) {}
+          }
+          const epsData = await parseEpsFile(file);
+          if (epsData.previewUrl && epsData.previewUrl.startsWith('data:image/')) {
+            // Update preview URL in state so user sees the preview immediately
+            setItems((prev) =>
+              prev.map((it) =>
+                it.id === item.id ? { ...it, previewUrl: epsData.previewUrl, epsHint: epsData.metadata } : it
+              )
+            );
+            return epsData.base64ForAi || epsData.previewUrl.split(',')[1] || '';
+          }
+        } catch (e) {
+          console.warn("EPS preview compression error:", e);
         }
+        // Fallback for EPS files without readable preview stream
+        return createFallbackPreview(file.name, 'Vector EPS');
       }
 
       // Method 1: Try modern createImageBitmap for fast, low-memory decoding
@@ -1543,6 +1601,8 @@ export default function App() {
             language: language,
             isAiGenerated,
             fastMode: isTurboMode,
+            vectorMetadataHint: item.epsHint,
+            fileName: item.file.name,
           }) 
         });
         
@@ -1673,6 +1733,32 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  /**
+   * Robust cross-browser file downloader
+   * Handles blobs and URL triggers, ensuring immediate download prompt
+   */
+  const triggerBrowserDownload = (blob: Blob, filename: string) => {
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        try {
+          if (document.body.contains(a)) {
+            document.body.removeChild(a);
+          }
+          URL.revokeObjectURL(url);
+        } catch (_) {}
+      }, 1500);
+    } catch (err) {
+      console.error('Trigger browser download failed:', err);
+    }
+  };
+
   const copyMetadata = (title: string, keywords: string[], id: string) => {
     const text = `Title: ${title}\nKeywords: ${keywords.join(', ')}`;
     navigator.clipboard.writeText(text);
@@ -1682,7 +1768,10 @@ export default function App() {
   };
 
   const downloadEmbeddedCopy = async (item: BulkItem) => {
-    if (!item.result) return;
+    if (!item.result) {
+      showToast("Metadata not generated yet for this file.");
+      return;
+    }
     const ext = item.file.name.split('.').pop()?.toLowerCase() || '';
     const isVideo = item.file.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'].includes(ext);
     const isVector = ext === 'eps' || ext === 'ai';
@@ -1690,20 +1779,32 @@ export default function App() {
     const keywords = item.result.keywords || [];
     const baseName = item.file.name.replace(/\.[^/.]+$/, "");
 
-    // For Video and Vector/EPS assets, provide the standard industry Adobe XMP & CSV/TXT sidecars
-    if (isVideo || isVector) {
+    // For Vector/EPS assets, embed DSC PostScript comments & XMP packet directly into EPS
+    if (isVector) {
       try {
-        showToast(`Generating Adobe XMP sidecar for ${isVector ? 'EPS Vector' : 'Video Footage'}...`);
+        showToast(`Writing metadata into ${item.file.name}...`);
+        const epsBlob = await embedMetadataIntoEps(item.file, title, keywords, item.result.shortDescription);
+        triggerBrowserDownload(epsBlob, `adobemeta_${item.file.name}`);
+        showToast(`✓ Downloaded adobemeta_${item.file.name}!`);
+        return;
+      } catch (err: any) {
+        console.error("EPS metadata embed error:", err);
+        // Fallback: download sidecar .xmp
+        const xmpContent = generateXmpSidecarXml(title, keywords, item.result.shortDescription);
+        const xmpBlob = new Blob([xmpContent], { type: 'application/rdf+xml;charset=utf-8' });
+        triggerBrowserDownload(xmpBlob, `${baseName}.xmp`);
+        showToast(`✓ Downloaded ${baseName}.xmp metadata sidecar!`);
+        return;
+      }
+    }
+
+    // For Video assets, provide the standard industry Adobe XMP sidecar
+    if (isVideo) {
+      try {
+        showToast(`Generating Adobe XMP sidecar for Video Footage...`);
         const xmpContent = generateXmpSidecarXml(title, keywords, item.result.shortDescription);
         const blob = new Blob([xmpContent], { type: 'application/rdf+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${baseName}.xmp`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        triggerBrowserDownload(blob, `${baseName}.xmp`);
         showToast(`✓ Adobe XMP metadata sidecar downloaded for ${item.file.name}`);
         return;
       } catch (err) {
@@ -1711,41 +1812,24 @@ export default function App() {
       }
     }
 
+    // For Image files (JPG, PNG, WebP)
     try {
-      showToast("Embedding EXIF/IPTC metadata...");
+      showToast("Embedding EXIF/IPTC metadata into image...");
       const blob = await embedJpegMetadata(item.file, title, keywords);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
       const downloadExt = item.file.name.match(/\.png$/i) ? '.jpg' : (item.file.name.substring(item.file.name.lastIndexOf('.')) || '.jpg');
-      a.download = `stockmeta_${baseName}${downloadExt}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast("✓ Image downloaded with embedded metadata");
+      triggerBrowserDownload(blob, `adobemeta_${baseName}${downloadExt}`);
+      showToast("✓ Image downloaded with embedded metadata!");
     } catch (err) {
-      console.error("Download copy error:", err);
-      showToast("Downloading sidecar metadata text file...");
+      console.error("Download copy error, falling back to sidecar text:", err);
       const sidecar = `Title: ${item.result.recommendedTitle || ''}\nDescription: ${item.result.shortDescription || item.result.recommendedTitle || ''}\nKeywords: ${(item.result.keywords || []).join(', ')}`;
       const textBlob = new Blob([sidecar], { type: 'text/plain;charset=utf-8' });
-      const textUrl = URL.createObjectURL(textBlob);
-      const a = document.createElement('a');
-      a.href = textUrl;
-      a.download = `${item.file.name}_metadata.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(textUrl), 1000);
+      triggerBrowserDownload(textBlob, `${item.file.name}_metadata.txt`);
+      showToast("✓ Downloaded metadata file!");
     }
   };
 
   const exportBatchCSV = () => {
     confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-    if (planType === "free" && !customApiKey) {
-      showToast("CSV Export is a PRO feature. Upgrade to unlock bulk exports.");
-      return;
-    }
     const completedItems = items.filter(i => i.result);
     if (completedItems.length === 0) {
       showToast("No completed items with metadata to export.");
@@ -1765,15 +1849,8 @@ export default function App() {
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `batch_${targetMarketplace}_metadata.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast("✓ CSV Export complete");
+    triggerBrowserDownload(blob, `batch_${targetMarketplace}_metadata.csv`);
+    showToast("✓ CSV Export complete!");
   };
 
   const exportBatchZip = async () => {
@@ -1797,8 +1874,15 @@ export default function App() {
          const isVideo = item.file.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'].includes(ext);
          const isVector = ext === 'eps' || ext === 'ai';
 
-         if (isVideo || isVector) {
-           // Include original file in ZIP
+         if (isVector) {
+           try {
+             const epsBlob = await embedMetadataIntoEps(item.file, title, keywords, item.result.shortDescription);
+             zip.file(item.file.name, epsBlob);
+           } catch (_) {
+             zip.file(item.file.name, item.file);
+           }
+         } else if (isVideo) {
+           // Include original video file in ZIP
            zip.file(item.file.name, item.file);
          } else {
            // For images, embed EXIF/IPTC directly into JPEG
@@ -1816,15 +1900,7 @@ export default function App() {
       }
       
       const content = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(content);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Stock_Metadata_Images_${Date.now()}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      
+      triggerBrowserDownload(content, `Stock_Metadata_Images_${Date.now()}.zip`);
       showToast("✓ All Metadata embedded & ZIP downloaded!");
     } catch (err: any) {
       console.error("ZIP Generation error:", err);
@@ -2173,7 +2249,7 @@ export default function App() {
               <div className="bg-indigo-600 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-300"/>
-                  <h3 className="text-white font-bold text-sm">StockMeta AI Assistant</h3>
+                  <h3 className="text-white font-bold text-sm">AdobeMeta Pro AI Assistant</h3>
                 </div>
                 <div className="flex items-center gap-2">
                   {isPro ? (
@@ -2261,361 +2337,276 @@ export default function App() {
         animate="visible"
         className="max-w-7xl mx-auto space-y-6 relative z-10"
       >
-        <motion.header variants={itemVariants} className="flex flex-wrap items-center justify-between gap-4 bg-slate-950/80 backdrop-blur-xl p-6 rounded-2xl border border-slate-800 shadow-2xl">
-          <div className="flex items-center gap-4">
-            <motion.div whileHover={{ scale: 1.05, rotate: -5 }} className="w-14 h-14 rounded-xl overflow-hidden shadow-lg border border-indigo-500/30">
+        {/* Top Header: Brand Identity, Plan Status & Utilities */}
+        <motion.header variants={itemVariants} className="bg-slate-950/90 backdrop-blur-xl px-5 py-4 rounded-2xl border border-slate-800 shadow-2xl flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <motion.div whileHover={{ scale: 1.05, rotate: -3 }} className="w-12 h-12 rounded-xl overflow-hidden shadow-lg border border-indigo-500/30 shrink-0">
               <img src={ratulLogo} alt="RATUL Logo" className="w-full h-full object-cover" />
             </motion.div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">AdobeMeta <span className="text-indigo-400">Pro</span></h1>
-              <p className="text-xs text-slate-400 mt-1 font-medium">Bulk Asset Metadata & Compliance Platform (100 Files Bundle)</p>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">AdobeMeta <span className="text-indigo-400">Pro</span></h1>
+                <span className="bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider hidden sm:inline-flex items-center gap-1">
+                  <Sparkles className="w-2.5 h-2.5 text-amber-400" /> 100 Files Engine
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 font-medium hidden sm:block">Commercial Stock Metadata, Compliance & Multi-Agency Distribution</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-            <div className="text-right flex flex-col justify-center bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-800/80 shadow-inner">
-              <div className="flex items-center justify-end gap-2 mb-0.5">
-                <span className="text-[9px] uppercase tracking-[0.15em] text-amber-400 font-bold flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5 text-amber-400 shrink-0" />
-                  {user?.email === "ratulsorker266@gmail.com" 
-                    ? "Founder (VIP)" 
-                    : isPro 
-                    ? `1-Month Free Pro (${proDaysLeft}d left)`
-                    : "Free Plan"}
-                </span>
-                <button 
-                  onClick={() => setShowProModal(true)} 
-                  className="text-[9px] uppercase tracking-wider bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded transition font-bold"
-                >
-                  {isPro ? "PRO Pass" : "Upgrade"}
-                </button>
-              </div>
-              <div className="flex items-center justify-end gap-2">
-                 <span className="text-sm font-black tracking-wide text-slate-100">
-                   {user?.displayName || user?.email?.split("@")[0] || "User"}
-                 </span>
-                 {isPro ? (
-                    <span 
-                      onClick={() => setShowProModal(true)}
-                      className="bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded cursor-pointer shadow-sm flex items-center gap-1 hover:brightness-110 transition" 
-                      title="1-Month Free Unlimited AI Processing Active"
-                    >
-                      <Sparkles className="w-3 h-3 text-slate-950" /> UNLIMITED PRO
-                    </span>
-                 ) : (
-                    <span className="text-xs font-bold text-slate-300 bg-slate-800 px-2 rounded-md" title="Max 100 per day">{100 - dailyUsage} left today</span>
-                 )}
-              </div>
-            </div>
-            <div className="hidden sm:block w-px h-10 bg-slate-800"></div>
-
-            {currentView === 'upload' && (
-              <div className="w-full lg:w-auto">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full">
-                  <div className="w-full">
-                    <label className="text-xs text-slate-400 block mb-1 font-medium">Asset Type</label>
-                    <select
-                      value={assetType}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setAssetType(val);
-                        if (val.includes('Generative AI')) {
-                          setIsAiGenerated(true);
-                        }
-                      }}
-                      className="w-full bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
-                    >
-                      <option value="Photo / JPG">Photo / JPG</option>
-                      <option value="Stock Video / Footage (4K / HD)">Stock Video / Footage (4K / HD)</option>
-                      <option value="PNG (Transparent)">PNG (Transparent Background)</option>
-                      <option value="Vector / EPS">Vector / EPS (Scalable)</option>
-                      <option value="Illustration">Illustration / Clipart</option>
-                      <option value="3D Render">3D Render / CGI</option>
-                      <option value="Generative AI">Generative AI Art</option>
-                    </select>
-                  </div>
-                  <div className="w-full">
-                    <label className="text-xs text-slate-400 block mb-1 font-medium">Language</label>
-                    <select
-                      value={language}
-                      onChange={(e) => setLanguage(e.target.value)}
-                      className="w-full bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
-                    >
-                      <option value="English">English (Global Default)</option>
-                      <option value="Spanish">Spanish (Español)</option>
-                      <option value="French">French (Français)</option>
-                      <option value="German">German (Deutsch)</option>
-                      <option value="Italian">Italian (Italiano)</option>
-                      <option value="Portuguese">Portuguese (Português)</option>
-                      <option value="Japanese">Japanese (日本語)</option>
-                    </select>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1 w-full">
-                    <label className="text-xs text-slate-400 block mb-1 font-medium">Marketplace</label>
-                    <select
-                      value={targetMarketplace}
-                      onChange={(e) => setTargetMarketplace(e.target.value as TargetMarketplace)}
-                      className="w-full bg-slate-900/50 backdrop-blur border border-slate-700 text-sm rounded-lg px-3 py-2.5 text-white font-medium focus:ring-1 focus:ring-indigo-500 transition-shadow"
-                    >
-                      <option value="adobe_stock">Adobe Stock (Top 10 Ranked, 49 KW)</option>
-                      <option value="shutterstock">Shutterstock (5+ Words Title, 50 KW)</option>
-                      <option value="freepik">Freepik (Design Tags, 30 Max)</option>
-                      <option value="vecteezy">Vecteezy (Vector & Art Focus, 35 KW)</option>
-                      <option value="getty">Getty Images / iStock (35 KW)</option>
-                      <option value="123rf">123RF (45 KW)</option>
-                      <option value="dreamstime">Dreamstime (45 KW)</option>
-                    </select>
-                  </div>
+          <div className="flex items-center gap-3">
+            {/* Contributor Profile / Plan Badge */}
+            <div className="flex items-center gap-2.5 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800 shadow-inner">
+              <div className="text-right">
+                <div className="flex items-center justify-end gap-1.5">
+                  <span className="text-[10px] uppercase tracking-wider text-amber-400 font-black flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5 text-amber-400" />
+                    {user?.email === "ratulsorker266@gmail.com" 
+                      ? "Founder (VIP)" 
+                      : isPro 
+                      ? `Unlimited Pro (${proDaysLeft}d)`
+                      : "Unlimited Pro"}
+                  </span>
+                </div>
+                <div className="text-xs font-bold text-slate-200 truncate max-w-[120px] sm:max-w-[160px]">
+                  {user?.displayName || user?.email?.split("@")[0] || "Contributor"}
                 </div>
               </div>
-            )}
 
-            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-              {currentView !== 'upload' && (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setCurrentView('upload')}
-                  className="shrink-0 whitespace-nowrap bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 border border-slate-700 shadow-md"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5 text-indigo-400" /> Studio
-                </motion.button>
-              )}
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  if (planType === "free") {
-                    showToast("Trends is a Pro feature.");
-                    setShowProModal(true);
-                    return;
-                  }
-                  if (planType === "pro_1m" && trendsUsage >= 1) {
-                    showToast("1-Month Pro limit: 1 Trend search per day.");
-                    return;
-                  }
-                  if (planType === "pro_3m" && trendsUsage >= 3) {
-                    showToast("3-Month Pro limit: 3 Trend searches per day.");
-                    return;
-                  }
-                  setCurrentView("trends");
-                }}
-                className={`shrink-0 whitespace-nowrap ${currentView === 'trends' ? 'bg-indigo-600 ring-2 ring-indigo-400' : 'bg-indigo-600/90 hover:bg-indigo-500'} text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md`}
+              <button 
+                onClick={() => setShowProModal(true)} 
+                className="text-[10px] uppercase tracking-wider bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-2.5 py-1.5 rounded-lg shadow transition shrink-0"
               >
-                <TrendingUp className="w-3.5 h-3.5" /> Trends
-              </motion.button>
+                PRO PASS
+              </button>
+            </div>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setCurrentView("prompts")}
-                className={`shrink-0 whitespace-nowrap ${currentView === 'prompts' ? 'bg-blue-600 ring-2 ring-blue-400' : 'bg-blue-600/90 hover:bg-blue-500'} text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md`}
-              >
-                <Wand2 className="w-3.5 h-3.5 text-blue-200" /> AI Prompts
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setCurrentView("calendar")}
-                className={`shrink-0 whitespace-nowrap ${currentView === 'calendar' ? 'bg-amber-600 ring-2 ring-amber-400' : 'bg-amber-600/90 hover:bg-amber-500'} text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md`}
-              >
-                <CalendarDays className="w-3.5 h-3.5 text-amber-200" /> Calendar
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  if (planType !== "premium" && planType !== "pro_1m" && planType !== "pro_3m" && !customApiKey) {
-                    showToast("Competitor Spy is a Premium feature.");
-                    setShowProModal(true);
-                    return;
-                  }
-                  setCurrentView("competitor");
-                }}
-                className={`shrink-0 whitespace-nowrap ${currentView === 'competitor' ? 'bg-purple-600 ring-2 ring-purple-400' : 'bg-purple-600/90 hover:bg-purple-500'} text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md`}
-              >
-                <Search className="w-3.5 h-3.5" /> 
-                <span>Competitor Spy</span>
-                {planType !== "premium" && planType !== "pro_1m" && planType !== "pro_3m" && !customApiKey && <span className="bg-amber-500 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded ml-1">PRO</span>}
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowVectorStudioModal(true)}
-                className="shrink-0 whitespace-nowrap bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 text-xs font-black px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md border border-amber-300/40"
-                title="EPS & AI Vector Metadata Studio: Direct Input, XMP Sidecar & Embedded PostScript DSC"
-              >
-                <FileCode className="w-3.5 h-3.5 text-slate-950" />
-                <span>Vector Studio</span>
-                <span className="bg-black/80 text-amber-300 text-[9px] font-black px-1.5 py-0.5 rounded ml-0.5">EPS/AI</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setShowTrademarkModal(true);
-                }}
-                className="shrink-0 whitespace-nowrap bg-rose-600/90 hover:bg-rose-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md border border-rose-400/30"
-                title="Automated Trademark & IP Shield Scanner"
-              >
-                <ShieldAlert className="w-3.5 h-3.5 text-rose-200" />
-                <span>IP Shield</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setShowRankModal(true);
-                }}
-                className="shrink-0 whitespace-nowrap bg-blue-600/90 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md border border-blue-400/30"
-                title="Live Algorithmic Search Rank Predictor"
-              >
-                <Target className="w-3.5 h-3.5 text-blue-200" />
-                <span>Rank Predictor</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowNicheRadarModal(true)}
-                className="shrink-0 whitespace-nowrap bg-amber-600/90 hover:bg-amber-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md border border-amber-400/30"
-                title="Real-Time Niche Opportunity Radar"
-              >
-                <Radar className="w-3.5 h-3.5 text-amber-200" />
-                <span>Niche Radar</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowReleaseModal(true)}
-                className="shrink-0 whitespace-nowrap bg-teal-600/90 hover:bg-teal-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md border border-teal-400/30"
-                title="Model & Property Release AI Pre-Inspector"
-              >
-                <UserCheck className="w-3.5 h-3.5 text-teal-200" />
-                <span>Release Check</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowReversePromptModal(true)}
-                className="shrink-0 whitespace-nowrap bg-purple-600/90 hover:bg-purple-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md"
-                title="Reverse engineer stock prompts from reference images"
-              >
-                <Wand2 className="w-3.5 h-3.5 text-purple-200" />
-                <span>Reverse Prompt</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowEarningsModal(true)}
-                className="shrink-0 whitespace-nowrap bg-emerald-700/80 hover:bg-emerald-600 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md border border-emerald-500/30"
-                title="Microstock ROI & Earnings Calculator"
-              >
-                <Calculator className="w-3.5 h-3.5 text-emerald-300" />
-                <span>ROI Calculator</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowCleanerModal(true)}
-                className="shrink-0 whitespace-nowrap bg-teal-600/80 hover:bg-teal-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md"
-                title="Deduplicate keywords & strip spam"
-              >
-                <Filter className="w-3.5 h-3.5 text-teal-200" />
-                <span>Tag Cleaner</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowGuideHubModal(true)}
-                className="shrink-0 whitespace-nowrap bg-blue-600/80 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md"
-                title="Stock Contributor Masterclass & SEO Knowledge"
-              >
-                <BookOpen className="w-3.5 h-3.5 text-blue-200" />
-                <span>Masterclass</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowFtpModal(true)}
-                className="shrink-0 whitespace-nowrap bg-cyan-700/80 hover:bg-cyan-600 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md"
-                title="Cloud & FTP Direct Submission Guide"
-              >
-                <CloudUpload className="w-3.5 h-3.5 text-cyan-200" />
-                <span>FTP Pipeline</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowMultiCsvModal(true)}
-                disabled={!items.some((i) => i.result)}
-                className="shrink-0 whitespace-nowrap bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:shadow-none text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md"
-                title="Export for Adobe Stock, Shutterstock, Freepik, or Bulk Rename"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" /> 
-                <span>Multi-CSV & Rename</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+            {/* Quick Utility Icons */}
+            <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+              <button
                 onClick={() => {
                   setTourStep(0);
                   setShowTourModal(true);
                 }}
-                className="shrink-0 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-sm"
+                className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
                 title="Interactive Guide & Tour"
               >
-                <HelpCircle className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="hidden md:inline">Tour</span>
-              </motion.button>
+                <HelpCircle className="w-4 h-4" />
+              </button>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 onClick={() => setShowShortcutsModal(true)}
-                className="shrink-0 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 border border-slate-700 shadow-sm"
+                className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
                 title="Keyboard Shortcuts (?)"
               >
-                <Keyboard className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="hidden md:inline">Hotkeys</span>
-              </motion.button>
-              
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                <Keyboard className="w-4 h-4" />
+              </button>
+
+              <button
                 onClick={() => setShowSettings(true)}
-                className="shrink-0 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 border border-slate-700"
+                className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
                 title="Settings & API Key"
               >
                 <Settings className="w-4 h-4" />
-              </motion.button>
-              
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              </button>
+
+              <button
                 onClick={handleLogout}
-                className="shrink-0 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2"
+                className="p-2 rounded-lg hover:bg-red-500/20 text-red-400 transition"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
-              </motion.button>
+              </button>
             </div>
           </div>
         </motion.header>
+
+        {/* Dedicated Navigation Bar & Contributor Power Ribbon */}
+        <motion.div variants={itemVariants} className="bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-2xl border border-slate-800 shadow-xl flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
+          {/* Main Primary View Switcher Tabs */}
+          <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 overflow-x-auto scrollbar-none shrink-0">
+            <button
+              onClick={() => setCurrentView('upload')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+                currentView === 'upload'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>Studio</span>
+            </button>
+
+            <button
+              onClick={() => setCurrentView('trends')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+                currentView === 'trends'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              <span>Market Trends</span>
+            </button>
+
+            <button
+              onClick={() => setCurrentView('prompts')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+                currentView === 'prompts'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Wand2 className="w-4 h-4 text-purple-400" />
+              <span>AI Prompts</span>
+            </button>
+
+            <button
+              onClick={() => setCurrentView('calendar')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+                currentView === 'calendar'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <CalendarDays className="w-4 h-4 text-amber-400" />
+              <span>Calendar</span>
+            </button>
+
+            <button
+              onClick={() => setCurrentView('competitor')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+                currentView === 'competitor'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Search className="w-4 h-4 text-cyan-400" />
+              <span>Competitor Spy</span>
+            </button>
+          </div>
+
+          {/* Contributor Tools Quick-Launch Toolbar */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
+            <button
+              onClick={() => setShowToolsHubModal(true)}
+              className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:brightness-110 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0 border border-indigo-400/30"
+              title="Open All 12 Contributor Tools Hub"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>Tools Hub</span>
+              <span className="bg-black/40 text-[10px] px-1.5 py-0.2 rounded-full font-black">12</span>
+            </button>
+
+            <button
+              onClick={() => setShowMultiCsvModal(true)}
+              className="bg-emerald-600/90 hover:bg-emerald-500 text-white text-xs font-bold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-emerald-500/30 shrink-0 shadow-sm"
+              title="1-Click Multi-Marketplace CSV Exporter & Bulk Renamer"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" />
+              <span>Multi-CSV</span>
+            </button>
+
+            <button
+              onClick={() => setShowVectorStudioModal(true)}
+              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-amber-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
+              title="EPS & AI Vector Metadata Studio"
+            >
+              <FileCode className="w-3.5 h-3.5 text-amber-400" />
+              <span>Vector</span>
+            </button>
+
+            <button
+              onClick={() => setShowTrademarkModal(true)}
+              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-rose-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
+              title="Automated Trademark & IP Shield"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+              <span>IP Shield</span>
+            </button>
+
+            <button
+              onClick={() => setShowRankModal(true)}
+              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-blue-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
+              title="Algorithmic Rank Predictor"
+            >
+              <Target className="w-3.5 h-3.5 text-blue-400" />
+              <span>Rank</span>
+            </button>
+
+            <button
+              onClick={() => setShowNicheRadarModal(true)}
+              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-amber-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
+              title="Real-Time Niche Opportunity Radar"
+            >
+              <Radar className="w-3.5 h-3.5 text-amber-400" />
+              <span>Niche</span>
+            </button>
+
+            <button
+              onClick={() => setShowReleaseModal(true)}
+              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-teal-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
+              title="Model & Property Release Inspector"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-teal-400" />
+              <span>Releases</span>
+            </button>
+
+            <button
+              onClick={() => setShowReversePromptModal(true)}
+              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-purple-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
+              title="Reverse Image Prompt Engineer"
+            >
+              <Wand2 className="w-3.5 h-3.5 text-purple-400" />
+              <span>Reverse AI</span>
+            </button>
+
+            <button
+              onClick={() => setShowEarningsModal(true)}
+              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-green-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
+              title="Earnings & Portfolio ROI Calculator"
+            >
+              <Calculator className="w-3.5 h-3.5 text-green-400" />
+              <span>ROI</span>
+            </button>
+
+            <button
+              onClick={() => setShowCleanerModal(true)}
+              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-emerald-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
+              title="Semantic Tag Cleaner & Spam Eliminator"
+            >
+              <Filter className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Tags</span>
+            </button>
+
+            <button
+              onClick={() => setShowGuideHubModal(true)}
+              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-indigo-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
+              title="Microstock Contributor Masterclass Guide"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Guide</span>
+            </button>
+
+            <button
+              onClick={() => setShowFtpModal(true)}
+              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
+              title="Cloud & FTP Direct Submission Setup"
+            >
+              <CloudUpload className="w-3.5 h-3.5 text-cyan-400" />
+              <span>FTP</span>
+            </button>
+
+            <button
+              onClick={() => setShowSimulatorModal(true)}
+              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-violet-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
+              title="Marketplace Buyer Search Simulator"
+            >
+              <Eye className="w-3.5 h-3.5 text-violet-400" />
+              <span>Buyer View</span>
+            </button>
+          </div>
+        </motion.div>
         {/* AdSense Placeholder */}
         <motion.div variants={itemVariants} className="bg-slate-900/40 border border-dashed border-slate-700 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-inner min-h-[90px]">
            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 opacity-70">Advertisement</span>
@@ -2768,6 +2759,77 @@ export default function App() {
               {/* Top High-RPM Monetization Leaderboard */}
               <GoogleAdSenseBanner format="leaderboard" />
 
+              {/* Studio Metadata Settings Bar */}
+              <div className="bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-xl">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Asset Type</span>
+                    </label>
+                    <select
+                      value={assetType}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setAssetType(val);
+                        if (val.includes('Generative AI')) {
+                          setIsAiGenerated(true);
+                        }
+                      }}
+                      className="w-full bg-slate-950/80 border border-slate-700 hover:border-slate-600 text-sm rounded-xl px-3.5 py-2.5 text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner"
+                    >
+                      <option value="Photo / JPG">Photo / JPG</option>
+                      <option value="Vector / EPS">Vector / EPS (Scalable Vector)</option>
+                      <option value="Stock Video / Footage (4K / HD)">Stock Video / Footage (4K / HD)</option>
+                      <option value="PNG (Transparent)">PNG (Transparent Background)</option>
+                      <option value="Illustration">Illustration / Clipart</option>
+                      <option value="3D Render">3D Render / CGI</option>
+                      <option value="Generative AI">Generative AI Art</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Target Marketplace</span>
+                    </label>
+                    <select
+                      value={targetMarketplace}
+                      onChange={(e) => setTargetMarketplace(e.target.value as TargetMarketplace)}
+                      className="w-full bg-slate-950/80 border border-slate-700 hover:border-slate-600 text-sm rounded-xl px-3.5 py-2.5 text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner"
+                    >
+                      <option value="adobe_stock">Adobe Stock (Top 10 Ranked, 49 KW)</option>
+                      <option value="shutterstock">Shutterstock (5+ Words Title, 50 KW)</option>
+                      <option value="freepik">Freepik (Design Tags, 30 Max)</option>
+                      <option value="vecteezy">Vecteezy (Vector & Art Focus, 35 KW)</option>
+                      <option value="getty">Getty Images / iStock (35 KW)</option>
+                      <option value="123rf">123RF (45 KW)</option>
+                      <option value="dreamstime">Dreamstime (45 KW)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Language</span>
+                    </label>
+                    <select
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value)}
+                      className="w-full bg-slate-950/80 border border-slate-700 hover:border-slate-600 text-sm rounded-xl px-3.5 py-2.5 text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner"
+                    >
+                      <option value="English">English (Global Default)</option>
+                      <option value="Spanish">Spanish (Español)</option>
+                      <option value="French">French (Français)</option>
+                      <option value="German">German (Deutsch)</option>
+                      <option value="Italian">Italian (Italiano)</option>
+                      <option value="Portuguese">Portuguese (Português)</option>
+                      <option value="Japanese">Japanese (日本語)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <motion.div variants={itemVariants} className="bg-slate-950/80 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5">
                 <motion.div 
                   whileHover={{ scale: 1.01, borderColor: "rgba(99, 102, 241, 0.8)" }}
@@ -2797,10 +2859,21 @@ export default function App() {
                       <Upload className="w-8 h-8 text-indigo-400" />
                     </motion.div>
                     <h3 className="text-xl font-bold text-slate-100">
-                      {isDragging ? 'Drop files here!' : 'Drag & Drop files or Click to select'}
+                      {isDragging ? 'Drop your EPS, Photos or Videos here!' : 'Drag & Drop files or Click to select'}
                     </h3>
                     <p className="text-base font-bold text-slate-300">Selected: <span className="text-indigo-400">{items.length}</span>/100 Files</p>
-                    <p className="text-xs text-slate-400 font-medium">Supports Photos (JPG/PNG), Vectors (EPS/AI/SVG), and 4K Videos (MP4/MOV)</p>
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                      <span className="text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <FileCode className="w-3 h-3 text-amber-400" /> Vector: .EPS / .AI / .SVG
+                      </span>
+                      <span className="text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <ImageIcon className="w-3 h-3 text-indigo-400" /> Photo: .JPG / .PNG / .WEBP
+                      </span>
+                      <span className="text-[11px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <Video className="w-3 h-3 text-purple-400" /> 4K Video: .MP4 / .MOV
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 font-medium">Automatic PostScript DSC parsing, embedded previews & Adobe XMP sidecar generation</p>
                   </label>
                 </motion.div>
 
@@ -2833,6 +2906,77 @@ export default function App() {
 
               {/* Contributor Milestone Goal Widget */}
               <ContributorGoalWidget completedCount={items.filter((i) => i.result).length} />
+
+              {/* Dedicated Top Action Bar for instant visibility of download buttons */}
+              {items.length > 0 && (
+                <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-black text-sm">
+                      {items.filter(i => i.result).length}/{items.length}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        <span>Studio Queue Status</span>
+                        {items.filter(i => i.result).length > 0 && (
+                          <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                            {items.filter(i => i.result).length} Ready for Download
+                          </span>
+                        )}
+                      </h4>
+                      <p className="text-xs text-slate-400">
+                        {isProcessing
+                          ? 'Dual-Agent AI is currently scanning and generating commercial metadata...'
+                          : items.filter(i => i.result).length > 0
+                          ? 'Metadata ready! Download ZIP with embedded EXIF/IPTC/XMP or CSV below.'
+                          : 'Click "Start Auto Keywording" below to generate keywords.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {items.filter(i => i.result).length > 0 ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={exportBatchZip}
+                          className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer"
+                        >
+                          <Download className="w-4 h-4 text-slate-950" />
+                          <span>Download All in ZIP</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowMultiCsvModal(true)}
+                          className="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/40 font-bold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer"
+                        >
+                          <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                          <span>Multi-Marketplace CSV</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={exportBatchCSV}
+                          className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer"
+                        >
+                          <FileDown className="w-4 h-4 text-slate-300" />
+                          <span>CSV Export</span>
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={startBulkProcessing}
+                        disabled={isProcessing}
+                        className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-indigo-600/25 cursor-pointer"
+                      >
+                        <Sparkles className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                        <span>{isProcessing ? 'Analyzing Images...' : 'Start Auto Keywording'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Dedicated Failed Items Retry Banner - ONLY shows when there are failed files */}
               <AnimatePresence>
@@ -2886,13 +3030,20 @@ export default function App() {
                     >
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <div className="w-16 h-16 rounded-lg overflow-hidden border border-slate-800 shadow-inner bg-slate-900 flex items-center justify-center">
-                            {item.previewUrl && !item.file.name.match(/\.(eps|ai)$/i) ? (
-                              <img src={item.previewUrl} alt="preview" className="w-full h-full object-cover" />
+                          <div className="w-16 h-16 rounded-lg overflow-hidden border border-slate-800 shadow-inner bg-slate-900 flex items-center justify-center relative">
+                            {item.previewUrl ? (
+                              <>
+                                <img src={item.previewUrl} alt="preview" className="w-full h-full object-cover" />
+                                {item.file.name.match(/\.(eps|ai)$/i) && (
+                                  <span className="absolute top-1 left-1 bg-amber-500 text-slate-950 px-1 py-0.2 rounded text-[8px] font-black shadow-sm">
+                                    EPS
+                                  </span>
+                                )}
+                              </>
                             ) : item.file.name.match(/\.(eps|ai)$/i) ? (
                               <div className="w-full h-full bg-gradient-to-br from-amber-600/30 via-slate-900 to-indigo-900/40 flex flex-col items-center justify-center p-1">
-                                <FileCode className="w-6 h-6 text-amber-400 mb-0.5" />
-                                <span className="text-[9px] font-black uppercase text-amber-300 tracking-wider">VECTOR</span>
+                                <RefreshCw className="w-5 h-5 text-amber-400 animate-spin mb-0.5" />
+                                <span className="text-[8px] font-black uppercase text-amber-300 tracking-wider">PARSING EPS</span>
                               </div>
                             ) : (
                               <Layers className="w-6 h-6 text-slate-700" />
@@ -3088,15 +3239,8 @@ export default function App() {
                                         item.result!.keywords,
                                         item.result!.shortDescription
                                       );
-                                      const url = URL.createObjectURL(blob);
-                                      const a = document.createElement('a');
-                                      a.href = url;
                                       const base = item.file.name.replace(/\.eps$/i, '');
-                                      a.download = `${base}_tagged.eps`;
-                                      document.body.appendChild(a);
-                                      a.click();
-                                      document.body.removeChild(a);
-                                      setTimeout(() => URL.revokeObjectURL(url), 1000);
+                                      triggerBrowserDownload(blob, `${base}_tagged.eps`);
                                       showToast(`✓ Downloaded ${base}_tagged.eps with embedded metadata!`);
                                     } catch (err: any) {
                                       console.error("EPS embedding error:", err);
@@ -3658,6 +3802,53 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Professional Contributor Studio Tools Suite Hub Modal */}
+      <StudioToolsHubModal
+        isOpen={showToolsHubModal}
+        onClose={() => setShowToolsHubModal(false)}
+        completedCount={items.filter((i) => i.result).length}
+        onOpenTool={(toolKey) => {
+          switch (toolKey) {
+            case 'vector_studio':
+              setShowVectorStudioModal(true);
+              break;
+            case 'reverse_prompt':
+              setShowReversePromptModal(true);
+              break;
+            case 'trademark_shield':
+              setShowTrademarkModal(true);
+              break;
+            case 'release_inspector':
+              setShowReleaseModal(true);
+              break;
+            case 'rank_predictor':
+              setShowRankModal(true);
+              break;
+            case 'tag_cleaner':
+              setShowCleanerModal(true);
+              break;
+            case 'niche_radar':
+              setShowNicheRadarModal(true);
+              break;
+            case 'search_simulator':
+              setShowSimulatorModal(true);
+              break;
+            case 'multi_csv':
+              setShowMultiCsvModal(true);
+              break;
+            case 'roi_calculator':
+              setShowEarningsModal(true);
+              break;
+            case 'ftp_pipeline':
+              setShowFtpModal(true);
+              break;
+            case 'masterclass':
+              setShowGuideHubModal(true);
+              break;
+          }
+        }}
+      />
 
       {/* Multi-Marketplace CSV & Rename Modal */}
       <MultiCsvExportModal
