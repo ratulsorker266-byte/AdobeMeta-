@@ -38,6 +38,13 @@ export interface BulkItem {
     boundingBox?: any;
     colorPalette?: string[];
   };
+  psdHint?: {
+    title?: string;
+    width?: number;
+    height?: number;
+    colorMode?: string;
+    layerCount?: number;
+  };
 }
 
 export interface StockPromptResult {

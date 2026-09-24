@@ -521,7 +521,16 @@ async function startServer() {
 
   function getAssetTypeSEOConfig(assetType: string = 'Photo') {
     const norm = (assetType || '').toLowerCase().trim();
-    if (norm.includes('vector') || norm.includes('eps')) {
+    if (norm.includes('psd') || norm.includes('template') || norm.includes('photoshop') || norm.includes('spd')) {
+      return {
+        name: 'Photoshop PSD / Template',
+        directive: `
+        - ASSET TYPE: Layered Photoshop Document (PSD / PSB / Graphic Template / Mockup).
+        - TITLE: High-value commercial title denoting template utility (e.g., "...PSD mockup template", "...layered flyer PSD template", "...social media post Photoshop template").
+        - KEYWORDS: MUST include top-ranked template keywords: "psd, photoshop, mockup, template, layered, editable, smart object, graphic template, design layout, flyer, branding, customizable".
+        - FORBIDDEN: Do not claim it is an unlayered flat photo.`
+      };
+    } else if (norm.includes('vector') || norm.includes('eps')) {
       return {
         name: 'Vector / EPS',
         directive: `
@@ -585,7 +594,7 @@ async function startServer() {
 
   app.post("/api/analyze", async (req, res) => {
     try {
-      const { imageBase64, mimeType, marketplace, isAiGenerated, tier, assetType, language, fastMode, vectorMetadataHint, fileName } = req.body;
+      const { imageBase64, mimeType, marketplace, isAiGenerated, tier, assetType, language, fastMode, vectorMetadataHint, psdMetadataHint, fileName } = req.body;
       const clientApiKey = req.headers['x-api-key'] as string;
       
       if (!imageBase64 || typeof imageBase64 !== "string" || !mimeType) {
@@ -615,6 +624,14 @@ async function startServer() {
 - Description: ${vectorMetadataHint.description || "None"}
 - Bounding Box Dimensions: ${vectorMetadataHint.boundingBox ? `${vectorMetadataHint.boundingBox.width}x${vectorMetadataHint.boundingBox.height} pt` : "Standard vector"}
 DIRECTIVE FOR VECTOR METADATA: Synthesize these hints with visual analysis to generate authentic, high-converting, strictly compliant commercial microstock metadata for ${marketConfig.name}. Upgrade and expand the keywords into high-ranking terms.`;
+      }
+      if (psdMetadataHint && typeof psdMetadataHint === "object") {
+        extraContextDirectives += `\nPHOTOSHOP PSD / TEMPLATE METADATA EXTRACTED FROM PSD HEADER:
+- Clean Title Theme: ${psdMetadataHint.title || "Template"}
+- Canvas Dimensions: ${psdMetadataHint.width && psdMetadataHint.height ? `${psdMetadataHint.width}x${psdMetadataHint.height} px` : "High resolution"}
+- Color Mode: ${psdMetadataHint.colorMode || "RGB"}
+- Layer Count: ${psdMetadataHint.layerCount || "Multi-layer editable"}
+DIRECTIVE FOR PHOTOSHOP PSD: Generate high-ranking commercial microstock title and keywords tailored to graphic designers seeking Photoshop templates, mockups, social media kits, or print-ready layouts on ${marketConfig.name}. Highlight editable layers, smart objects, and commercial utility.`;
       }
 
       // Unified Gemini analysis call tailored strictly to target marketplace and asset format

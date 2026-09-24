@@ -32,6 +32,7 @@ import { SearchSimulatorModal } from './components/SearchSimulatorModal';
 import { VectorMetadataStudioModal } from './components/VectorMetadataStudioModal';
 import { GoogleAdSenseBanner } from './components/GoogleAdSenseBanner';
 import { parseEpsFile, isEpsFile } from './lib/epsParser';
+import { parsePsdFile, isPsdFile } from './lib/psdParser';
 import { StudioToolsHubModal } from './components/StudioToolsHubModal';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
@@ -842,7 +843,13 @@ export default function App() {
   }, [isProcessing, items]);
 
   useEffect(() => {
+    // Safety fallback: if Firebase onAuthStateChanged takes more than 2.5s, clear auth loading so UI always displays
+    const safetyTimer = setTimeout(() => {
+      setIsAuthLoading(false);
+    }, 2500);
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      clearTimeout(safetyTimer);
       setUser(currentUser);
       setIsAuthLoading(false);
       if (currentUser) {
@@ -1005,12 +1012,13 @@ export default function App() {
       const ext = f.name.split('.').pop()?.toLowerCase() || '';
       const isVideo = f.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'].includes(ext);
       const isEps = isEpsFile(f);
+      const isPsd = isPsdFile(f);
       const baseName = f.name.replace(/\.[^/.]+$/, '').toLowerCase();
       const companionJpg = isEps ? jpgMap.get(baseName) : undefined;
       
       const initialUrl = companionJpg
         ? URL.createObjectURL(companionJpg)
-        : isEps
+        : (isEps || isPsd)
         ? ''
         : URL.createObjectURL(f);
 
@@ -1021,6 +1029,25 @@ export default function App() {
         status: 'pending',
         progress: 0,
       };
+
+      // Asynchronously parse PSD / PSB / SPD file to render canvas preview thumbnail & layer metadata
+      if (isPsd) {
+        parsePsdFile(f).then((psdData) => {
+          setItems((prev) =>
+            prev.map((it) =>
+              it.id === item.id
+                ? {
+                    ...it,
+                    previewUrl: psdData.previewUrl || it.previewUrl,
+                    psdHint: psdData.metadata,
+                  }
+                : it
+            )
+          );
+        }).catch((err) => {
+          console.warn("PSD/SPD parse error:", err);
+        });
+      }
 
       // Asynchronously parse EPS file to extract real preview thumbnail & DSC comments
       if (isEps) {
@@ -1142,10 +1169,10 @@ export default function App() {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files) {
-      const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'svg', 'eps', 'ai', 'mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'];
+      const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'svg', 'eps', 'ai', 'psd', 'psb', 'spd', 'mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'];
       processFiles(Array.from(e.dataTransfer.files).filter((f: any) => {
         const ext = f.name.split('.').pop()?.toLowerCase() || '';
-        return f.type.startsWith('image/') || f.type.startsWith('video/') || allowedExts.includes(ext);
+        return f.type.startsWith('image/') || f.type.startsWith('video/') || isPsdFile(f) || allowedExts.includes(ext);
       }) as File[]);
     }
   };
@@ -1418,6 +1445,28 @@ export default function App() {
         } catch (_) {}
       }
 
+      // If file is a Photoshop PSD / PSB / SPD file, parse composite canvas or use cached preview
+      if (ext === 'psd' || ext === 'psb' || ext === 'spd' || isPsdFile(file)) {
+        try {
+          if (item.previewUrl && item.previewUrl.startsWith('data:image/')) {
+            const b64 = item.previewUrl.split(',')[1];
+            if (b64) return b64;
+          }
+          const psdData = await parsePsdFile(file);
+          if (psdData.previewUrl && psdData.previewUrl.startsWith('data:image/')) {
+            setItems((prev) =>
+              prev.map((it) =>
+                it.id === item.id ? { ...it, previewUrl: psdData.previewUrl, psdHint: psdData.metadata } : it
+              )
+            );
+            return psdData.base64ForAi || psdData.previewUrl.split(',')[1] || '';
+          }
+        } catch (psdErr) {
+          console.warn("PSD preview compression error:", psdErr);
+        }
+        return createFallbackPreview(file.name, 'Photoshop PSD');
+      }
+
       // If file is an EPS or AI vector, use parsed high-fidelity preview, companion preview, or parse directly
       if (ext === 'eps' || ext === 'ai' || isEpsFile(file)) {
         try {
@@ -1578,12 +1627,15 @@ export default function App() {
         const fileExt = item.file.name.split('.').pop()?.toLowerCase() || '';
         const isItemVideo = item.file.type.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'].includes(fileExt);
         const isItemVector = fileExt === 'eps' || fileExt === 'ai' || fileExt === 'svg';
+        const isItemPsd = fileExt === 'psd' || fileExt === 'psb' || fileExt === 'spd' || isPsdFile(item.file);
         
         let effectiveAssetType = assetType;
         if (isItemVideo) {
           effectiveAssetType = 'Stock Video / Footage (4K / HD)';
         } else if (isItemVector && assetType === 'Photo / JPG') {
           effectiveAssetType = 'Vector / EPS';
+        } else if (isItemPsd && assetType === 'Photo / JPG') {
+          effectiveAssetType = 'Photoshop PSD / Template';
         }
 
         const res = await fetch('/api/analyze', { 
@@ -1602,6 +1654,7 @@ export default function App() {
             isAiGenerated,
             fastMode: isTurboMode,
             vectorMetadataHint: item.epsHint,
+            psdMetadataHint: item.psdHint,
             fileName: item.file.name,
           }) 
         });
@@ -2126,13 +2179,13 @@ export default function App() {
         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-purple-600/20 blur-[120px] pointer-events-none" />
         
         <motion.div 
-          initial={{ x: '-120vw', rotate: -5 }}
-          animate={isLeaving ? { x: '120vw', rotate: 5 } : { x: 0, rotate: 0 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={isLeaving ? { x: '120vw', rotate: 5, opacity: 0 } : { opacity: 1, y: 0, x: 0, rotate: 0 }}
           transition={{ 
             type: "spring", 
-            stiffness: isLeaving ? 80 : 50, 
-            damping: isLeaving ? 15 : 12,
-            mass: 1.2
+            stiffness: isLeaving ? 80 : 120, 
+            damping: isLeaving ? 15 : 18,
+            mass: 1
           }}
           className="relative z-10 w-full max-w-md flex flex-col items-center"
         >
@@ -2779,6 +2832,7 @@ export default function App() {
                       className="w-full bg-slate-950/80 border border-slate-700 hover:border-slate-600 text-sm rounded-xl px-3.5 py-2.5 text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner"
                     >
                       <option value="Photo / JPG">Photo / JPG</option>
+                      <option value="Photoshop PSD / Template">Photoshop PSD / Template (.PSD, .SPD, .PSB)</option>
                       <option value="Vector / EPS">Vector / EPS (Scalable Vector)</option>
                       <option value="Stock Video / Footage (4K / HD)">Stock Video / Footage (4K / HD)</option>
                       <option value="PNG (Transparent)">PNG (Transparent Background)</option>
@@ -2847,7 +2901,7 @@ export default function App() {
                     type="file"
                     multiple
                     onChange={handleFilesSelect}
-                    accept="image/*,video/*,.svg,.eps,.ai,.mp4,.mov,.webm,.m4v,.avi"
+                    accept="image/*,video/*,.svg,.eps,.ai,.psd,.psb,.spd,.mp4,.mov,.webm,.m4v,.avi"
                     className="hidden"
                     id="bulkInput"
                   />
@@ -2859,10 +2913,13 @@ export default function App() {
                       <Upload className="w-8 h-8 text-indigo-400" />
                     </motion.div>
                     <h3 className="text-xl font-bold text-slate-100">
-                      {isDragging ? 'Drop your EPS, Photos or Videos here!' : 'Drag & Drop files or Click to select'}
+                      {isDragging ? 'Drop your PSD/SPD, EPS, Photos or Videos here!' : 'Drag & Drop files or Click to select'}
                     </h3>
                     <p className="text-base font-bold text-slate-300">Selected: <span className="text-indigo-400">{items.length}</span>/100 Files</p>
                     <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                      <span className="text-[11px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <Layers className="w-3 h-3 text-sky-400" /> Photoshop: .PSD / .SPD / .PSB
+                      </span>
                       <span className="text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                         <FileCode className="w-3 h-3 text-amber-400" /> Vector: .EPS / .AI / .SVG
                       </span>
@@ -2873,7 +2930,7 @@ export default function App() {
                         <Video className="w-3 h-3 text-purple-400" /> 4K Video: .MP4 / .MOV
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 font-medium">Automatic PostScript DSC parsing, embedded previews & Adobe XMP sidecar generation</p>
+                    <p className="text-xs text-slate-400 font-medium">Automatic Photoshop composite canvas rendering, PostScript DSC parsing & Adobe XMP sidecar generation</p>
                   </label>
                 </motion.div>
 
