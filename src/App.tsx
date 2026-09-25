@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe } from 'lucide-react';
+import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe, Gamepad2 } from 'lucide-react';
 import { BulkItem, TargetMarketplace, TrendData } from './types';
 import { embedJpegMetadata, generateXmpSidecarXml, embedMetadataIntoEps } from './lib/metadataEmbedder';
 import ratulLogo from './assets/images/ratul_logo_1789373833240.jpg';
@@ -34,6 +34,9 @@ import { GoogleAdSenseBanner } from './components/GoogleAdSenseBanner';
 import { parseEpsFile, isEpsFile } from './lib/epsParser';
 import { parsePsdFile, isPsdFile } from './lib/psdParser';
 import { StudioToolsHubModal } from './components/StudioToolsHubModal';
+import { AlgorithmRankBoosterModal } from './components/AlgorithmRankBoosterModal';
+import { CompetitorTagGapModal } from './components/CompetitorTagGapModal';
+import { ContributorArcadeModal } from './components/ContributorArcadeModal';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   useEffect(() => {
@@ -711,6 +714,11 @@ export default function App() {
   const [simulatorActiveItem, setSimulatorActiveItem] = useState<{ title: string; keywords: string[]; thumbnailUrl?: string } | null>(null);
   const [trademarkActiveItem, setTrademarkActiveItem] = useState<{ title: string; keywords: string[] } | null>(null);
   const [rankActiveItem, setRankActiveItem] = useState<{ title: string; keywords: string[] } | null>(null);
+  const [showAlgorithmBoosterModal, setShowAlgorithmBoosterModal] = useState<boolean>(false);
+  const [algorithmActiveItem, setAlgorithmActiveItem] = useState<BulkItem | null>(null);
+  const [showCompetitorGapModal, setShowCompetitorGapModal] = useState<boolean>(false);
+  const [competitorActiveItem, setCompetitorActiveItem] = useState<BulkItem | null>(null);
+  const [showArcadeModal, setShowArcadeModal] = useState<boolean>(false);
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -740,6 +748,9 @@ export default function App() {
         setShowReleaseModal(false);
         setShowSimulatorModal(false);
         setShowVectorStudioModal(false);
+        setShowAlgorithmBoosterModal(false);
+        setShowCompetitorGapModal(false);
+        setShowArcadeModal(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -2219,6 +2230,47 @@ export default function App() {
     showToast('✨ 1-Click Auto-Fix applied! Score enhanced to 90+');
   };
 
+  const handleSaveAlgorithmKeywords = async (itemId: string, updatedKeywords: string[]) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === itemId && i.result
+          ? { ...i, result: { ...i.result, keywords: updatedKeywords } }
+          : i
+      )
+    );
+    if (user) {
+      try {
+        const docRef = doc(collection(db, 'users', user.uid, 'assets'), itemId);
+        await updateDoc(docRef, { 'result.keywords': updatedKeywords });
+      } catch (err) {
+        console.warn('Could not sync algorithm keywords to Firestore:', err);
+      }
+    }
+  };
+
+  const handleAddCompetitorKeywords = async (itemId: string, newKeywords: string[]) => {
+    let finalKeywords: string[] = [];
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id === itemId && i.result) {
+          const current = i.result.keywords || [];
+          const combined = Array.from(new Set([...current, ...newKeywords])).slice(0, 50);
+          finalKeywords = combined;
+          return { ...i, result: { ...i.result, keywords: combined } };
+        }
+        return i;
+      })
+    );
+    if (user && finalKeywords.length > 0) {
+      try {
+        const docRef = doc(collection(db, 'users', user.uid, 'assets'), itemId);
+        await updateDoc(docRef, { 'result.keywords': finalKeywords });
+      } catch (err) {
+        console.warn('Could not sync competitor keywords to Firestore:', err);
+      }
+    }
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -2544,6 +2596,15 @@ export default function App() {
 
             {/* Quick Utility Icons */}
             <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+              <button
+                onClick={() => setShowArcadeModal(true)}
+                className="p-2 rounded-lg bg-gradient-to-r from-amber-500/20 to-purple-500/20 hover:from-amber-500/30 hover:to-purple-500/30 text-amber-300 hover:text-white border border-amber-500/30 transition flex items-center gap-1.5"
+                title="Play Contributor Arcade Mini-Games (🎮)"
+              >
+                <Gamepad2 className="w-4 h-4 text-amber-400" />
+                <span className="hidden md:inline text-xs font-bold">Arcade 🎮</span>
+              </button>
+
               <button
                 onClick={() => {
                   setTourStep(0);
@@ -3095,6 +3156,16 @@ export default function App() {
                           ? 'Metadata ready! Download ZIP with embedded EXIF/IPTC/XMP or CSV below.'
                           : 'Click "Start Auto Keywording" below to generate keywords.'}
                       </p>
+                      {isProcessing && (
+                        <button
+                          type="button"
+                          onClick={() => setShowArcadeModal(true)}
+                          className="mt-2.5 inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/25 via-indigo-600/35 to-purple-600/35 hover:from-amber-500/40 hover:to-purple-600/50 text-amber-300 hover:text-white border border-amber-500/40 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-md shadow-amber-500/10 animate-pulse cursor-pointer"
+                        >
+                          <Gamepad2 className="w-4 h-4 text-amber-400" />
+                          <span>Waiting for Metadata? Play Contributor Games (🎮)</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -3312,6 +3383,32 @@ export default function App() {
 
                       {item.result && (
                         <div className="flex flex-wrap items-center gap-2">
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              setAlgorithmActiveItem(item);
+                              setShowAlgorithmBoosterModal(true);
+                            }}
+                            className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                            title="Marketplace Algorithm Priority Booster (Top 10 Slots)"
+                          >
+                            <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
+                            <span>Top 10 Boost</span>
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              setCompetitorActiveItem(item);
+                              setShowCompetitorGapModal(true);
+                            }}
+                            className="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                            title="Benchmark vs 1% Bestsellers & Fill Keyword Gaps"
+                          >
+                            <Target className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>Competitor Gaps</span>
+                          </motion.button>
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -4011,6 +4108,29 @@ export default function App() {
             case 'masterclass':
               setShowGuideHubModal(true);
               break;
+            case 'algorithm_booster': {
+              const active = items.find((i) => i.result) || items[0] || null;
+              if (active) {
+                setAlgorithmActiveItem(active);
+                setShowAlgorithmBoosterModal(true);
+              } else {
+                showToast('Upload or process an asset first to optimize Top 10 algorithm ranking!');
+              }
+              break;
+            }
+            case 'competitor_gap': {
+              const active = items.find((i) => i.result) || items[0] || null;
+              if (active) {
+                setCompetitorActiveItem(active);
+                setShowCompetitorGapModal(true);
+              } else {
+                showToast('Upload or process an asset first to inspect competitor keyword gaps!');
+              }
+              break;
+            }
+            case 'contributor_arcade':
+              setShowArcadeModal(true);
+              break;
           }
         }}
       />
@@ -4128,6 +4248,30 @@ export default function App() {
         showToast={showToast}
       />
 
+      {/* Marketplace Algorithm Rank Booster (Top 10 Priority) Modal */}
+      <AlgorithmRankBoosterModal
+        item={algorithmActiveItem}
+        isOpen={showAlgorithmBoosterModal}
+        onClose={() => {
+          setShowAlgorithmBoosterModal(false);
+          setAlgorithmActiveItem(null);
+        }}
+        onSave={handleSaveAlgorithmKeywords}
+        showToast={showToast}
+      />
+
+      {/* Competitor Keyword Gap Inspector Modal */}
+      <CompetitorTagGapModal
+        item={competitorActiveItem}
+        isOpen={showCompetitorGapModal}
+        onClose={() => {
+          setShowCompetitorGapModal(false);
+          setCompetitorActiveItem(null);
+        }}
+        onAddKeywords={handleAddCompetitorKeywords}
+        showToast={showToast}
+      />
+
       {/* Keyboard Shortcuts Reference Modal */}
       <KeyboardShortcutsModal
         isOpen={showShortcutsModal}
@@ -4141,6 +4285,16 @@ export default function App() {
         currentStep={tourStep}
         onNext={() => setTourStep((prev) => Math.min(prev + 1, 4))}
         onPrev={() => setTourStep((prev) => Math.max(prev - 1, 0))}
+      />
+
+      {/* Contributor Mini-Games Arcade Modal */}
+      <ContributorArcadeModal
+        isOpen={showArcadeModal}
+        onClose={() => setShowArcadeModal(false)}
+        isProcessing={isProcessing}
+        completedCount={items.filter(i => i.result).length}
+        totalCount={items.length}
+        showToast={showToast}
       />
 
       {/* Toast Notification */}

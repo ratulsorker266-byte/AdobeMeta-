@@ -15,7 +15,10 @@ import {
   Radar,
   Eye,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Zap,
+  Flame,
+  Gamepad2
 } from 'lucide-react';
 
 interface StudioToolsHubModalProps {
@@ -45,6 +48,15 @@ export const StudioToolsHubModal: React.FC<StudioToolsHubModalProps> = ({
   if (!isOpen) return null;
 
   const tools: ToolCard[] = [
+    {
+      id: 'contributor_arcade',
+      name: 'Contributor Arcade (Mini-Games)',
+      category: 'Vector & AI',
+      description: 'Play Flappy Stock Drone, Retro Snake, and Keyword Speed Blitz while AI generates metadata in the background.',
+      icon: Gamepad2,
+      color: 'from-amber-500/20 via-pink-500/20 to-purple-500/20 border-pink-500/30 text-pink-400',
+      badge: '🎮 Mini-Games'
+    },
     {
       id: 'vector_studio',
       name: 'EPS & Vector Studio',
@@ -80,6 +92,24 @@ export const StudioToolsHubModal: React.FC<StudioToolsHubModalProps> = ({
       icon: UserCheck,
       color: 'from-teal-500/20 to-emerald-500/20 border-teal-500/30 text-teal-400',
       badge: 'Legal Shield'
+    },
+    {
+      id: 'algorithm_booster',
+      name: 'Algorithm Rank Booster (Top 10)',
+      category: 'SEO & Discovery',
+      description: '1-Click algorithmic priority sorting. Positions high-converting commercial tags into slots #1-#10 for maximum marketplace visibility.',
+      icon: Zap,
+      color: 'from-amber-500/20 to-orange-500/20 border-amber-500/30 text-amber-400',
+      badge: 'Algorithm #1'
+    },
+    {
+      id: 'competitor_gap',
+      name: 'Competitor Tag Gap Inspector',
+      category: 'SEO & Discovery',
+      description: 'Benchmark metadata against top 1% best-selling competitor stock visuals and 1-click add missing high-RPM tags.',
+      icon: Target,
+      color: 'from-indigo-500/20 to-purple-500/20 border-indigo-500/30 text-indigo-400',
+      badge: 'Bestseller Gaps'
     },
     {
       id: 'rank_predictor',
