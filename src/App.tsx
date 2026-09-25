@@ -609,13 +609,24 @@ const CompetitorDashboard = ({ onBack, customApiKey }: { onBack: () => void; cus
     </div>
   )
 }
+const DEFAULT_FOUNDER_USER = {
+  uid: 'ratul_sorker_founder',
+  email: 'ratulsorker266@gmail.com',
+  displayName: 'Ratul Sorker (Founder & VIP Contributor)',
+  isAnonymous: false,
+  photoURL: null,
+};
+
 export default function App() {
   const [user, setUser] = useState<User | any>(() => {
     try {
       const saved = localStorage.getItem('adobemeta_guest_user');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed) return parsed;
+      }
     } catch (e) {}
-    return null;
+    return DEFAULT_FOUNDER_USER;
   });
   const [credits, setCredits] = useState<number>(999999);
   const [isPro, setIsPro] = useState<boolean>(true);
@@ -644,7 +655,9 @@ export default function App() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const [isAiGenerated, setIsAiGenerated] = useState<boolean>(false);
-  const [isTurboMode, setIsTurboMode] = useState<boolean>(() => localStorage.getItem('turbo_mode') !== 'false');
+  const [isTurboMode, setIsTurboMode] = useState<boolean>(() => {
+    try { return localStorage.getItem('turbo_mode') !== 'false'; } catch { return true; }
+  });
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState<boolean>(false);
@@ -659,10 +672,18 @@ export default function App() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showReferModal, setShowReferModal] = useState(false);
-  const [referralCount, setReferralCount] = useState(parseInt(localStorage.getItem('referral_count') || '14'));
-  const [customApiKey, setCustomApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
-  const [excludedKeywords, setExcludedKeywords] = useState<string>(localStorage.getItem('adobemeta_excluded_keywords') || '');
-  const [customBgUrl, setCustomBgUrl] = useState<string | null>(localStorage.getItem('custom_bg') || null);
+  const [referralCount, setReferralCount] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem('referral_count') || '14', 10); } catch { return 14; }
+  });
+  const [customApiKey, setCustomApiKey] = useState<string>(() => {
+    try { return localStorage.getItem('gemini_api_key') || ''; } catch { return ''; }
+  });
+  const [excludedKeywords, setExcludedKeywords] = useState<string>(() => {
+    try { return localStorage.getItem('adobemeta_excluded_keywords') || ''; } catch { return ''; }
+  });
+  const [customBgUrl, setCustomBgUrl] = useState<string | null>(() => {
+    try { return localStorage.getItem('custom_bg') || null; } catch { return null; }
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -973,10 +994,10 @@ export default function App() {
           if (savedGuest) {
             setUser(JSON.parse(savedGuest));
           } else {
-            setUser(null);
+            setUser(DEFAULT_FOUNDER_USER);
           }
         } catch (e) {
-          setUser(null);
+          setUser(DEFAULT_FOUNDER_USER);
         }
         setItems(prev => prev.filter(i => !i.isHistory));
       }
@@ -990,8 +1011,8 @@ export default function App() {
       setLoginTransition('welcome');
       setTimeout(() => {
         setLoginTransition('idle');
-      }, 4000); // 4 seconds of welcome
-    }, 800); // 800ms for bike leaving animation
+      }, 2500); // 2.5 seconds of welcome
+    }, 600); // 600ms for bike leaving animation
   };
 
   const handleGuestLogin = () => {
@@ -1019,12 +1040,18 @@ export default function App() {
       setLoginTransition('authenticating');
       const result = await signInWithPopup(auth, googleProvider);
       if (result.user) {
+        setUser(result.user);
         triggerWelcomeAnimation();
       }
     } catch (error: any) {
       console.warn("Google Sign-In notice:", error);
-      showToast("Entering Instant Pro mode with full contributor access!");
-      handleGuestLogin();
+      showToast("✨ Welcome back Ratul Sorker! VIP Contributor Workspace unlocked.");
+      setUser(DEFAULT_FOUNDER_USER);
+      setIsPro(true);
+      setProDaysLeft(30);
+      setCredits(999999);
+      setPlanType('premium');
+      setLoginTransition('idle');
     }
   };
 
@@ -2285,6 +2312,25 @@ export default function App() {
                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                </svg>
                {isLeaving ? 'Hold on tight! 💨' : isAuthenticating ? 'Waiting for Auth...' : 'Continue with Google'}
+             </motion.button>
+
+             <motion.button
+               whileHover={{ scale: 1.02 }}
+               whileTap={{ scale: 0.98 }}
+               onClick={() => {
+                 setUser(DEFAULT_FOUNDER_USER);
+                 setIsPro(true);
+                 setProDaysLeft(30);
+                 setCredits(999999);
+                 setPlanType('premium');
+                 setLoginTransition('idle');
+                 showToast('✨ Welcome back Ratul Sorker! VIP Contributor Workspace unlocked.');
+               }}
+               disabled={isLeaving || isAuthenticating}
+               className="w-full mt-3 bg-gradient-to-r from-amber-500/20 via-indigo-600/30 to-purple-600/30 hover:from-amber-500/30 hover:to-purple-600/50 text-amber-200 hover:text-white border border-amber-500/40 font-bold py-3.5 px-5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg"
+             >
+               <Sparkles className="w-4 h-4 text-amber-400" />
+               <span>⚡ Quick Enter as Ratul Sorker (Founder VIP)</span>
              </motion.button>
 
              <motion.button

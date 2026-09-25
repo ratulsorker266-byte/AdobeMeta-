@@ -72,16 +72,8 @@ export const TrademarkShieldModal = ({
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  React.useEffect(() => {
-    const textToScan = initialTitle || initialKeywords?.join(', ') || defaultSample;
-    setInputText(textToScan);
-    runScanWithText(textToScan, false);
-  }, [initialTitle, initialKeywords, isOpen]);
-
-  if (!isOpen) return null;
-
-  const runScanWithText = (text: string, notify = true) => {
-    if (!text.trim()) return;
+  const runScanWithText = React.useCallback((text: string, notify = true) => {
+    if (!text || !text.trim()) return;
 
     const words = text.split(/[\s,;]+/);
     const detected: { word: string; category: string; risk: 'critical' | 'high' | 'moderate'; safeAlternative: string; reason: string }[] = [];
@@ -127,7 +119,17 @@ export const TrademarkShieldModal = ({
         showToast(`Warning: ${detected.length} trademarked terms detected!`);
       }
     }
-  };
+  }, [showToast]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      const textToScan = initialTitle || initialKeywords?.join(', ') || defaultSample;
+      setInputText(textToScan);
+      runScanWithText(textToScan, false);
+    }
+  }, [initialTitle, initialKeywords, isOpen, runScanWithText]);
+
+  if (!isOpen) return null;
 
   const runScan = () => {
     runScanWithText(inputText, true);
