@@ -11,10 +11,13 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-  };
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+    };
+  }
 
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
@@ -37,16 +40,35 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle className="w-8 h-8" />
             </div>
             <h2 className="text-xl font-bold text-white mb-2">Something went wrong</h2>
-            <p className="text-sm text-slate-400 mb-6">
+            <p className="text-sm text-slate-400 mb-4">
               AdobeMeta Pro encountered an unexpected issue while loading the workspace.
             </p>
-            <button
-              onClick={this.handleReload}
-              className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition shadow-lg w-full"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Reload AdobeMeta Pro
-            </button>
+            {this.state.error?.message && (
+              <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 mb-6 text-left text-xs font-mono text-rose-300 break-words max-h-32 overflow-y-auto">
+                {this.state.error.message}
+              </div>
+            )}
+            <div className="flex flex-col gap-3 w-full">
+              <button
+                onClick={this.handleReload}
+                className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition shadow-lg w-full"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Reload AdobeMeta Pro
+              </button>
+              <button
+                onClick={() => {
+                  try {
+                    localStorage.removeItem('custom_bg');
+                    sessionStorage.clear();
+                  } catch (e) {}
+                  window.location.reload();
+                }}
+                className="text-xs text-slate-400 hover:text-slate-200 py-2 transition"
+              >
+                Clear Cache & Reload Clean State
+              </button>
+            </div>
           </div>
         </div>
       );

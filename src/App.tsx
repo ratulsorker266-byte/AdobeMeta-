@@ -610,7 +610,13 @@ const CompetitorDashboard = ({ onBack, customApiKey }: { onBack: () => void; cus
   )
 }
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | any>(() => {
+    try {
+      const saved = localStorage.getItem('adobemeta_guest_user');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return null;
+  });
   const [credits, setCredits] = useState<number>(999999);
   const [isPro, setIsPro] = useState<boolean>(true);
   const [planType, setPlanType] = useState<string>("premium");
@@ -619,7 +625,7 @@ export default function App() {
   const [trendsUsage, setTrendsUsage] = useState<number>(0);
   const [showProModal, setShowProModal] = useState<boolean>(false);
   const [dailyUsage, setDailyUsage] = useState<number>(0);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [loginTransition, setLoginTransition] = useState<'idle' | 'authenticating' | 'leaving' | 'welcome'>('idle');
 
   const [currentView, setCurrentView] = useState<'upload' | 'trends' | 'competitor' | 'prompts' | 'calendar'>('upload');
@@ -962,6 +968,16 @@ export default function App() {
           console.error("Error loading history:", error);
         }
       } else {
+        try {
+          const savedGuest = localStorage.getItem('adobemeta_guest_user');
+          if (savedGuest) {
+            setUser(JSON.parse(savedGuest));
+          } else {
+            setUser(null);
+          }
+        } catch (e) {
+          setUser(null);
+        }
         setItems(prev => prev.filter(i => !i.isHistory));
       }
     });
@@ -978,6 +994,26 @@ export default function App() {
     }, 800); // 800ms for bike leaving animation
   };
 
+  const handleGuestLogin = () => {
+    const guestUser = {
+      uid: 'guest_' + Math.random().toString(36).substring(2, 9),
+      email: 'contributor@adobemeta.pro',
+      displayName: 'Guest Contributor',
+      isAnonymous: true,
+      photoURL: null
+    };
+    try {
+      localStorage.setItem('adobemeta_guest_user', JSON.stringify(guestUser));
+    } catch (e) {}
+    setUser(guestUser as any);
+    setIsPro(true);
+    setProDaysLeft(30);
+    setCredits(999999);
+    setPlanType('premium');
+    triggerWelcomeAnimation();
+    showToast('✨ Welcome! Enjoy 30 Days of Unlimited Pro Features!');
+  };
+
   const handleGoogleLogin = async () => {
     try {
       setLoginTransition('authenticating');
@@ -985,14 +1021,22 @@ export default function App() {
       if (result.user) {
         triggerWelcomeAnimation();
       }
-    } catch (error) {
-      console.error("Login failed:", error);
-      setLoginTransition('idle');
+    } catch (error: any) {
+      console.warn("Google Sign-In notice:", error);
+      showToast("Entering Instant Pro mode with full contributor access!");
+      handleGuestLogin();
     }
   };
 
   const handleLogout = async () => {
-    await signOut(auth);
+    try {
+      localStorage.removeItem('adobemeta_guest_user');
+    } catch (e) {}
+    try {
+      await signOut(auth);
+    } catch (e) {}
+    setUser(null);
+    setLoginTransition('idle');
   };
 
   const processFiles = (files: File[]) => {
@@ -2158,7 +2202,7 @@ export default function App() {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+    visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
   };
 
   if (isAuthLoading) {
@@ -2242,6 +2286,24 @@ export default function App() {
                </svg>
                {isLeaving ? 'Hold on tight! 💨' : isAuthenticating ? 'Waiting for Auth...' : 'Continue with Google'}
              </motion.button>
+
+             <motion.button
+               whileHover={{ scale: 1.02 }}
+               whileTap={{ scale: 0.98 }}
+               onClick={handleGuestLogin}
+               disabled={isLeaving || isAuthenticating}
+               className="w-full mt-3 bg-gradient-to-r from-indigo-600/30 to-purple-600/30 hover:from-indigo-600/50 hover:to-purple-600/50 text-indigo-200 hover:text-white border border-indigo-500/40 font-semibold py-3 px-5 rounded-xl transition flex items-center justify-center gap-2 shadow"
+             >
+               <Sparkles className="w-4 h-4 text-amber-400" />
+               <span>Instant Access as Guest Contributor</span>
+             </motion.button>
+
+             <button
+               onClick={handleGuestLogin}
+               className="mt-3 text-xs text-slate-400 hover:text-slate-200 underline underline-offset-4 transition"
+             >
+               Skip sign-in and start uploading assets directly →
+             </button>
 
              <div className="mt-8 pt-6 border-t border-slate-800">
                 <div className="text-center flex flex-col justify-center items-center">
@@ -2771,7 +2833,7 @@ export default function App() {
               onBack={() => setCurrentView('upload')}
               customApiKey={customApiKey}
               user={user}
-              planType={planType}
+              planType={planType === "premium" || planType === "pro" ? "pro" : "free"}
               setTrendsUsage={setTrendsUsage}
               initialSearchQuery={trendSearchPreload}
             />
@@ -3194,7 +3256,7 @@ export default function App() {
                                 className="shrink-0 bg-red-500/20 hover:bg-red-500/30 disabled:opacity-50 text-red-200 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition self-start sm:self-auto cursor-pointer shadow-sm hover:shadow-red-500/10"
                                 title="Retry this file"
                               >
-                                <RefreshCw className={`w-3.5 h-3.5 ${isProcessing && item.status === 'processing' ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={`w-3.5 h-3.5 ${isProcessing ? 'animate-spin' : ''}`} />
                                 <span>Retry File</span>
                               </button>
                             </div>
@@ -3243,7 +3305,7 @@ export default function App() {
                               setSimulatorActiveItem({
                                 title: item.result!.recommendedTitle,
                                 keywords: item.result!.keywords,
-                                thumbnailUrl: item.thumbnailUrl,
+                                thumbnailUrl: item.previewUrl,
                               });
                               setShowSimulatorModal(true);
                             }}
