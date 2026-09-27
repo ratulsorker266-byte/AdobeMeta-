@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe, Gamepad2 } from 'lucide-react';
+import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe, Gamepad2, Phone, PhoneCall, Heart, Headphones, Mic } from 'lucide-react';
 import { BulkItem, TargetMarketplace, TrendData } from './types';
 import { embedJpegMetadata, generateXmpSidecarXml, embedMetadataIntoEps } from './lib/metadataEmbedder';
 import ratulLogo from './assets/images/ratul_logo_1789373833240.jpg';
@@ -9,7 +9,7 @@ import { User, onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, setDoc, doc, deleteDoc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import confetti from 'canvas-confetti';
 import JSZip from 'jszip';
-import { MultiCsvExportModal } from './components/MultiCsvExportModal';
+import { MultiCsvExportModal, detectShutterstockCategory } from './components/MultiCsvExportModal';
 import { PromptStudioDashboard } from './components/PromptStudioDashboard';
 import { SeasonalCalendarDashboard } from './components/SeasonalCalendarDashboard';
 import { RejectionShieldBadge } from './components/RejectionShieldBadge';
@@ -37,6 +37,7 @@ import { StudioToolsHubModal } from './components/StudioToolsHubModal';
 import { AlgorithmRankBoosterModal } from './components/AlgorithmRankBoosterModal';
 import { CompetitorTagGapModal } from './components/CompetitorTagGapModal';
 import { ContributorArcadeModal } from './components/ContributorArcadeModal';
+import { LiveTrendingTicker } from './components/LiveTrendingTicker';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   useEffect(() => {
@@ -653,9 +654,17 @@ export default function App() {
   const [assetType, setAssetType] = useState<string>("Photo / JPG");
   const [language, setLanguage] = useState<string>("English");
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
-  const [chatMessages, setChatMessages] = useState<any[]>([{ role: "model", parts: [{ text: "Hello! I am your AdobeMeta Pro AI assistant. How can I help you with your microstock keywords, titles, or portfolio strategy today?" }] }]);
+  const [preferredNickname, setPreferredNickname] = useState<string>(() => {
+    try {
+      return localStorage.getItem('preferred_user_name') || 'Ratul Sorker';
+    } catch {
+      return 'Ratul Sorker';
+    }
+  });
+  const [chatMessages, setChatMessages] = useState<any[]>([{ role: "model", parts: [{ text: "Hello! I am your AdobeMeta AI Assistant. How can I help you with your microstock keywords, titles, or portfolio strategy today?" }] }]);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const [isAiGenerated, setIsAiGenerated] = useState<boolean>(false);
   const [isTurboMode, setIsTurboMode] = useState<boolean>(() => {
@@ -769,10 +778,13 @@ export default function App() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [items.length]);
 
-  // Auto-scroll chat to bottom
+  // Auto-scroll chat to bottom inside chat container only (prevents window jumping)
   useEffect(() => {
-    if (isChatOpen) {
-      chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (isChatOpen && chatContainerRef.current) {
+      const container = chatContainerRef.current;
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
     }
   }, [chatMessages, isChatLoading, isChatOpen]);
 
@@ -1212,7 +1224,13 @@ export default function App() {
           "Content-Type": "application/json",
           ...(customApiKey ? { "x-api-key": customApiKey.trim() } : {})
         },
-        body: JSON.stringify({ messages: newMessages, tier: planType })
+        body: JSON.stringify({
+          messages: newMessages,
+          tier: planType,
+          userName: user?.displayName || user?.email?.split('@')[0] || 'Ratul Sorker',
+          preferredName: preferredNickname || user?.displayName || 'Ratul Sorker',
+          userEmail: user?.email || 'ratulsorker266@gmail.com'
+        })
       });
 
       const data = await res.json();
@@ -1971,21 +1989,68 @@ export default function App() {
       return;
     }
 
-    // \uFEFF Byte Order Mark for Excel UTF-8 support
-    let csv = '\uFEFFFilename,Title,Description,Keywords\n';
-    completedItems.forEach((item) => {
-      if (item.result) {
-        const safeFileName = item.file.name.replace(/"/g, '""');
+    let csv = '';
+    let fileName = `Stock_Metadata_${Date.now()}.csv`;
+
+    if (targetMarketplace === 'adobe_stock') {
+      // 100% Compliant Adobe Stock Contributor CSV: Filename,Title,Keywords,Category
+      csv = '\uFEFFFilename,Title,Keywords,Category\n';
+      completedItems.forEach((item) => {
+        if (!item.result) return;
+        const safeName = item.file.name.replace(/"/g, '""');
+        const title = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+        const keywords = (item.result.keywords || []).slice(0, 49).map(k => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+        csv += `"${safeName}","${title}","${keywords}",""\n`;
+      });
+      fileName = `Adobe_Stock_Metadata_${Date.now()}.csv`;
+    } else if (targetMarketplace === 'shutterstock') {
+      // 100% Compliant Shutterstock Contributor CSV: Filename,Description,Keywords,Categories
+      csv = '\uFEFFFilename,Description,Keywords,Categories\n';
+      completedItems.forEach((item) => {
+        if (!item.result) return;
+        const safeName = item.file.name.replace(/"/g, '""');
+        let desc = (item.result.recommendedTitle || item.result.shortDescription || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+        const words = desc.split(/\s+/).filter(Boolean);
+        if (words.length < 5) {
+          desc = `Commercial stock visual of ${desc || 'creative subject'}`;
+        }
+        let keywordsArr = (item.result.keywords || []).map(k => k.trim()).filter(Boolean);
+        if (keywordsArr.length < 7) {
+          keywordsArr = [...keywordsArr, 'commercial', 'visual', 'photography', 'creative', 'stock', 'royalty free', 'editorial'].slice(0, 7);
+        }
+        const keywords = keywordsArr.slice(0, 50).join(', ').replace(/"/g, '""');
+        const categories = detectShutterstockCategory(keywordsArr, desc).replace(/"/g, '""');
+        csv += `"${safeName}","${desc}","${keywords}","${categories}"\n`;
+      });
+      fileName = `Shutterstock_Metadata_${Date.now()}.csv`;
+    } else if (targetMarketplace === 'freepik') {
+      // 100% Compliant Freepik CSV: File name,Title,Tags
+      csv = '\uFEFFFile name,Title,Tags\n';
+      completedItems.forEach((item) => {
+        if (!item.result) return;
+        const safeName = item.file.name.replace(/"/g, '""');
+        const title = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+        const tags = (item.result.keywords || []).slice(0, 30).map(k => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+        csv += `"${safeName}","${title}","${tags}"\n`;
+      });
+      fileName = `Freepik_Metadata_${Date.now()}.csv`;
+    } else {
+      // Universal Multi-Agency CSV: Filename,Title,Description,Keywords,License
+      csv = '\uFEFFFilename,Title,Description,Keywords,License\n';
+      completedItems.forEach((item) => {
+        if (!item.result) return;
+        const safeName = item.file.name.replace(/"/g, '""');
         const safeTitle = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
         const safeDesc = (item.result.shortDescription || item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
         const safeKeywords = (item.result.keywords || []).map(k => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
-        csv += `"${safeFileName}","${safeTitle}","${safeDesc}","${safeKeywords}"\n`;
-      }
-    });
+        csv += `"${safeName}","${safeTitle}","${safeDesc}","${safeKeywords}","Commercial"\n`;
+      });
+      fileName = `${targetMarketplace}_Metadata_${Date.now()}.csv`;
+    }
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    triggerBrowserDownload(blob, `batch_${targetMarketplace}_metadata.csv`);
-    showToast("✓ CSV Export complete!");
+    triggerBrowserDownload(blob, fileName);
+    showToast(`✓ ${targetMarketplace === 'adobe_stock' ? 'Adobe Stock' : targetMarketplace === 'shutterstock' ? 'Shutterstock' : 'Marketplace'} CSV Exported!`);
   };
 
   const exportBatchZip = async () => {
@@ -2442,7 +2507,7 @@ export default function App() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsChatOpen(!isChatOpen)}
-            className="fixed bottom-6 right-6 z-[110] bg-indigo-600 hover:bg-indigo-500 text-white p-3.5 rounded-full shadow-xl border border-indigo-400/30 flex items-center justify-center gap-2 group"
+            className="fixed bottom-6 right-6 z-[110] bg-indigo-600 hover:bg-indigo-500 text-white p-3.5 rounded-full shadow-xl border border-indigo-400/30 flex items-center justify-center gap-2 group cursor-pointer"
             title="Open AI Stock Assistant"
           >
             {isChatOpen ? <X className="w-6 h-6" /> : (
@@ -2457,12 +2522,12 @@ export default function App() {
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 30, scale: 0.95 }}
-              className="fixed bottom-20 right-4 sm:right-6 z-[110] w-[calc(100vw-2rem)] sm:w-[380px] h-[480px] max-h-[80vh] bg-slate-900 border border-slate-700 shadow-2xl rounded-2xl flex flex-col overflow-hidden"
+              className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-[120] w-[calc(100vw-2rem)] sm:w-[380px] max-w-[calc(100vw-2rem)] h-[490px] max-h-[82vh] bg-slate-900 border border-slate-700 shadow-2xl rounded-2xl flex flex-col overflow-hidden"
             >
-              <div className="bg-indigo-600 px-4 py-3 flex items-center justify-between">
+              <div className="bg-indigo-600 px-4 py-3 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-300"/>
-                  <h3 className="text-white font-bold text-sm">AdobeMeta Pro AI Assistant</h3>
+                  <h3 className="text-white font-bold text-sm">AdobeMeta AI Assistant</h3>
                 </div>
                 <div className="flex items-center gap-2">
                   {isPro ? (
@@ -2472,12 +2537,13 @@ export default function App() {
                       {Math.max(0, 20 - chatUsage)} msgs left
                     </span>
                   )}
-                  <button onClick={() => setIsChatOpen(false)} className="text-white/80 hover:text-white p-1">
+                  <button type="button" onClick={() => setIsChatOpen(false)} className="text-white/80 hover:text-white p-1 cursor-pointer">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/60">
+
+              <div ref={chatContainerRef} className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-3 bg-slate-950/60">
                 {chatMessages.map((msg, idx) => {
                   const textContent = msg.parts?.[0]?.text || msg.text || '';
                   const isError = textContent.startsWith('⚠️');
@@ -2507,9 +2573,29 @@ export default function App() {
                     </div>
                   </div>
                 )}
-                <div ref={chatBottomRef} />
               </div>
-              <div className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
+
+              {/* Quick Prompt Chips */}
+              <div className="px-3 py-1.5 bg-slate-950/60 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto text-[11px] scrollbar-none shrink-0">
+                {[
+                  '🚀 How to increase Adobe Stock sales?',
+                  '🔥 Best trending microstock niches',
+                  '💡 Tips to boost AdSense revenue'
+                ].map((promptText, pIdx) => (
+                  <button
+                    key={pIdx}
+                    type="button"
+                    onClick={() => {
+                      setChatInput(promptText);
+                    }}
+                    className="bg-slate-800/90 hover:bg-indigo-900/60 text-slate-300 hover:text-indigo-200 border border-slate-700/60 rounded-full px-2.5 py-0.5 whitespace-nowrap transition cursor-pointer shrink-0"
+                  >
+                    {promptText}
+                  </button>
+                ))}
+              </div>
+
+              <div className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 items-center shrink-0">
                 <input
                   type="text"
                   value={chatInput}
@@ -2520,13 +2606,14 @@ export default function App() {
                       handleSendChat();
                     }
                   }}
-                  placeholder="Ask anything about stock metadata, AI prompts, or marketplace guidelines..."
+                  placeholder="Ask a question or request advice..."
                   className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
                 />
                 <button
+                  type="button"
                   onClick={() => chatInput.trim() && handleSendChat()}
                   disabled={!chatInput.trim() || isChatLoading}
-                  className="bg-indigo-600 disabled:bg-slate-800 disabled:text-slate-600 hover:bg-indigo-500 text-white p-2.5 rounded-xl transition flex items-center justify-center"
+                  className="bg-indigo-600 disabled:bg-slate-800 disabled:text-slate-600 hover:bg-indigo-500 text-white p-2.5 rounded-xl transition flex items-center justify-center shrink-0 cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -2642,6 +2729,18 @@ export default function App() {
             </div>
           </div>
         </motion.header>
+ 
+        {/* Live Marketplace Buyer Demand Surge Ticker */}
+        <motion.div variants={itemVariants} className="rounded-2xl overflow-hidden shadow-lg border border-slate-800">
+          <LiveTrendingTicker
+            onSelectTrend={(tag) => {
+              setTrendSearchPreload(tag);
+              setPromptStudioPreloadConcept(tag);
+              showToast(`✓ Applied trending tag "${tag}" to Market Trends & AI Prompts!`);
+            }}
+            showToast={showToast}
+          />
+        </motion.div>
 
         {/* Dedicated Navigation Bar & Contributor Power Ribbon */}
         <motion.div variants={itemVariants} className="bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-2xl border border-slate-800 shadow-xl flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
@@ -3176,6 +3275,7 @@ export default function App() {
                           type="button"
                           onClick={exportBatchZip}
                           className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer"
+                          title="Download all processed assets in 1 ZIP with embedded IPTC metadata & Adobe XMP sidecars"
                         >
                           <Download className="w-4 h-4 text-slate-950" />
                           <span>Download All in ZIP</span>
@@ -3183,20 +3283,30 @@ export default function App() {
 
                         <button
                           type="button"
-                          onClick={() => setShowMultiCsvModal(true)}
-                          className="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/40 font-bold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer"
+                          onClick={exportBatchCSV}
+                          className="bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-indigo-600/20 cursor-pointer"
+                          title={`Download 100% verified ${targetMarketplace === 'adobe_stock' ? 'Adobe Stock (Filename,Title,Keywords,Category)' : targetMarketplace === 'shutterstock' ? 'Shutterstock (Filename,Description,Keywords,Categories)' : 'agency-compliant'} CSV`}
                         >
-                          <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                          <span>Multi-Marketplace CSV</span>
+                          <FileDown className="w-4 h-4" />
+                          <span>
+                            {targetMarketplace === 'adobe_stock'
+                              ? 'Download Adobe Stock CSV'
+                              : targetMarketplace === 'shutterstock'
+                              ? 'Download Shutterstock CSV'
+                              : targetMarketplace === 'freepik'
+                              ? 'Download Freepik CSV'
+                              : 'Download Agency CSV'}
+                          </span>
                         </button>
 
                         <button
                           type="button"
-                          onClick={exportBatchCSV}
-                          className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer"
+                          onClick={() => setShowMultiCsvModal(true)}
+                          className="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/40 font-bold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer"
+                          title="View and download individual CSV formats for Adobe Stock, Shutterstock, Freepik, Getty, and Vecteezy"
                         >
-                          <FileDown className="w-4 h-4 text-slate-300" />
-                          <span>CSV Export</span>
+                          <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                          <span>All Agencies CSV Hub</span>
                         </button>
                       </>
                     ) : (
@@ -3255,15 +3365,15 @@ export default function App() {
 
               <motion.div variants={containerVariants} className="space-y-4 pb-32">
                 <AnimatePresence>
-                  {items.map((item) => (
-                    <motion.div 
-                      layout
-                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      key={item.id} 
-                      className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-xl p-4 flex flex-wrap items-center gap-4 justify-between shadow-[0_4px_30px_rgba(0,0,0,0.1)] hover:border-indigo-500/50 hover:bg-slate-900/60 transition-all duration-300"
-                    >
+                  {items.map((item, index) => (
+                    <React.Fragment key={item.id}>
+                      <motion.div 
+                        layout
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-xl p-4 flex flex-wrap items-center gap-4 justify-between shadow-[0_4px_30px_rgba(0,0,0,0.1)] hover:border-indigo-500/50 hover:bg-slate-900/60 transition-all duration-300"
+                      >
                       <div className="flex items-center gap-4">
                         <div className="relative">
                           <div className="w-16 h-16 rounded-lg overflow-hidden border border-slate-800 shadow-inner bg-slate-900 flex items-center justify-center relative">
@@ -3542,6 +3652,10 @@ export default function App() {
                         </div>
                       )}
                     </motion.div>
+                    {(index + 1) % 3 === 0 && (
+                      <GoogleAdSenseBanner format="in-feed" />
+                    )}
+                  </React.Fragment>
                   ))}
                 </AnimatePresence>
               </motion.div>

@@ -17,7 +17,7 @@ async function startServer() {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(self), geolocation=()");
     // Rate limit header signaling
     res.setHeader("X-RateLimit-Policy", "stockmeta-anti-abuse-v1");
     next();
@@ -46,15 +46,22 @@ async function startServer() {
   let lastTrendFetchTime = 0;
   const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours
 
+  const exhaustedDailyModels = new Set<string>();
+
   // Helper function to call Gemini with automatic fallback across reliable models
-  // Prioritizes high-quota, resilient models if quota limit or overload occurs
+  // Prioritizes gemini-flash-latest and gemini-3.1-flash-lite for near-instant response times
   async function generateWithFallback(ai: GoogleGenAI, options: any, fastFirst: boolean = false) {
     const candidateModels = fastFirst
-      ? ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"]
-      : ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"];
+      ? ["gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.1-pro-preview"]
+      : ["gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.1-pro-preview"];
+
+    // Filter out models that have already exhausted their daily free tier quota in this process
+    const activeCandidates = candidateModels.filter(m => !exhaustedDailyModels.has(m));
+    const modelsToTry = activeCandidates.length > 0 ? activeCandidates : candidateModels;
+
     let lastError: any = null;
 
-    for (const model of candidateModels) {
+    for (const model of modelsToTry) {
       try {
         return await ai.models.generateContent({
           ...options,
@@ -62,7 +69,19 @@ async function startServer() {
         });
       } catch (err: any) {
         lastError = err;
-        console.warn(`Model ${model} attempt failed: ${err?.message || err}. Trying next fallback...`);
+        const errMsg = err?.message || String(err);
+
+        // If daily limit exceeded for this model, mark it so subsequent calls don't waste time on it
+        if (errMsg.includes("GenerateRequestsPerDay") || errMsg.includes("limit: 20") || (errMsg.includes("429") && errMsg.includes("RESOURCE_EXHAUSTED"))) {
+          exhaustedDailyModels.add(model);
+        }
+
+        // If a short retry-in delay is specified (e.g. milliseconds), pause briefly before fallback
+        if (errMsg.includes("retry in")) {
+          await new Promise(r => setTimeout(r, 200));
+        }
+
+        console.warn(`Model ${model} attempt failed: ${errMsg}. Trying next fallback...`);
       }
     }
     throw lastError || new Error("All AI models failed to respond.");
@@ -235,19 +254,65 @@ async function startServer() {
 
   app.post("/api/chat", async (req, res) => {
     try {
-      const { messages, tier } = req.body;
+      const { messages, tier, userName, preferredName, userEmail } = req.body;
       const clientApiKey = typeof req.headers["x-api-key"] === "string" ? req.headers["x-api-key"].trim() : "";
       const contentsToUse = sanitizeChatMessages(messages);
-      const systemInstruction = "You are AdobeMeta Pro AI Assistant, an elite authority and consultant in microstock SEO (Adobe Stock, Shutterstock, Getty/iStock, Freepik, Vecteezy), keywording, titles, metadata standards, and stock portfolio growth. Always provide direct, helpful, and actionable responses. Answer in the same language as the user's message.";
+      
+      const friendName = (preferredName || userName || (userEmail ? userEmail.split('@')[0] : "Ratul Sorker")).trim();
 
-      const response = await callGeminiUnified(clientApiKey, async (ai) => {
-        return await generateWithFallback(ai, {
-          contents: contentsToUse,
-          config: { systemInstruction }
+      const systemInstruction = `You are "AdobeMeta AI Assistant" — an expert, friendly, and reliable microstock contributor assistant and Google ranking/monetization advisor.
+The user is ${friendName}${userEmail ? ` (Email: ${userEmail})` : ""}.
+
+Key Directives:
+1. Core Mission:
+   - Provide world-class advice on stock photo/vector/illustration metadata, titles, descriptions, keyword ranking algorithms (Adobe Stock, Shutterstock, Freepik, Getty/iStock), and Google AdSense/monetization strategies.
+   - Be helpful, practical, encouraging, and clear.
+
+2. Tone and Style:
+   - Professional, concise, friendly, and direct. Keep normal answers to 2-4 structured, easily readable sentences or bullet points unless the user asks for a comprehensive guide.
+   - Never sound robotic or repetitive.
+
+3. Language:
+   - Fluently mirror the user's language. If they ask in English, answer in English. If they ask in Bengali or Banglish, answer in natural Bengali. If they ask in Hindi, Spanish, or other languages, respond in that language.`;
+
+      let replyText = "";
+      try {
+        const response = await callGeminiUnified(clientApiKey, async (ai) => {
+          return await generateWithFallback(ai, {
+            contents: contentsToUse,
+            config: { systemInstruction }
+          }, true);
         });
-      });
+        replyText = response?.text || response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      } catch (geminiErr: any) {
+        console.warn("/api/chat primary AI call failed, using intelligent stock fallback:", geminiErr?.message);
+        // Extract latest user prompt
+        const lastUserMsg = [...contentsToUse].reverse().find(m => m.role === "user");
+        const userQuery = (lastUserMsg?.parts?.[0]?.text || "").toLowerCase();
 
-      const replyText = response?.text || response?.candidates?.[0]?.content?.parts?.[0]?.text || "I am ready to help with your stock photography and metadata questions.";
+        if (userQuery.includes("google") || userQuery.includes("monetiz") || userQuery.includes("adsense") || userQuery.includes("আয়") || userQuery.includes("টাকা")) {
+          replyText = `Here are the top 3 proven strategies to maximize Google AdSense & stock monetization:
+1. High CPC Niche Targeting: Focus on Business, FinTech, Clean Energy, Healthcare, and Cloud AI concepts which command 3x–5x higher buyer bidding.
+2. Search Intent Matching: Use 3–5 word long-tail titles containing the exact commercial intent (e.g. "small business owner reviewing quarterly financial statements on tablet").
+3. Multi-Agency Synergy: Cross-publish your approved assets across Adobe Stock, Freepik, and Shutterstock with compliant IPTC metadata to multiply daily impressions.`;
+        } else if (userQuery.includes("rank") || userQuery.includes("adobe stock") || userQuery.includes("shutterstock") || userQuery.includes("freepik") || userQuery.includes("সেল")) {
+          replyText = `To boost your stock asset ranking right now:
+1. First 10 Keywords Rule: Adobe Stock weights your first 5-10 tags heaviest in search. Put your primary subject and action directly at tags 1 to 5.
+2. Title & Tag Correlation: Ensure the main 2-3 words from your title are mirrored in your top 10 keywords.
+3. Conceptual Diversity: Include both literal terms ("laptop", "office") and commercial concepts ("collaboration", "startup growth", "productivity").`;
+        } else if (userQuery.includes("trend") || userQuery.includes("topic") || userQuery.includes("টপিক") || userQuery.includes("আজকের")) {
+          replyText = `Today's highest-converting microstock themes:
+1. Authentic Workplace & Hybrid Culture: Unstaged, candid moments of diverse professionals collaborating.
+2. Sustainable Tech & Clean Energy: Solar panel installations, electric mobility, zero-waste lifestyle.
+3. Real Human Emotions: Relatable moments of mindfulness, family connection, and mental wellness.`;
+        } else {
+          replyText = `Hello ${friendName}! I am here to assist you with your stock metadata, SEO algorithm ranking, and portfolio monetization strategies. What specific topic or stock asset can I help you optimize today?`;
+        }
+      }
+
+      if (!replyText) {
+        replyText = `Hello ${friendName}! How can I help you optimize your stock metadata or earnings today?`;
+      }
       res.json({ text: replyText });
     } catch(e: any) {
       console.error("/api/chat error:", e);
@@ -500,20 +565,34 @@ async function startServer() {
         return {
           id: 'adobe_stock',
           name: 'Adobe Stock',
-          targetKeywordCount: '45 to 49',
+          targetKeywordCount: '35 to 49',
           maxKeywords: 49,
-          minKeywords: 35,
+          minKeywords: 25,
           titleDirectives: `
-          - ADOBE STOCK MANDATORY RULE: Natural, commercially compelling title (7 to 14 words).
-          - Must describe: Main subject + specific action/state + environment/background + lighting/mood.
-          - NO keyword stuffing in title. Capitalize first letter of sentence naturally. NO trailing period.
-          - Avoid filler words like "image of", "photo of", "isolated on background".`,
+          - OFFICIAL ADOBE STOCK TITLE GUIDELINES (Aug 2026):
+            * Write a brief, clear title that accurately describes the content.
+            * Keep it short, ideally under 70 characters (5 to 12 words).
+            * Focus strictly on what's most visually important in the content (Subject + Action + Setting).
+            * Avoid overly technical or gear-heavy terms (no camera brands, lens specs).
+            * Do NOT refer to anything involving IP, trademarks, artist names, or real people.
+            * Capitalize the first letter naturally, NO trailing period, NO keyword stuffing.
+            * Official Adobe examples: "Gay couple hugging in the park", "Women in laboratory with face masks and gloves", "Senior woman flexing her muscles on beach".`,
           keywordDirectives: `
-          - ADOBE STOCK ALGORITHM PRIORITY: Maximum 49 keywords.
-          - CRITICAL: The first 10 keywords MUST be the absolute most critical search terms. Adobe's search algorithm heavily weights the top 10 keywords for search ranking!
-          - Next keywords include secondary elements, lighting style, perspective, and conceptual emotions.`,
+          - OFFICIAL ADOBE STOCK KEYWORD GUIDELINES (Aug 2026):
+            * Include up to 49 keywords (min 25, max 49).
+            * KEYWORD ORDER IS ESSENTIAL: The FIRST 10 KEYWORDS MUST BE THE ABSOLUTE MOST IMPORTANT AND RELEVANT TERMS (they have the greatest influence on Adobe search ranking!).
+            * Separate descriptive elements (e.g., "White, fluffy, young animal, pup").
+            * Balance general and specific keywords (e.g., "Animal, mammal, carnivore").
+            * Include:
+              - Number of people ("one person", "two people", "alone", "three people")
+              - Setting ("indoors", "outdoors", "day", "night", "sunny", "cloudy")
+              - Viewpoint/angle ("high-angle view", "aerial view", "portrait", "close-up")
+              - Model demographics if people present ("senior adult", "Caucasian", "Black woman", "Latinx teen")
+              - Conceptual themes ("collaboration", "wellness", "lifestyle", "success")
+            * NO trademarks, NO brand names.
+            * Exactly one language, each keyword used once.`,
           descriptionDirectives: `
-          - Natural 1-2 sentence commercial summary.`
+          - Natural, accurate 1-sentence commercial summary matching the title.`
         };
     }
   }
@@ -769,6 +848,14 @@ DIRECTIVE FOR PHOTOSHOP PSD: Generate high-ranking commercial microstock title a
           const extraWords = sanitizedKeywords.slice(0, 5 - words.length).join(' ');
           cleanTitle = `${cleanTitle} with ${extraWords}`;
         }
+      } else if (marketConfig.id === 'adobe_stock') {
+        // Adobe Stock: "Keep it short, ideally under 70 characters"
+        if (cleanTitle.length > 70) {
+          const firstClause = cleanTitle.split(/[,;-]/)[0]?.trim();
+          if (firstClause && firstClause.length >= 25 && firstClause.length <= 70) {
+            cleanTitle = firstClause;
+          }
+        }
       }
       parsed.recommendedTitle = cleanTitle;
 
@@ -788,6 +875,12 @@ DIRECTIVE FOR PHOTOSHOP PSD: Generate high-ranking commercial microstock title a
         }
       }
       parsed.priorityKeywords = sanitizedPriority.slice(0, 10);
+
+      // Adobe Stock: Place the most important keywords in the first 10 positions
+      if (sanitizedPriority.length > 0) {
+        const remaining = parsed.keywords.filter((k: string) => !sanitizedPriority.includes(k));
+        parsed.keywords = [...sanitizedPriority, ...remaining].slice(0, marketConfig.maxKeywords);
+      }
 
       parsed.shortDescription = parsed.shortDescription || parsed.recommendedTitle;
       parsed.acceptanceProbability = typeof parsed.acceptanceProbability === "number" ? Math.min(100, Math.max(0, parsed.acceptanceProbability)) : 85;

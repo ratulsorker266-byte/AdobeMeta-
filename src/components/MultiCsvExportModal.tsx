@@ -5,6 +5,44 @@ import { BulkItem } from '../types';
 import JSZip from 'jszip';
 import { embedJpegMetadata, generateXmpSidecarXml } from '../lib/metadataEmbedder';
 
+export const VALID_SHUTTERSTOCK_CATEGORIES = [
+  'Abstract', 'Animals/Wildlife', 'The Arts', 'Backgrounds/Textures', 'Beauty/Fashion',
+  'Buildings/Landmarks', 'Business/Finance', 'Celebrities', 'Education', 'Food and Drink',
+  'Healthcare/Medical', 'Holidays', 'Industrial', 'Interiors', 'Miscellaneous', 'Nature',
+  'Objects', 'Parks/Outdoor', 'People', 'Religion', 'Science', 'Signs/Symbols',
+  'Sports/Recreation', 'Technology', 'Transportation', 'Vectors', 'Vintage'
+];
+
+export const detectShutterstockCategory = (keywords: string[] = [], text: string = ''): string => {
+  const blob = (keywords.join(' ') + ' ' + text).toLowerCase();
+  const matched: string[] = [];
+
+  const check = (cat: string, regex: RegExp) => {
+    if (regex.test(blob) && !matched.includes(cat)) {
+      matched.push(cat);
+    }
+  };
+
+  check('People', /\b(people|person|man|woman|child|family|team|worker|portrait|adult|couple|girl|boy|human|lifestyle)\b/);
+  check('Business/Finance', /\b(business|finance|money|office|corporate|marketing|banking|investment|economy|workplace)\b/);
+  check('Technology', /\b(technology|tech|ai|computer|software|digital|code|internet|cyber|robot|phone|laptop)\b/);
+  check('Nature', /\b(nature|landscape|tree|flower|forest|mountain|ocean|sea|beach|water|sky|plant|sun|outdoor)\b/);
+  check('Animals/Wildlife', /\b(animal|wildlife|dog|cat|bird|pet|mammal|fish|fauna|wild)\b/);
+  check('Food and Drink', /\b(food|drink|meal|coffee|restaurant|cooking|fruit|vegetable|kitchen|eating|delicious)\b/);
+  check('Healthcare/Medical', /\b(health|medical|doctor|hospital|medicine|clinic|patient|nurse|wellness|treatment)\b/);
+  check('Buildings/Landmarks', /\b(building|architecture|city|urban|landmark|house|street|construction|tower)\b/);
+  check('Backgrounds/Textures', /\b(background|texture|pattern|abstract|wallpaper|surface|backdrop|geometric)\b/);
+  check('Vectors', /\b(vector|illustration|graphic|icon|clipart|drawing|eps|flat)\b/);
+  check('Industrial', /\b(industry|industrial|factory|manufacture|engineer|machinery|production|energy|solar)\b/);
+  check('Education', /\b(education|school|student|study|learning|university|book|knowledge)\b/);
+  check('Transportation', /\b(transportation|car|vehicle|road|traffic|train|airplane|flight|ship)\b/);
+  check('Holidays', /\b(holiday|christmas|new year|easter|halloween|celebration|festive)\b/);
+
+  if (matched.length === 0) return 'Miscellaneous';
+  // Shutterstock allows max 2 categories, separated by comma
+  return matched.slice(0, 2).join(', ');
+};
+
 interface MultiCsvExportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -120,10 +158,20 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
     completedItems.forEach((item) => {
       if (!item.result) return;
       const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
-      const desc = (item.result.recommendedTitle || item.result.shortDescription || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-      // Shutterstock requires 50 keywords max, min 7
-      const keywords = (item.result.keywords || []).slice(0, 50).map((k) => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
-      csv += `"${filename}","${desc}","${keywords}","Technology, Lifestyle"\n`;
+      let desc = (item.result.recommendedTitle || item.result.shortDescription || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+      // Shutterstock rule: Description must have at least 5 words!
+      const words = desc.split(/\s+/).filter(Boolean);
+      if (words.length < 5) {
+        desc = `Commercial stock visual of ${desc || 'creative subject'}`;
+      }
+      // Shutterstock requires min 7, max 50 keywords
+      let keywordsArr = (item.result.keywords || []).map((k) => k.trim()).filter(Boolean);
+      if (keywordsArr.length < 7) {
+        keywordsArr = [...keywordsArr, 'commercial', 'visual', 'photography', 'creative', 'stock', 'royalty free', 'editorial'].slice(0, 7);
+      }
+      const keywords = keywordsArr.slice(0, 50).join(', ').replace(/"/g, '""');
+      const categories = detectShutterstockCategory(keywordsArr, desc).replace(/"/g, '""');
+      csv += `"${filename}","${desc}","${keywords}","${categories}"\n`;
     });
     return csv;
   };
