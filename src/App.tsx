@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe, Gamepad2, Phone, PhoneCall, Heart, Headphones, Mic } from 'lucide-react';
-import { BulkItem, TargetMarketplace, TrendData } from './types';
+import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe, Gamepad2, Phone, PhoneCall, Heart, Headphones, Mic, Compass, Grid } from 'lucide-react';
+import { BulkItem, TargetMarketplace, TrendData, MetadataResult } from './types';
 import { embedJpegMetadata, generateXmpSidecarXml, embedMetadataIntoEps } from './lib/metadataEmbedder';
 import ratulLogo from './assets/images/ratul_logo_1789373833240.jpg';
 import { motion, AnimatePresence } from 'motion/react';
@@ -38,6 +38,12 @@ import { AlgorithmRankBoosterModal } from './components/AlgorithmRankBoosterModa
 import { CompetitorTagGapModal } from './components/CompetitorTagGapModal';
 import { ContributorArcadeModal } from './components/ContributorArcadeModal';
 import { LiveTrendingTicker } from './components/LiveTrendingTicker';
+import { PrivacyPolicyModal, TermsOfServiceModal, EarningsDisclaimerModal, ContactSupportModal } from './components/LegalModals';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
+import { EarningMonetizationModal } from './components/EarningMonetizationModal';
+import { WebsiteFooter } from './components/WebsiteFooter';
+import { InteractiveSpatialHouse, SpatialRoom } from './components/InteractiveSpatialHouse';
+import { CommandPaletteModal } from './components/CommandPaletteModal';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   useEffect(() => {
@@ -729,6 +735,38 @@ export default function App() {
   const [competitorActiveItem, setCompetitorActiveItem] = useState<BulkItem | null>(null);
   const [showArcadeModal, setShowArcadeModal] = useState<boolean>(false);
 
+  // Google Monetization, Compliance & Legal Modals
+  const [showEarningMonetizeModal, setShowEarningMonetizeModal] = useState<boolean>(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState<boolean>(false);
+  const [showTermsModal, setShowTermsModal] = useState<boolean>(false);
+  const [showDisclaimerModal, setShowDisclaimerModal] = useState<boolean>(false);
+  const [showContactModal, setShowContactModal] = useState<boolean>(false);
+
+  // Architectural Digital Space State
+  const [workspaceMode, setWorkspaceMode] = useState<'spatial' | 'classic'>(() => {
+    try {
+      return (localStorage.getItem('adobemeta_workspace_mode') as 'spatial' | 'classic') || 'spatial';
+    } catch {
+      return 'spatial';
+    }
+  });
+  const [spatialRoom, setSpatialRoom] = useState<SpatialRoom>('studio');
+  const [activeSpatialItemId, setActiveSpatialItemId] = useState<string | null>(null);
+  const [showCommandPalette, setShowCommandPalette] = useState<boolean>(false);
+
+  const handleUpdateMetadata = (id: string, updated: Partial<MetadataResult>) => {
+    setItems(prev => prev.map(item => {
+      if (item.id !== id || !item.result) return item;
+      return {
+        ...item,
+        result: {
+          ...item.result,
+          ...updated,
+        },
+      };
+    }));
+  };
+
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -737,10 +775,14 @@ export default function App() {
         return;
       }
 
-      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowCommandPalette((prev) => !prev);
+      } else if (e.key === '?' || (e.shiftKey && e.key === '/')) {
         e.preventDefault();
         setShowShortcutsModal((prev) => !prev);
       } else if (e.key === 'Escape') {
+        setShowCommandPalette(false);
         setShowShortcutsModal(false);
         setShowToolsHubModal(false);
         setMockupItem(null);
@@ -1994,56 +2036,69 @@ export default function App() {
 
     if (targetMarketplace === 'adobe_stock') {
       // 100% Compliant Adobe Stock Contributor CSV: Filename,Title,Keywords,Category
-      csv = '\uFEFFFilename,Title,Keywords,Category\n';
+      csv = '\uFEFFFilename,Title,Keywords,Category\r\n';
       completedItems.forEach((item) => {
         if (!item.result) return;
         const safeName = item.file.name.replace(/"/g, '""');
-        const title = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-        const keywords = (item.result.keywords || []).slice(0, 49).map(k => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
-        csv += `"${safeName}","${title}","${keywords}",""\n`;
+        let title = (item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+        // Adobe Stock August 2026 rule: Keep short and focused, under 70 characters
+        if (title.length > 70) {
+          const truncated = title.substring(0, 68);
+          const lastSpace = truncated.lastIndexOf(' ');
+          title = lastSpace > 30 ? truncated.substring(0, lastSpace) : truncated;
+        }
+        const keywords = (item.result.keywords || [])
+          .slice(0, 49)
+          .map(k => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim())
+          .filter(Boolean)
+          .join(', ')
+          .replace(/"/g, '""');
+        csv += `"${safeName}","${title}","${keywords}",""\r\n`;
       });
       fileName = `Adobe_Stock_Metadata_${Date.now()}.csv`;
     } else if (targetMarketplace === 'shutterstock') {
       // 100% Compliant Shutterstock Contributor CSV: Filename,Description,Keywords,Categories
-      csv = '\uFEFFFilename,Description,Keywords,Categories\n';
+      csv = '\uFEFFFilename,Description,Keywords,Categories\r\n';
       completedItems.forEach((item) => {
         if (!item.result) return;
         const safeName = item.file.name.replace(/"/g, '""');
-        let desc = (item.result.recommendedTitle || item.result.shortDescription || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+        let desc = (item.result.recommendedTitle || item.result.shortDescription || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
         const words = desc.split(/\s+/).filter(Boolean);
         if (words.length < 5) {
-          desc = `Commercial stock visual of ${desc || 'creative subject'}`;
+          desc = `Commercial stock visual of ${desc || 'creative subject'} in high quality`;
         }
-        let keywordsArr = (item.result.keywords || []).map(k => k.trim()).filter(Boolean);
+        let keywordsArr = (item.result.keywords || [])
+          .map(k => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim())
+          .filter(Boolean);
         if (keywordsArr.length < 7) {
           keywordsArr = [...keywordsArr, 'commercial', 'visual', 'photography', 'creative', 'stock', 'royalty free', 'editorial'].slice(0, 7);
         }
         const keywords = keywordsArr.slice(0, 50).join(', ').replace(/"/g, '""');
         const categories = detectShutterstockCategory(keywordsArr, desc).replace(/"/g, '""');
-        csv += `"${safeName}","${desc}","${keywords}","${categories}"\n`;
+        csv += `"${safeName}","${desc}","${keywords}","${categories}"\r\n`;
       });
       fileName = `Shutterstock_Metadata_${Date.now()}.csv`;
     } else if (targetMarketplace === 'freepik') {
       // 100% Compliant Freepik CSV: File name,Title,Tags
-      csv = '\uFEFFFile name,Title,Tags\n';
+      csv = '\uFEFFFile name,Title,Tags\r\n';
       completedItems.forEach((item) => {
         if (!item.result) return;
         const safeName = item.file.name.replace(/"/g, '""');
-        const title = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-        const tags = (item.result.keywords || []).slice(0, 30).map(k => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
-        csv += `"${safeName}","${title}","${tags}"\n`;
+        const title = (item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+        const tags = (item.result.keywords || []).slice(0, 30).map(k => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+        csv += `"${safeName}","${title}","${tags}"\r\n`;
       });
       fileName = `Freepik_Metadata_${Date.now()}.csv`;
     } else {
       // Universal Multi-Agency CSV: Filename,Title,Description,Keywords,License
-      csv = '\uFEFFFilename,Title,Description,Keywords,License\n';
+      csv = '\uFEFFFilename,Title,Description,Keywords,License\r\n';
       completedItems.forEach((item) => {
         if (!item.result) return;
         const safeName = item.file.name.replace(/"/g, '""');
-        const safeTitle = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-        const safeDesc = (item.result.shortDescription || item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-        const safeKeywords = (item.result.keywords || []).map(k => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
-        csv += `"${safeName}","${safeTitle}","${safeDesc}","${safeKeywords}","Commercial"\n`;
+        const safeTitle = (item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+        const safeDesc = (item.result.shortDescription || item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+        const safeKeywords = (item.result.keywords || []).map(k => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+        csv += `"${safeName}","${safeTitle}","${safeDesc}","${safeKeywords}","Commercial"\r\n`;
       });
       fileName = `${targetMarketplace}_Metadata_${Date.now()}.csv`;
     }
@@ -2054,7 +2109,7 @@ export default function App() {
   };
 
   const exportBatchZip = async () => {
-    const completedItems = items.filter(i => i.result && i.status === 'completed');
+    const completedItems = items.filter(i => i.result);
     if (completedItems.length === 0) {
       showToast("No completed items to export as ZIP.");
       return;
@@ -2098,10 +2153,43 @@ export default function App() {
          const xmpContent = generateXmpSidecarXml(title, keywords, item.result.shortDescription);
          zip.file(`${cleanBase}.xmp`, xmpContent);
       }
+
+      // Automatically include the 100% compliant CSV inside the ZIP
+      if (targetMarketplace === 'shutterstock') {
+        let zipShutterCsv = '\uFEFFFilename,Description,Keywords,Categories\r\n';
+        completedItems.forEach((item) => {
+          if (!item.result) return;
+          const safeName = item.file.name.replace(/"/g, '""');
+          let desc = (item.result.recommendedTitle || item.result.shortDescription || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+          const words = desc.split(/\s+/).filter(Boolean);
+          if (words.length < 5) desc = `Commercial stock visual of ${desc || 'creative subject'} in high quality`;
+          let kwArr = (item.result.keywords || []).map(k => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+          if (kwArr.length < 7) kwArr = [...kwArr, 'commercial', 'visual', 'photography', 'creative', 'stock', 'royalty free', 'editorial'].slice(0, 7);
+          const kws = kwArr.slice(0, 50).join(', ').replace(/"/g, '""');
+          const cat = detectShutterstockCategory(kwArr, desc).replace(/"/g, '""');
+          zipShutterCsv += `"${safeName}","${desc}","${kws}","${cat}"\r\n`;
+        });
+        zip.file(`Shutterstock_Upload_Metadata.csv`, zipShutterCsv);
+      } else {
+        let zipAdobeCsv = '\uFEFFFilename,Title,Keywords,Category\r\n';
+        completedItems.forEach((item) => {
+          if (!item.result) return;
+          const safeName = item.file.name.replace(/"/g, '""');
+          let title = (item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+          if (title.length > 70) {
+            const truncated = title.substring(0, 68);
+            const lastSpace = truncated.lastIndexOf(' ');
+            title = lastSpace > 30 ? truncated.substring(0, lastSpace) : truncated;
+          }
+          const kws = (item.result.keywords || []).slice(0, 49).map(k => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+          zipAdobeCsv += `"${safeName}","${title}","${kws}",""\r\n`;
+        });
+        zip.file(`Adobe_Stock_Upload_Metadata.csv`, zipAdobeCsv);
+      }
       
       const content = await zip.generateAsync({ type: 'blob' });
       triggerBrowserDownload(content, `Stock_Metadata_Images_${Date.now()}.zip`);
-      showToast("✓ All Metadata embedded & ZIP downloaded!");
+      showToast("✓ All Metadata embedded & ZIP downloaded (with agency CSV)!");
     } catch (err: any) {
       console.error("ZIP Generation error:", err);
       showToast("Failed to create ZIP: " + (err?.message || "Unknown error"));
@@ -2637,319 +2725,266 @@ export default function App() {
         animate="visible"
         className="max-w-7xl mx-auto space-y-6 relative z-10"
       >
-        {/* Top Header: Brand Identity, Plan Status & Utilities */}
-        <motion.header variants={itemVariants} className="bg-slate-950/90 backdrop-blur-xl px-5 py-4 rounded-2xl border border-slate-800 shadow-2xl flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <motion.div whileHover={{ scale: 1.05, rotate: -3 }} className="w-12 h-12 rounded-xl overflow-hidden shadow-lg border border-indigo-500/30 shrink-0">
-              <img src={ratulLogo} alt="RATUL Logo" className="w-full h-full object-cover" />
-            </motion.div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">AdobeMeta <span className="text-indigo-400">Pro</span></h1>
-                <span className="bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider hidden sm:inline-flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5 text-amber-400" /> 100 Files Engine
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 font-medium hidden sm:block">Commercial Stock Metadata, Compliance & Multi-Agency Distribution</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Contributor Profile / Plan Badge */}
-            <div className="flex items-center gap-2.5 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800 shadow-inner">
-              <div className="text-right">
-                <div className="flex items-center justify-end gap-1.5">
-                  <span className="text-[10px] uppercase tracking-wider text-amber-400 font-black flex items-center gap-1">
-                    <Sparkles className="w-2.5 h-2.5 text-amber-400" />
-                    {user?.email === "ratulsorker266@gmail.com" 
-                      ? "Founder (VIP)" 
-                      : isPro 
-                      ? `Unlimited Pro (${proDaysLeft}d)`
-                      : "Unlimited Pro"}
+        {/* Master Architectural Command Center - Unified Seamless Navigation */}
+        <motion.header
+          variants={itemVariants}
+          className="bg-slate-950/90 backdrop-blur-2xl rounded-2xl sm:rounded-3xl border border-slate-800/90 shadow-2xl overflow-hidden divide-y divide-slate-800/60"
+        >
+          {/* TIER 1: Primary Brand Identity & Core Workspace Switcher */}
+          <div className="px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+            {/* Left: Brand Identity */}
+            <div className="flex items-center gap-3">
+              <motion.div whileHover={{ scale: 1.05 }} className="w-10 h-10 rounded-xl overflow-hidden shadow-lg border border-indigo-500/40 shrink-0">
+                <img src={ratulLogo} alt="AdobeMeta Pro Logo" className="w-full h-full object-cover" />
+              </motion.div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-1.5">
+                    <span>AdobeMeta</span>
+                    <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Pro</span>
+                  </h1>
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    ENGINE ACTIVE
                   </span>
                 </div>
-                <div className="text-xs font-bold text-slate-200 truncate max-w-[120px] sm:max-w-[160px]">
-                  {user?.displayName || user?.email?.split("@")[0] || "Contributor"}
-                </div>
+                <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
+                  Modern Architectural Contributor Suite · Founder VIP
+                </p>
               </div>
+            </div>
 
-              <button 
-                onClick={() => setShowProModal(true)} 
-                className="text-[10px] uppercase tracking-wider bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-2.5 py-1.5 rounded-lg shadow transition shrink-0"
+            {/* Center: Primary Workspaces Concourse */}
+            <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800/80 overflow-x-auto scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setCurrentView('upload')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                  currentView === 'upload'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
               >
-                PRO PASS
+                <Layers className="w-3.5 h-3.5" />
+                <span>Studio</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentView('trends')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                  currentView === 'trends'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Market Trends</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentView('prompts')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                  currentView === 'prompts'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Wand2 className="w-3.5 h-3.5 text-purple-400" />
+                <span>AI Prompts</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentView('calendar')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                  currentView === 'calendar'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <CalendarDays className="w-3.5 h-3.5 text-amber-400" />
+                <span>Calendar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentView('competitor')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                  currentView === 'competitor'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Search className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Competitor Spy</span>
               </button>
             </div>
 
-            {/* Quick Utility Icons */}
-            <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+            {/* Right: Search, Tools Hub & Controls */}
+            <div className="flex items-center gap-2 shrink-0">
               <button
+                type="button"
+                onClick={() => setShowCommandPalette(true)}
+                className="hidden lg:flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer"
+                title="Search tools, actions or exports (⌘K)"
+              >
+                <Search className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Search</span>
+                <kbd className="font-mono text-[10px] bg-slate-800 border border-slate-700 px-1 py-0.2 rounded text-slate-300">⌘K</kbd>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowToolsHubModal(true)}
+                className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:brightness-110 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0 border border-indigo-400/30 cursor-pointer"
+                title="Open All 12 Contributor Tools Hub (Vector, IP Shield, Rank, Niche, Releases, AI Prompts & Mini-Games)"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span className="hidden sm:inline">Tools Hub</span>
+                <span className="bg-black/40 text-[10px] px-1.5 py-0.2 rounded-full font-black">12</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setShowArcadeModal(true)}
-                className="p-2 rounded-lg bg-gradient-to-r from-amber-500/20 to-purple-500/20 hover:from-amber-500/30 hover:to-purple-500/30 text-amber-300 hover:text-white border border-amber-500/30 transition flex items-center gap-1.5"
+                className="p-2 sm:px-2.5 sm:py-1.5 rounded-xl text-amber-300 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5 text-xs font-semibold border border-slate-800"
                 title="Play Contributor Arcade Mini-Games (🎮)"
               >
                 <Gamepad2 className="w-4 h-4 text-amber-400" />
-                <span className="hidden md:inline text-xs font-bold">Arcade 🎮</span>
+                <span className="hidden xl:inline">Arcade</span>
               </button>
 
               <button
-                onClick={() => {
-                  setTourStep(0);
-                  setShowTourModal(true);
-                }}
-                className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
-                title="Interactive Guide & Tour"
-              >
-                <HelpCircle className="w-4 h-4" />
-              </button>
-
-              <button
+                type="button"
                 onClick={() => setShowShortcutsModal(true)}
-                className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
+                className="p-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition border border-slate-800"
                 title="Keyboard Shortcuts (?)"
               >
                 <Keyboard className="w-4 h-4" />
               </button>
 
               <button
+                type="button"
                 onClick={() => setShowSettings(true)}
-                className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
-                title="Settings & API Key"
+                className="p-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition border border-slate-800"
+                title="Settings & Custom API Key"
               >
                 <Settings className="w-4 h-4" />
               </button>
 
               <button
+                type="button"
                 onClick={handleLogout}
-                className="p-2 rounded-lg hover:bg-red-500/20 text-red-400 transition"
+                className="p-2 rounded-xl hover:bg-red-500/20 text-red-400 transition border border-slate-800"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
           </div>
+
+          {/* TIER 2: Studio Workspace Controls & Monetization Portals */}
+          <div className="bg-slate-900/60 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+            {/* Left: Spatial 3D House vs Classic Grid Switch */}
+            {currentView === 'upload' ? (
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">
+                  Interface:
+                </span>
+                <div className="flex items-center gap-1 bg-slate-950/90 p-1 rounded-xl border border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWorkspaceMode('spatial');
+                      localStorage.setItem('adobemeta_workspace_mode', 'spatial');
+                      showToast('Entered Architectural Digital Space');
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      workspaceMode === 'spatial'
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                    title="Enter Modern Architectural Contributor Space"
+                  >
+                    <Compass className="w-3.5 h-3.5 text-indigo-300" />
+                    <span>Architectural Space</span>
+                    <span className="text-[9px] bg-emerald-400/20 text-emerald-300 px-1 py-0.2 rounded font-black">3D</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWorkspaceMode('classic');
+                      localStorage.setItem('adobemeta_workspace_mode', 'classic');
+                      showToast('Switched to Classic Batch Grid');
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      workspaceMode === 'classic'
+                        ? 'bg-indigo-600 text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                    title="Switch to Classic Batch Grid"
+                  >
+                    <Grid className="w-3.5 h-3.5 text-slate-300" />
+                    <span>Classic Grid</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('upload')}
+                  className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Return to Studio</span>
+                </button>
+                <span className="text-slate-600">/</span>
+                <span className="text-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                  {currentView === 'trends' ? 'Market Trends Analytics' : currentView === 'prompts' ? 'AI Prompt Studio' : currentView === 'calendar' ? 'Seasonal Demand Calendar' : 'Competitor Tag Spy'}
+                </span>
+              </div>
+            )}
+
+            {/* Right: Key Portals (Earning & Monetize, Multi-CSV) */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowEarningMonetizeModal(true)}
+                className="bg-emerald-600/90 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-emerald-500/40 shrink-0 shadow-sm cursor-pointer"
+                title="Microstock Royalties & Google AdSense Monetization Hub"
+              >
+                <DollarSign className="w-3.5 h-3.5 text-emerald-200" />
+                <span>Earning & Monetize</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowMultiCsvModal(true)}
+                className="bg-slate-800 hover:bg-slate-700 text-emerald-300 hover:text-emerald-200 text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-emerald-500/30 shrink-0 shadow-sm cursor-pointer"
+                title="1-Click Multi-Marketplace CSV Exporter (Adobe Stock, Shutterstock, Freepik, Getty)"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Multi-CSV</span>
+              </button>
+            </div>
+          </div>
+
+          {/* TIER 3: Seamless Integrated Live Demand Ticker */}
+          <div className="bg-slate-950/80">
+            <LiveTrendingTicker
+              onSelectTrend={(tag) => {
+                setTrendSearchPreload(tag);
+                setPromptStudioPreloadConcept(tag);
+                showToast(`✓ Applied trending tag "${tag}" to Market Trends & AI Prompts!`);
+              }}
+              showToast={showToast}
+            />
+          </div>
         </motion.header>
- 
-        {/* Live Marketplace Buyer Demand Surge Ticker */}
-        <motion.div variants={itemVariants} className="rounded-2xl overflow-hidden shadow-lg border border-slate-800">
-          <LiveTrendingTicker
-            onSelectTrend={(tag) => {
-              setTrendSearchPreload(tag);
-              setPromptStudioPreloadConcept(tag);
-              showToast(`✓ Applied trending tag "${tag}" to Market Trends & AI Prompts!`);
-            }}
-            showToast={showToast}
-          />
-        </motion.div>
-
-        {/* Dedicated Navigation Bar & Contributor Power Ribbon */}
-        <motion.div variants={itemVariants} className="bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-2xl border border-slate-800 shadow-xl flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
-          {/* Main Primary View Switcher Tabs */}
-          <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 overflow-x-auto scrollbar-none shrink-0">
-            <button
-              onClick={() => setCurrentView('upload')}
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 ${
-                currentView === 'upload'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Layers className="w-4 h-4" />
-              <span>Studio</span>
-            </button>
-
-            <button
-              onClick={() => setCurrentView('trends')}
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 ${
-                currentView === 'trends'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
-              <span>Market Trends</span>
-            </button>
-
-            <button
-              onClick={() => setCurrentView('prompts')}
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 ${
-                currentView === 'prompts'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Wand2 className="w-4 h-4 text-purple-400" />
-              <span>AI Prompts</span>
-            </button>
-
-            <button
-              onClick={() => setCurrentView('calendar')}
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 ${
-                currentView === 'calendar'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <CalendarDays className="w-4 h-4 text-amber-400" />
-              <span>Calendar</span>
-            </button>
-
-            <button
-              onClick={() => setCurrentView('competitor')}
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 ${
-                currentView === 'competitor'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Search className="w-4 h-4 text-cyan-400" />
-              <span>Competitor Spy</span>
-            </button>
-          </div>
-
-          {/* Contributor Tools Quick-Launch Toolbar */}
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
-            <button
-              onClick={() => setShowToolsHubModal(true)}
-              className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:brightness-110 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0 border border-indigo-400/30"
-              title="Open All 12 Contributor Tools Hub"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Tools Hub</span>
-              <span className="bg-black/40 text-[10px] px-1.5 py-0.2 rounded-full font-black">12</span>
-            </button>
-
-            <button
-              onClick={() => setShowMultiCsvModal(true)}
-              className="bg-emerald-600/90 hover:bg-emerald-500 text-white text-xs font-bold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-emerald-500/30 shrink-0 shadow-sm"
-              title="1-Click Multi-Marketplace CSV Exporter & Bulk Renamer"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" />
-              <span>Multi-CSV</span>
-            </button>
-
-            <button
-              onClick={() => setShowVectorStudioModal(true)}
-              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-amber-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
-              title="EPS & AI Vector Metadata Studio"
-            >
-              <FileCode className="w-3.5 h-3.5 text-amber-400" />
-              <span>Vector</span>
-            </button>
-
-            <button
-              onClick={() => setShowTrademarkModal(true)}
-              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-rose-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
-              title="Automated Trademark & IP Shield"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-              <span>IP Shield</span>
-            </button>
-
-            <button
-              onClick={() => setShowRankModal(true)}
-              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-blue-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
-              title="Algorithmic Rank Predictor"
-            >
-              <Target className="w-3.5 h-3.5 text-blue-400" />
-              <span>Rank</span>
-            </button>
-
-            <button
-              onClick={() => setShowNicheRadarModal(true)}
-              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-amber-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
-              title="Real-Time Niche Opportunity Radar"
-            >
-              <Radar className="w-3.5 h-3.5 text-amber-400" />
-              <span>Niche</span>
-            </button>
-
-            <button
-              onClick={() => setShowReleaseModal(true)}
-              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-teal-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
-              title="Model & Property Release Inspector"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-teal-400" />
-              <span>Releases</span>
-            </button>
-
-            <button
-              onClick={() => setShowReversePromptModal(true)}
-              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-purple-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
-              title="Reverse Image Prompt Engineer"
-            >
-              <Wand2 className="w-3.5 h-3.5 text-purple-400" />
-              <span>Reverse AI</span>
-            </button>
-
-            <button
-              onClick={() => setShowEarningsModal(true)}
-              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-green-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
-              title="Earnings & Portfolio ROI Calculator"
-            >
-              <Calculator className="w-3.5 h-3.5 text-green-400" />
-              <span>ROI</span>
-            </button>
-
-            <button
-              onClick={() => setShowCleanerModal(true)}
-              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-emerald-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
-              title="Semantic Tag Cleaner & Spam Eliminator"
-            >
-              <Filter className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Tags</span>
-            </button>
-
-            <button
-              onClick={() => setShowGuideHubModal(true)}
-              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-indigo-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
-              title="Microstock Contributor Masterclass Guide"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Guide</span>
-            </button>
-
-            <button
-              onClick={() => setShowFtpModal(true)}
-              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
-              title="Cloud & FTP Direct Submission Setup"
-            >
-              <CloudUpload className="w-3.5 h-3.5 text-cyan-400" />
-              <span>FTP</span>
-            </button>
-
-            <button
-              onClick={() => setShowSimulatorModal(true)}
-              className="bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-violet-300 text-xs font-semibold px-2.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700/80 shrink-0"
-              title="Marketplace Buyer Search Simulator"
-            >
-              <Eye className="w-3.5 h-3.5 text-violet-400" />
-              <span>Buyer View</span>
-            </button>
-          </div>
-        </motion.div>
-        {/* AdSense Placeholder */}
-        <motion.div variants={itemVariants} className="bg-slate-900/40 border border-dashed border-slate-700 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-inner min-h-[90px]">
-           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 opacity-70">Advertisement</span>
-           <p className="text-xs text-slate-600 font-medium">Google AdSense Space (728x90) / Affiliate Banner</p>
-        </motion.div>
-        {/* Affiliate Banner */}
-        <motion.div variants={itemVariants} className="bg-slate-900/80 backdrop-blur-md border border-indigo-500/30 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-lg">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-indigo-900/50 rounded-full flex items-center justify-center border border-indigo-500/50">
-               <TrendingUp className="w-5 h-5 text-indigo-400" />
-             </div>
-             <div>
-               <h4 className="text-sm font-bold text-white">Recommended Platforms</h4>
-               <p className="text-xs text-slate-400">Maximize your earnings by joining our top partnered stock marketplaces.</p>
-             </div>
-          </div>
-          <div className="flex flex-wrap gap-3">
-             <a href="https://submit.shutterstock.com" target="_blank" rel="noreferrer" className="bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 text-xs font-bold px-4 py-2 rounded-lg transition">Join Shutterstock</a>
-             <a href="https://contributor.stock.adobe.com" target="_blank" rel="noreferrer" className="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 text-xs font-bold px-4 py-2 rounded-lg transition">Join Adobe Stock</a>
-             <a href="https://www.freepik.com/contributor" target="_blank" rel="noreferrer" className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-4 py-2 rounded-lg transition">Join Freepik</a>
-          </div>
-        </motion.div>
 
         
         <AnimatePresence>
@@ -3077,11 +3112,35 @@ export default function App() {
               exit={{ opacity: 0, x: 20 }}
               className="space-y-6"
             >
-              {/* Top High-RPM Monetization Leaderboard */}
-              <GoogleAdSenseBanner format="leaderboard" />
+              {workspaceMode === 'spatial' ? (
+                <InteractiveSpatialHouse
+                  items={items}
+                  currentRoom={spatialRoom}
+                  onRoomChange={setSpatialRoom}
+                  activeItemId={activeSpatialItemId}
+                  onSelectActiveItem={setActiveSpatialItemId}
+                  onUpdateMetadata={handleUpdateMetadata}
+                  targetMarketplace={targetMarketplace}
+                  onMarketplaceChange={setTargetMarketplace}
+                  exportBatchCSV={exportBatchCSV}
+                  exportBatchZip={exportBatchZip}
+                  onOpenMultiCsvModal={() => setShowMultiCsvModal(true)}
+                  onOpenSettingsModal={() => setShowSettings(true)}
+                  onOpenEarningModal={() => setShowEarningMonetizeModal(true)}
+                  onOpenRankModal={() => setShowRankModal(true)}
+                  onOpenNicheRadar={() => setShowNicheRadarModal(true)}
+                  onTriggerProcess={startBulkProcessing}
+                  isProcessing={isProcessing}
+                  onFilesSelect={handleFilesSelect}
+                  showToast={showToast}
+                />
+              ) : (
+                <>
+                  {/* Top High-RPM Monetization Leaderboard */}
+                  <GoogleAdSenseBanner format="leaderboard" />
 
-              {/* Studio Metadata Settings Bar */}
-              <div className="bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-xl">
+                  {/* Studio Metadata Settings Bar */}
+                  <div className="bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-xl">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   <div>
                     <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1.5">
@@ -3659,9 +3718,23 @@ export default function App() {
                   ))}
                 </AnimatePresence>
               </motion.div>
+                </>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Full-Suite Contributor & Legal Google Monetize Footer */}
+        <WebsiteFooter
+          onOpenPrivacy={() => setShowPrivacyModal(true)}
+          onOpenTerms={() => setShowTermsModal(true)}
+          onOpenDisclaimer={() => setShowDisclaimerModal(true)}
+          onOpenContact={() => setShowContactModal(true)}
+          onOpenEarnings={() => setShowEarningsModal(true)}
+          onOpenNicheRadar={() => setShowNicheRadarModal(true)}
+          onOpenGuideHub={() => setShowGuideHubModal(true)}
+          onOpenMultiCsv={() => setShowMultiCsvModal(true)}
+        />
       </motion.div>
 
       <AnimatePresence>
@@ -4291,6 +4364,57 @@ export default function App() {
         showToast={showToast}
       />
 
+      {/* Global Raycast/Linear-Style Command Palette (⌘K) */}
+      <CommandPaletteModal
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        onNavigateView={(view) => setCurrentView(view)}
+        onToggleMode={(mode) => {
+          setWorkspaceMode(mode);
+          localStorage.setItem('adobemeta_workspace_mode', mode);
+          showToast(`Switched to ${mode === 'spatial' ? 'Architectural Digital Space' : 'Classic Batch Grid'}`);
+        }}
+        workspaceMode={workspaceMode}
+        onStartProcessing={startBulkProcessing}
+        onExportAdobeCsv={exportBatchCSV}
+        onExportShutterstockCsv={exportBatchCSV}
+        onExportZip={exportBatchZip}
+        onOpenMultiCsv={() => setShowMultiCsvModal(true)}
+        onOpenToolsHub={() => setShowToolsHubModal(true)}
+        onOpenEarning={() => setShowEarningMonetizeModal(true)}
+        onOpenTool={(toolId) => {
+          switch (toolId) {
+            case 'vector_studio':
+              setShowVectorStudioModal(true);
+              break;
+            case 'reverse_prompt':
+              setShowReversePromptModal(true);
+              break;
+            case 'trademark_shield':
+              setShowTrademarkModal(true);
+              break;
+            case 'release_inspector':
+              setShowReleaseModal(true);
+              break;
+            case 'rank_predictor':
+              setShowRankModal(true);
+              break;
+            case 'niche_radar':
+              setShowNicheRadarModal(true);
+              break;
+            case 'contributor_arcade':
+              setShowArcadeModal(true);
+              break;
+            default:
+              setShowToolsHubModal(true);
+              break;
+          }
+        }}
+        onClearQueue={clearAllItems}
+        itemsCount={items.length}
+        completedCount={items.filter((i) => i.result).length}
+      />
+
       {/* Automated Trademark & IP Shield Modal */}
       <TrademarkShieldModal
         isOpen={showTrademarkModal}
@@ -4410,6 +4534,23 @@ export default function App() {
         totalCount={items.length}
         showToast={showToast}
       />
+
+      {/* Google Monetization & Contributor Earning Center Modal */}
+      <EarningMonetizationModal
+        isOpen={showEarningMonetizeModal}
+        onClose={() => setShowEarningMonetizeModal(false)}
+        onOpenCalculator={() => setShowEarningsModal(true)}
+        onOpenNicheRadar={() => setShowNicheRadarModal(true)}
+      />
+
+      {/* GDPR & Google AdSense Compliant Cookie Banner */}
+      <CookieConsentBanner onOpenPrivacy={() => setShowPrivacyModal(true)} />
+
+      {/* Legal & Compliance Modals for AdSense Approval */}
+      <PrivacyPolicyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
+      <TermsOfServiceModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
+      <EarningsDisclaimerModal isOpen={showDisclaimerModal} onClose={() => setShowDisclaimerModal(false)} />
+      <ContactSupportModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />
 
       {/* Toast Notification */}
       <AnimatePresence>

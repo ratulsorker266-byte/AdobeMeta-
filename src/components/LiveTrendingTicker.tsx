@@ -46,7 +46,7 @@ export const LiveTrendingTicker: React.FC<LiveTrendingTickerProps> = ({
   };
 
   return (
-    <div className="w-full bg-slate-950/80 border-y border-slate-800/80 backdrop-blur-md py-2 px-3 sm:px-4 overflow-hidden relative shadow-inner">
+    <div className="w-full bg-slate-950/60 backdrop-blur-md py-1.5 px-3 sm:px-4 overflow-hidden relative">
       <div className="max-w-7xl mx-auto flex items-center gap-3">
         {/* Left Live Badge */}
         <div className="flex items-center gap-1.5 shrink-0 bg-indigo-950/70 border border-indigo-500/30 px-2.5 py-1 rounded-full shadow-sm">

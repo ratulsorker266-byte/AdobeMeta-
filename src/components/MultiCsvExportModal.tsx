@@ -39,8 +39,8 @@ export const detectShutterstockCategory = (keywords: string[] = [], text: string
   check('Holidays', /\b(holiday|christmas|new year|easter|halloween|celebration|festive)\b/);
 
   if (matched.length === 0) return 'Miscellaneous';
-  // Shutterstock allows max 2 categories, separated by comma
-  return matched.slice(0, 2).join(', ');
+  // Return the single most relevant primary category to guarantee 100% error-free Shutterstock CSV parsing
+  return matched[0];
 };
 
 interface MultiCsvExportModalProps {
@@ -140,38 +140,51 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
 
   // 1. Adobe Stock CSV format: Filename,Title,Keywords,Category
   const getAdobeStockCsv = (forceRenamed?: boolean) => {
-    let csv = '\uFEFFFilename,Title,Keywords,Category\n';
+    let csv = '\uFEFFFilename,Title,Keywords,Category\r\n';
     completedItems.forEach((item) => {
       if (!item.result) return;
       const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
-      const title = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-      // Adobe Stock accepts up to 49 keywords
-      const keywords = (item.result.keywords || []).slice(0, 49).map((k) => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
-      csv += `"${filename}","${title}","${keywords}",""\n`;
+      let title = (item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+      // Adobe Stock August 2026 rule: Keep brief and under 70 characters
+      if (title.length > 70) {
+        const truncated = title.substring(0, 68);
+        const lastSpace = truncated.lastIndexOf(' ');
+        title = lastSpace > 30 ? truncated.substring(0, lastSpace) : truncated;
+      }
+      // Adobe Stock accepts up to 49 keywords, ordered by priority
+      const keywords = (item.result.keywords || [])
+        .slice(0, 49)
+        .map((k) => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+        .join(', ')
+        .replace(/"/g, '""');
+      csv += `"${filename}","${title}","${keywords}",""\r\n`;
     });
     return csv;
   };
 
   // 2. Shutterstock CSV format: Filename,Description,Keywords,Categories
   const getShutterstockCsv = (forceRenamed?: boolean) => {
-    let csv = '\uFEFFFilename,Description,Keywords,Categories\n';
+    let csv = '\uFEFFFilename,Description,Keywords,Categories\r\n';
     completedItems.forEach((item) => {
       if (!item.result) return;
       const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
-      let desc = (item.result.recommendedTitle || item.result.shortDescription || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+      let desc = (item.result.recommendedTitle || item.result.shortDescription || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
       // Shutterstock rule: Description must have at least 5 words!
       const words = desc.split(/\s+/).filter(Boolean);
       if (words.length < 5) {
-        desc = `Commercial stock visual of ${desc || 'creative subject'}`;
+        desc = `Commercial stock visual of ${desc || 'creative subject'} in high quality`;
       }
-      // Shutterstock requires min 7, max 50 keywords
-      let keywordsArr = (item.result.keywords || []).map((k) => k.trim()).filter(Boolean);
+      // Shutterstock requires min 7, max 50 keywords with NO internal commas
+      let keywordsArr = (item.result.keywords || [])
+        .map((k) => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim())
+        .filter(Boolean);
       if (keywordsArr.length < 7) {
         keywordsArr = [...keywordsArr, 'commercial', 'visual', 'photography', 'creative', 'stock', 'royalty free', 'editorial'].slice(0, 7);
       }
       const keywords = keywordsArr.slice(0, 50).join(', ').replace(/"/g, '""');
       const categories = detectShutterstockCategory(keywordsArr, desc).replace(/"/g, '""');
-      csv += `"${filename}","${desc}","${keywords}","${categories}"\n`;
+      csv += `"${filename}","${desc}","${keywords}","${categories}"\r\n`;
     });
     return csv;
   };

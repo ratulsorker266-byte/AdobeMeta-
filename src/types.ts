@@ -1,10 +1,36 @@
 export type TargetMarketplace = 'adobe_stock' | 'shutterstock' | 'freepik' | '123rf' | 'dreamstime' | 'vecteezy' | 'getty';
 
+export type SearchIntentData = {
+  primaryIntent: string;
+  secondaryIntent?: string;
+  commercialUseCases: string[];
+  targetBuyer?: string;
+};
+
+export type VisualAnalysisData = {
+  subject: string;
+  action?: string;
+  environment?: string;
+  lightingMood?: string;
+  composition?: string;
+};
+
+export type SmartWarning = {
+  type: 'info' | 'suggestion' | 'warning' | 'critical';
+  message: string;
+};
+
 export type MetadataResult = {
   recommendedTitle: string;
   shortDescription: string;
   keywords: string[];
   priorityKeywords: string[];
+  category?: string;
+  searchIntent?: SearchIntentData;
+  visualAnalysis?: VisualAnalysisData;
+  visualTruthConfidence?: 'HIGH CONFIDENCE' | 'MEDIUM CONFIDENCE' | 'REVIEW NEEDED';
+  metadataQualityScore?: number;
+  smartWarnings?: SmartWarning[];
   overallSubmissionRiskScore: number;
   riskLabel: string;
   salesPotentialScore?: number;
