@@ -1,0 +1,9 @@
+# User-agent directives for Googlebot and other web crawlers
+User-agent: *
+Allow: /
+
+# Google AdSense Authorized Digital Sellers
+Allow: /ads.txt
+
+# Sitemap location
+Sitemap: https://ais-pre-doigpfihkslqf5mv7i6suv-339605403270.asia-southeast1.run.app/sitemap.xml

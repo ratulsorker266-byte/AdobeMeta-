@@ -1,167 +1,235 @@
 import React, { useState, useMemo } from 'react';
-import { Copy, Check, Filter, Sparkles, Layers } from 'lucide-react';
+import { Copy, Check, Sparkles, Compass, Target, Layers } from 'lucide-react';
+import { KeywordTaxonomy } from '../types';
 
 interface SemanticKeywordBadgesProps {
   keywords: string[];
+  keywordTaxonomy?: KeywordTaxonomy;
+  longTailKeywords?: string[];
   showToast: (msg: string) => void;
+  themeMode?: 'light' | 'dark';
 }
 
-type TagCategory = 'all' | 'subject' | 'mood' | 'concept' | 'technical';
+type TaxonomyFilter = 'all' | 'top10' | 'longtail' | 'subject' | 'concept' | 'action' | 'environment';
 
-export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({ keywords, showToast }) => {
-  const [activeFilter, setActiveFilter] = useState<TagCategory>('all');
+export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({ 
+  keywords, 
+  keywordTaxonomy,
+  longTailKeywords = [],
+  showToast,
+  themeMode = 'light'
+}) => {
+  const [activeFilter, setActiveFilter] = useState<TaxonomyFilter>('all');
   const [copiedType, setCopiedType] = useState<string | null>(null);
+  const isLight = themeMode === 'light';
 
-  // Categorize keywords heuristically based on stock taxonomy
-  const categorized = useMemo(() => {
-    const moodWords = new Set(['happy', 'joy', 'smile', 'warm', 'cozy', 'dramatic', 'bright', 'sunset', 'sunrise', 'golden', 'peaceful', 'calm', 'vibrant', 'dark', 'cinematic', 'lifestyle', 'friendly', 'serene', 'energetic', 'cheerful', 'moody', 'light']);
-    const conceptWords = new Set(['business', 'innovation', 'success', 'growth', 'finance', 'technology', 'future', 'freedom', 'health', 'wellness', 'connection', 'development', 'leadership', 'strategy', 'sustainability', 'teamwork', 'security', 'digital', 'smart', 'eco', 'investment', 'work', 'corporate', 'education']);
-    const technicalWords = new Set(['copy space', 'copyspace', 'isolated', 'white background', 'close up', 'closeup', 'macro', 'aerial', 'overhead', 'top view', 'flat lay', 'flatlay', 'horizontal', 'vertical', 'wide angle', 'panoramic', 'bokeh', 'shallow depth', 'focus', 'minimal', 'minimalist', 'clean background', 'cut out', 'studio shot']);
+  // Build classified keywords combining backend taxonomy & heuristic mapping
+  const classifiedKeywords = useMemo(() => {
+    const primarySet = new Set((keywordTaxonomy?.primarySubject || []).map(s => s.toLowerCase()));
+    const secondarySet = new Set((keywordTaxonomy?.secondarySubject || []).map(s => s.toLowerCase()));
+    const actionSet = new Set((keywordTaxonomy?.action || []).map(s => s.toLowerCase()));
+    const envSet = new Set((keywordTaxonomy?.environment || []).map(s => s.toLowerCase()));
+    const conceptSet = new Set((keywordTaxonomy?.commercialConcept || []).map(s => s.toLowerCase()));
+    const longTailSet = new Set((longTailKeywords || []).map(s => s.toLowerCase()));
 
     return (keywords || []).map((tag, idx) => {
       const lower = tag.toLowerCase().trim();
-      let category: 'subject' | 'mood' | 'concept' | 'technical' = 'subject';
+      const isTop10 = idx < 10;
+      const isLongTail = longTailSet.has(lower) || lower.split(/\s+/).length >= 3;
 
-      if (technicalWords.has(lower) || lower.includes('space') || lower.includes('view') || lower.includes('background') || lower.includes('angle') || lower.includes('shot')) {
-        category = 'technical';
-      } else if (conceptWords.has(lower) || lower.includes('tech') || lower.includes('future') || lower.includes('lead') || lower.includes('market')) {
+      let category: 'subject' | 'concept' | 'action' | 'environment' | 'other' = 'other';
+      if (primarySet.has(lower) || secondarySet.has(lower)) {
+        category = 'subject';
+      } else if (actionSet.has(lower) || lower.endsWith('ing')) {
+        category = 'action';
+      } else if (envSet.has(lower)) {
+        category = 'environment';
+      } else if (conceptSet.has(lower)) {
         category = 'concept';
-      } else if (moodWords.has(lower) || lower.includes('light') || lower.includes('sun') || lower.includes('warm') || lower.includes('happy')) {
-        category = 'mood';
       }
 
-      return { tag, category, isTop10: idx < 10 };
+      return {
+        tag,
+        isTop10,
+        isLongTail,
+        category,
+        index: idx + 1
+      };
     });
-  }, [keywords]);
+  }, [keywords, keywordTaxonomy, longTailKeywords]);
 
-  const filtered = categorized.filter((item) => {
-    if (activeFilter === 'all') return true;
-    return item.category === activeFilter;
-  });
+  const filtered = useMemo(() => {
+    switch (activeFilter) {
+      case 'top10':
+        return classifiedKeywords.filter(k => k.isTop10);
+      case 'longtail':
+        return classifiedKeywords.filter(k => k.isLongTail);
+      case 'subject':
+        return classifiedKeywords.filter(k => k.category === 'subject');
+      case 'concept':
+        return classifiedKeywords.filter(k => k.category === 'concept');
+      case 'action':
+        return classifiedKeywords.filter(k => k.category === 'action');
+      case 'environment':
+        return classifiedKeywords.filter(k => k.category === 'environment');
+      case 'all':
+      default:
+        return classifiedKeywords;
+    }
+  }, [classifiedKeywords, activeFilter]);
 
   const copyTags = (tagList: string[], type: string) => {
     navigator.clipboard.writeText(tagList.join(', '));
     setCopiedType(type);
-    showToast(`Copied ${type} to clipboard!`);
+    showToast(`✓ Copied ${type} to clipboard`);
     setTimeout(() => setCopiedType(null), 2000);
   };
 
   const top10 = (keywords || []).slice(0, 10);
 
-  const getBadgeStyle = (category: string, isTop10: boolean) => {
-    if (isTop10) {
-      return 'bg-indigo-950/70 text-indigo-200 border-indigo-500/40 ring-1 ring-indigo-500/20 font-semibold';
-    }
-    switch (category) {
-      case 'concept':
-        return 'bg-emerald-950/40 text-emerald-300 border-emerald-800/40 hover:border-emerald-600';
-      case 'mood':
-        return 'bg-purple-950/40 text-purple-300 border-purple-800/40 hover:border-purple-600';
-      case 'technical':
-        return 'bg-amber-950/40 text-amber-300 border-amber-800/40 hover:border-amber-600';
-      default:
-        return 'bg-blue-950/40 text-blue-300 border-blue-800/40 hover:border-blue-600';
-    }
-  };
-
   return (
-    <div className="space-y-3 pt-2">
-      {/* Category filter pills & Quick Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+    <div className="space-y-3 pt-1">
+      {/* Category Filter Bar & Quick Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className={`flex flex-wrap items-center gap-1 ${isLight ? 'bg-slate-100/90 border-slate-200' : 'bg-slate-900 border-slate-800'} p-1 rounded-xl border text-xs`}>
           <button
+            type="button"
             onClick={() => setActiveFilter('all')}
-            className={`px-2.5 py-1 rounded-lg transition font-medium text-[11px] ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
               activeFilter === 'all'
-                ? 'bg-slate-800 text-white shadow'
-                : 'text-slate-400 hover:text-slate-200'
+                ? isLight ? 'bg-white text-slate-900 shadow-xs border border-slate-200' : 'bg-slate-800 text-white shadow-xs'
+                : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             All ({keywords.length})
           </button>
+
           <button
-            onClick={() => setActiveFilter('subject')}
-            className={`px-2 py-1 rounded-lg transition font-medium text-[11px] flex items-center gap-1 ${
-              activeFilter === 'subject'
-                ? 'bg-blue-600 text-white shadow'
-                : 'text-blue-400 hover:text-blue-300'
+            type="button"
+            onClick={() => setActiveFilter('top10')}
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1.5 cursor-pointer ${
+              activeFilter === 'top10'
+                ? isLight ? 'bg-indigo-600 text-white shadow-xs' : 'bg-indigo-600 text-white shadow-xs'
+                : isLight ? 'text-indigo-700 hover:text-indigo-900' : 'text-indigo-400 hover:text-indigo-300'
             }`}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+            <Sparkles className="w-3 h-3" />
+            <span>Top 10 Heavyweight</span>
+          </button>
+
+          {longTailKeywords.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveFilter('longtail')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1.5 cursor-pointer ${
+                activeFilter === 'longtail'
+                  ? isLight ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-600 text-white shadow-xs'
+                  : isLight ? 'text-emerald-700 hover:text-emerald-900' : 'text-emerald-400 hover:text-emerald-300'
+              }`}
+            >
+              <Target className="w-3 h-3" />
+              <span>Long-Tail Intent</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setActiveFilter('subject')}
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
+              activeFilter === 'subject'
+                ? isLight ? 'bg-slate-800 text-white' : 'bg-slate-700 text-white'
+                : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
             Subject
           </button>
+
           <button
+            type="button"
             onClick={() => setActiveFilter('concept')}
-            className={`px-2 py-1 rounded-lg transition font-medium text-[11px] flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
               activeFilter === 'concept'
-                ? 'bg-emerald-600 text-white shadow'
-                : 'text-emerald-400 hover:text-emerald-300'
+                ? isLight ? 'bg-slate-800 text-white' : 'bg-slate-700 text-white'
+                : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             Concept
-          </button>
-          <button
-            onClick={() => setActiveFilter('mood')}
-            className={`px-2 py-1 rounded-lg transition font-medium text-[11px] flex items-center gap-1 ${
-              activeFilter === 'mood'
-                ? 'bg-purple-600 text-white shadow'
-                : 'text-purple-400 hover:text-purple-300'
-            }`}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-            Mood
-          </button>
-          <button
-            onClick={() => setActiveFilter('technical')}
-            className={`px-2 py-1 rounded-lg transition font-medium text-[11px] flex items-center gap-1 ${
-              activeFilter === 'technical'
-                ? 'bg-amber-600 text-white shadow'
-                : 'text-amber-400 hover:text-amber-300'
-            }`}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-            Composition
           </button>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-1.5">
+        {/* 1-Click Copy Controls */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
-            onClick={() => copyTags(top10, 'Top 10 High-Ranking Tags')}
-            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-950 border border-indigo-500/40 hover:bg-indigo-900/60 text-indigo-300 flex items-center gap-1 transition shadow-sm"
-            title="Adobe Stock weights the first 10 keywords heaviest in search algorithm"
+            type="button"
+            onClick={() => copyTags(top10, 'Top 10 Keywords')}
+            className={`text-[11px] font-medium px-2.5 py-1 rounded-lg border transition flex items-center gap-1 cursor-pointer ${
+              isLight
+                ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+                : 'bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border-indigo-500/40'
+            }`}
+            title="Adobe Stock weights first 10 keywords heaviest in search algorithm"
           >
-            <Sparkles className="w-3 h-3 text-indigo-400" />
-            <span>{copiedType === 'Top 10 High-Ranking Tags' ? 'Copied Top 10' : 'Copy Top 10'}</span>
+            {copiedType === 'Top 10 Keywords' ? <Check className="w-3 h-3 text-emerald-500" /> : <Sparkles className="w-3 h-3 text-indigo-500" />}
+            <span>{copiedType === 'Top 10 Keywords' ? 'Copied' : 'Copy Top 10'}</span>
           </button>
 
           <button
-            onClick={() => copyTags(keywords, 'All Tags')}
-            className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1 transition"
+            type="button"
+            onClick={() => copyTags(keywords, 'All Keywords')}
+            className={`text-[11px] font-medium px-2.5 py-1 rounded-lg border transition flex items-center gap-1 cursor-pointer ${
+              isLight
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+            }`}
           >
-            {copiedType === 'All Tags' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
-            <span>{copiedType === 'All Tags' ? 'Copied' : 'Copy All'}</span>
+            {copiedType === 'All Keywords' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-slate-500" />}
+            <span>{copiedType === 'All Keywords' ? 'Copied' : 'Copy All'}</span>
           </button>
         </div>
       </div>
 
-      {/* Semantic Keyword Cloud */}
-      <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-2 bg-slate-950/60 rounded-xl border border-slate-800/80">
-        {filtered.map((item, idx) => (
-          <span
-            key={idx}
-            className={`text-xs px-2.5 py-1 rounded-lg border transition cursor-default select-all flex items-center gap-1.5 ${getBadgeStyle(
-              item.category,
-              item.isTop10
-            )}`}
-          >
-            {item.isTop10 && (
-              <span className="text-[9px] font-black opacity-60">#{idx + 1}</span>
-            )}
-            <span>{item.tag}</span>
-          </span>
-        ))}
+      {/* Semantic Keyword Badges Grid */}
+      <div className={`flex flex-wrap gap-1.5 max-h-52 overflow-y-auto p-3 rounded-xl border ${
+        isLight ? 'bg-slate-50/70 border-slate-200/90' : 'bg-slate-950/70 border-slate-800'
+      }`}>
+        {filtered.length === 0 ? (
+          <div className="text-xs text-slate-400 py-3 text-center w-full">
+            No keywords found under this taxonomy category.
+          </div>
+        ) : (
+          filtered.map((item, idx) => {
+            let badgeClasses = '';
+            if (item.isTop10) {
+              badgeClasses = isLight
+                ? 'bg-indigo-50/80 text-indigo-900 border-indigo-200/90 font-medium'
+                : 'bg-indigo-950/60 text-indigo-200 border-indigo-500/40 font-medium';
+            } else if (item.isLongTail) {
+              badgeClasses = isLight
+                ? 'bg-emerald-50/80 text-emerald-900 border-emerald-200/90'
+                : 'bg-emerald-950/40 text-emerald-300 border-emerald-500/40';
+            } else {
+              badgeClasses = isLight
+                ? 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:text-slate-900'
+                : 'bg-slate-900/80 text-slate-300 border-slate-800 hover:border-slate-700 hover:text-white';
+            }
+
+            return (
+              <span
+                key={`${item.tag}-${idx}`}
+                className={`text-xs px-2.5 py-1 rounded-lg border transition cursor-default select-all flex items-center gap-1.5 ${badgeClasses}`}
+              >
+                {item.isTop10 && (
+                  <span className={`text-[9px] font-mono font-bold px-1 rounded ${
+                    isLight ? 'bg-indigo-100 text-indigo-700' : 'bg-indigo-900/80 text-indigo-300'
+                  }`}>
+                    #{item.index}
+                  </span>
+                )}
+                <span>{item.tag}</span>
+              </span>
+            );
+          })
+        )}
       </div>
     </div>
   );

@@ -20,6 +20,28 @@ export type SmartWarning = {
   message: string;
 };
 
+export type KeywordTaxonomy = {
+  primarySubject: string[];
+  secondarySubject?: string[];
+  action: string[];
+  environment: string[];
+  commercialConcept: string[];
+  useCases: string[];
+  styleAndComposition: string[];
+  industry: string[];
+  longTailPhrases: string[];
+};
+
+export type MetadataVersion = {
+  versionNumber: number;
+  timestamp: number;
+  title: string;
+  keywords: string[];
+  category?: string;
+  mode?: 'initial' | 'more_precise' | 'more_commercial' | 'more_search_focused' | 'alternative_vocabulary' | 'manual_edit';
+  qualityScore?: number;
+};
+
 export type MetadataResult = {
   recommendedTitle: string;
   shortDescription: string;
@@ -28,6 +50,11 @@ export type MetadataResult = {
   category?: string;
   searchIntent?: SearchIntentData;
   visualAnalysis?: VisualAnalysisData;
+  keywordTaxonomy?: KeywordTaxonomy;
+  longTailKeywords?: string[];
+  commercialProblemSolved?: string;
+  versions?: MetadataVersion[];
+  activeVersionIndex?: number;
   visualTruthConfidence?: 'HIGH CONFIDENCE' | 'MEDIUM CONFIDENCE' | 'REVIEW NEEDED';
   metadataQualityScore?: number;
   smartWarnings?: SmartWarning[];

@@ -27,20 +27,39 @@ async function startServer() {
     res.json({ status: "ok", uptime: process.uptime() });
   });
 
-  const FALLBACK_TRENDS = {
-    currentTrends: [
-      { topic: "Authentic Work from Home", description: "Real people working from home, imperfect setups, diverse ages.", keywords: ["wfh", "remote work", "home office", "authentic", "real people", "laptop", "casual"] },
-      { topic: "Sustainable Living", description: "Eco-friendly practices, reusable items, solar panels, green energy.", keywords: ["sustainability", "eco friendly", "green", "solar", "renewable", "environment", "nature"] },
-      { topic: "Mental Health & Wellness", description: "Meditation, therapy, self-care routines, peaceful moments.", keywords: ["mental health", "wellness", "meditation", "self care", "therapy", "peace", "calm"] },
-      { topic: "Technology Integration", description: "AI concepts, smart home devices, virtual reality, modern tech.", keywords: ["technology", "ai", "smart home", "vr", "future", "digital", "innovation"] }
-    ],
-    upcomingTrends: [
-      { topic: "Seasonal Changes", targetMonth: "Next 2 Months", description: "Transition of seasons, weather changes, seasonal activities.", keywords: ["season", "weather", "transition", "nature", "outdoor", "change", "landscape"] },
-      { topic: "Holiday Prep", targetMonth: "Next 3-4 Months", description: "Preparing for major holidays, shopping, family gatherings.", keywords: ["holiday", "preparation", "shopping", "family", "gathering", "celebration", "festive"] },
-      { topic: "New Year Goals", targetMonth: "Next 3-4 Months", description: "Fitness, planning, healthy habits, fresh starts.", keywords: ["new year", "goals", "planning", "fitness", "health", "start", "resolution"] },
-      { topic: "Winter Activities", targetMonth: "Next 3 Months", description: "Snow sports, cozy indoor scenes, warm drinks.", keywords: ["winter", "snow", "cozy", "indoor", "warm", "cold", "sports"] }
-    ]
-  };
+  // Google AdSense Authorized Digital Sellers crawler endpoint
+  app.get("/ads.txt", (req, res) => {
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.send("google.com, pub-4920194820194820, DIRECT, f08c47fec0942fa0\n");
+  });
+
+  // Crawler directives & sitemap
+  app.get("/robots.txt", (req, res) => {
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.send("User-agent: *\nAllow: /\nSitemap: https://ais-pre-doigpfihkslqf5mv7i6suv-339605403270.asia-southeast1.run.app/sitemap.xml\n");
+  });
+
+  // Dynamic 5-Star XML Sitemap for Google search indexing and AdSense compliance
+  app.get("/sitemap.xml", (req, res) => {
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    const today = new Date().toISOString().split("T")[0];
+    const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://ais-pre-doigpfihkslqf5mv7i6suv-339605403270.asia-southeast1.run.app/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://ais-pre-doigpfihkslqf5mv7i6suv-339605403270.asia-southeast1.run.app/ads.txt</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>`;
+    res.send(sitemapXml);
+  });
 
   let cachedGeneralTrends: any = null;
   let lastTrendFetchTime = 0;
@@ -49,11 +68,13 @@ async function startServer() {
   const exhaustedDailyModels = new Set<string>();
 
   // Helper function to call Gemini with automatic fallback across reliable models
-  // Prioritizes gemini-flash-latest and gemini-3.1-flash-lite for near-instant response times
+  // Prioritizes gemini-3.8-flash, gemini-flash-latest, and gemini-3.1-flash-lite
   async function generateWithFallback(ai: GoogleGenAI, options: any, fastFirst: boolean = false) {
-    const candidateModels = fastFirst
-      ? ["gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.1-pro-preview"]
-      : ["gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.1-pro-preview"];
+    const candidateModels = [
+      "gemini-3.8-flash",
+      "gemini-flash-latest",
+      "gemini-3.1-flash-lite"
+    ];
 
     // Filter out models that have already exhausted their daily free tier quota in this process
     const activeCandidates = candidateModels.filter(m => !exhaustedDailyModels.has(m));
@@ -69,10 +90,17 @@ async function startServer() {
         });
       } catch (err: any) {
         lastError = err;
-        const errMsg = err?.message || String(err);
+        const errMsg = (err?.message || String(err)).toLowerCase();
 
-        // If daily limit exceeded for this model, mark it so subsequent calls don't waste time on it
-        if (errMsg.includes("GenerateRequestsPerDay") || errMsg.includes("limit: 20") || (errMsg.includes("429") && errMsg.includes("RESOURCE_EXHAUSTED"))) {
+        // If daily limit or token quota exceeded for this model, mark it so subsequent calls bypass it
+        if (
+          errMsg.includes("generaterequestsperday") || 
+          errMsg.includes("limit: 20") || 
+          errMsg.includes("resource_exhausted") || 
+          errMsg.includes("quota exceeded") ||
+          errMsg.includes("tokens_per_model") ||
+          errMsg.includes("429")
+        ) {
           exhaustedDailyModels.add(model);
         }
 
@@ -81,7 +109,7 @@ async function startServer() {
           await new Promise(r => setTimeout(r, 200));
         }
 
-        console.warn(`Model ${model} attempt failed: ${errMsg}. Trying next fallback...`);
+        console.warn(`Model ${model} attempt failed: ${err?.message}. Trying next fallback...`);
       }
     }
     throw lastError || new Error("All AI models failed to respond.");
@@ -373,7 +401,7 @@ Key Directives:
       }
       if (!apiKeyToUse && isGeneral) {
         const nowMonth = new Date().toLocaleString('en-US', { month: 'long' }).toLowerCase();
-        return res.json(MONTHLY_TRENDS_KNOWLEDGE[nowMonth] || FALLBACK_TRENDS);
+        return res.json(MONTHLY_TRENDS_KNOWLEDGE[nowMonth] || MONTHLY_TRENDS_KNOWLEDGE['october']);
       }
       
       const prompt = `
@@ -437,20 +465,21 @@ Key Directives:
       });
 
       // Ensure all critical sections are present, merging with curated month DB if necessary
+      const defaultMonthData = MONTHLY_TRENDS_KNOWLEDGE[new Date().toLocaleString('en-US', { month: 'long' }).toLowerCase()] || MONTHLY_TRENDS_KNOWLEDGE['october'];
       if (!data.currentTrends || !Array.isArray(data.currentTrends) || data.currentTrends.length === 0) {
-        data.currentTrends = matchedMonth?.currentTrends || FALLBACK_TRENDS.currentTrends;
+        data.currentTrends = matchedMonth?.currentTrends || defaultMonthData.currentTrends;
       }
       if (!data.upcomingTrends || !Array.isArray(data.upcomingTrends) || data.upcomingTrends.length === 0) {
-        data.upcomingTrends = matchedMonth?.upcomingTrends || FALLBACK_TRENDS.upcomingTrends;
+        data.upcomingTrends = matchedMonth?.upcomingTrends || defaultMonthData.upcomingTrends;
       }
       if (!data.whatToCreate || !Array.isArray(data.whatToCreate) || data.whatToCreate.length === 0) {
-        data.whatToCreate = matchedMonth?.whatToCreate || [];
+        data.whatToCreate = matchedMonth?.whatToCreate || defaultMonthData.whatToCreate;
       }
-      if (!data.monthOverview && matchedMonth?.monthOverview) {
-        data.monthOverview = matchedMonth.monthOverview;
+      if (!data.monthOverview && (matchedMonth?.monthOverview || defaultMonthData.monthOverview)) {
+        data.monthOverview = matchedMonth?.monthOverview || defaultMonthData.monthOverview;
       }
-      if (!data.monthName && matchedMonth?.monthName) {
-        data.monthName = matchedMonth.monthName;
+      if (!data.monthName && (matchedMonth?.monthName || defaultMonthData.monthName)) {
+        data.monthName = matchedMonth?.monthName || defaultMonthData.monthName;
       }
       if (isGeneral) {
         cachedGeneralTrends = data;
@@ -466,7 +495,7 @@ Key Directives:
       const isGeneral = !req.body.searchQuery || req.body.searchQuery.trim() === '';
       if (isGeneral) {
         const nowMonth = new Date().toLocaleString('en-US', { month: 'long' }).toLowerCase();
-        return res.json(MONTHLY_TRENDS_KNOWLEDGE[nowMonth] || FALLBACK_TRENDS);
+        return res.json(MONTHLY_TRENDS_KNOWLEDGE[nowMonth] || MONTHLY_TRENDS_KNOWLEDGE['october']);
       }
       res.status(500).json({ error: cleanErrorMessage(error) });
     }
@@ -672,7 +701,23 @@ Key Directives:
 
   app.post("/api/analyze", async (req, res) => {
     try {
-      const { imageBase64, mimeType, marketplace, isAiGenerated, tier, assetType, language, fastMode, vectorMetadataHint, psdMetadataHint, fileName } = req.body;
+      const { 
+        imageBase64, 
+        mimeType, 
+        marketplace, 
+        isAiGenerated, 
+        tier, 
+        assetType, 
+        language, 
+        fastMode, 
+        vectorMetadataHint, 
+        psdMetadataHint, 
+        fileName,
+        regenerationMode,
+        previousTitle,
+        previousKeywords,
+        targetSearchQuery
+      } = req.body;
       const clientApiKey = req.headers['x-api-key'] as string;
       
       if (!imageBase64 || typeof imageBase64 !== "string" || !mimeType) {
@@ -712,69 +757,101 @@ DIRECTIVE FOR VECTOR METADATA: Synthesize these hints with visual analysis to ge
 DIRECTIVE FOR PHOTOSHOP PSD: Generate high-ranking commercial microstock title and keywords tailored to graphic designers seeking Photoshop templates, mockups, social media kits, or print-ready layouts on ${marketConfig.name}. Highlight editable layers, smart objects, and commercial utility.`;
       }
 
-      // Unified Gemini analysis call tailored strictly to target marketplace and asset format
+      let regenDirectives = "";
+      if (regenerationMode === 'rank_one_guarantee' || targetSearchQuery) {
+        const customTarget = targetSearchQuery && typeof targetSearchQuery === 'string' ? targetSearchQuery.trim() : '';
+        regenDirectives = `\nREGENERATION DIRECTIVE (⚡ RANK #1 SEARCH DOMINANCE):
+- OBJECTIVE: Engineer this metadata so that when a commercial buyer searches for this visual, THIS IMAGE APPEARS IN RANK #1!
+${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- Identify the exact #1 commercial search phrase paying buyers type to purchase this specific visual."}
+- TITLE REQUIREMENT: The first 4 to 8 words of the Title MUST directly contain this exact primary search phrase.
+- KEYWORD SLOTS 1 TO 5: Slot 1 MUST be the exact primary search query phrase. Slots 2-5 MUST be the most critical constituent nouns, dynamic verbs, and commercial intent tokens. This ensures a 100% relevance score on Adobe Stock (which weights slots 1-10 with 75% search influence) and Google Images vector search.`;
+      } else if (regenerationMode === 'more_precise') {
+        regenDirectives = `\nREGENERATION DIRECTIVE (PRECISION FOCUS): The user requested hyper-specific technical precision. Focus meticulously on granular anatomical/object features, specific technical attributes, material finishes, and precision industry nomenclature.`;
+      } else if (regenerationMode === 'more_commercial') {
+        regenDirectives = `\nREGENERATION DIRECTIVE (COMMERCIAL FOCUS): Focus deeply on enterprise monetization, corporate ROI, business problems solved, marketing utility, and commercial buyer intent (e.g. B2B software, corporate communication, editorial cover).`;
+      } else if (regenerationMode === 'more_search_focused') {
+        regenDirectives = `\nREGENERATION DIRECTIVE (SEO & SEARCH FOCUS): Maximize organic search discoverability. Generate high-volume search queries and 3-5 word high-intent long-tail phrases that commercial art directors actively type into stock search engines.`;
+      } else if (regenerationMode === 'alternative_vocabulary') {
+        const prevTags = Array.isArray(previousKeywords) ? previousKeywords.slice(0, 15).join(', ') : '';
+        regenDirectives = `\nREGENERATION DIRECTIVE (ALTERNATIVE VOCABULARY): Provide a fresh, distinct vocabulary spectrum. Avoid simply repeating these previous keywords: [${prevTags}]. Use sophisticated alternative synonyms and fresh editorial phrasing while remaining 100% faithful to the visual truth.`;
+      }
+
+      // Unified Gemini analysis call tailored strictly to target marketplace, buyer intent, and asset format
       const prompt = `
-      You are a World-Class Microstock Contributor SEO Director and Senior ${marketConfig.name} Inspector.
-      Target Marketplace: ${marketConfig.name.toUpperCase()} (Strict adherence to ${marketConfig.name} rules required).
+      You are an Elite Commercial Creative Intelligence & Stock SEO Director.
+      Target Marketplace: ${marketConfig.name.toUpperCase()} (Strict adherence to ${marketConfig.name} guidelines).
       Asset Type: ${assetConfig.name}.
       AI Generated: ${isAiGenerated ? 'Yes' : 'No'}.
       Language Requirement: MUST write Title, Description, and Keywords strictly in ${language || "English"}.
       ${extraContextDirectives}
+      ${regenDirectives}
       
-      STRICT COMMERCIAL METADATA DIRECTIVES FOR ${marketConfig.name.toUpperCase()}:
+      CORE PRINCIPLES OF COMMERCIAL METADATA INTELLIGENCE:
+      Buyers do not search solely for what an image literally contains. They search for:
+      - WHAT IT REPRESENTS (Symbolism, metaphor, conceptual meaning)
+      - WHAT IT COMMUNICATES (Message, tone, corporate values, emotion)
+      - WHERE IT CAN BE USED (Hero banner, brochure, editorial, app screen, social ad)
+      - WHAT BUSINESS PROBLEM IT VISUALIZES (e.g., cloud security bottleneck, remote team burnout, clean energy transition)
+      - WHAT CONCEPT IT SUPPORTS (Innovation, resilience, growth, sustainability)
       
-      1. VISUAL-FIRST TRUTH ANALYSIS (Analyze visual elements BEFORE drafting metadata):
+      STRICT DIRECTIVES:
+      1. VISUAL GROUND-TRUTH (Never hallucinate or invent objects not reasonably supported by the visual):
          - "visualSubject": Primary subject visible in the image.
          - "visualAction": Specific action, motion, or state.
          - "visualEnvironment": Setting (indoors, outdoors, urban, studio, landscape).
          - "visualLighting": Lighting style (natural light, golden hour, softbox, ambient, bright).
          - "visualComposition": Perspective / camera framing (close-up, aerial, wide angle, eye level).
-         - VISUAL TRUTH RULE: Never fabricate or invent visual information. If something cannot be verified with confidence, do NOT invent it.
       
-      2. SEARCH INTENT ENGINE (Think like a commercial buyer):
+      2. COMMERCIAL REASONING & SEARCH INTENT:
          - "primarySearchIntent": The exact 3-5 word phrase a commercial buyer would type to discover this asset.
          - "secondarySearchIntent": Supporting commercial search phrase.
-         - "commercialUseCases": 3 to 5 realistic commercial applications (e.g. "Corporate Website Hero", "B2B Marketing Banner", "Healthcare Brochure", "Social Media Campaign").
-         - "targetBuyer": Who would purchase this visual (e.g. "Creative Directors, Marketing Managers, Editorial Publishers").
+         - "commercialProblemSolved": 1 sentence summarizing the business/conceptual problem this image visualizes.
+         - "commercialUseCases": 3 to 5 realistic commercial applications (e.g. "Corporate Website Hero", "B2B Marketing Banner", "Annual Sustainability Report", "Healthcare Social Campaign").
+         - "targetBuyer": Specific industry buyer (e.g. "Fintech Marketing Directors, Healthcare Publishers, Creative Agencies").
       
-      3. TITLE REQUIREMENTS FOR ${marketConfig.name.toUpperCase()}:
+      3. LONG-TAIL SEARCH INTELLIGENCE:
+         - "longTailKeywords": 5 to 8 high-converting, commercially meaningful 3-5 word search phrases supported directly by the asset (e.g. "small business owner reviewing quarterly budget", "clean energy solar power station", "sustainable remote team collaboration").
+      
+      4. KEYWORD TAXONOMY CLASSIFICATION:
+         Classify the vocabulary into internal roles:
+         - primarySubject: 4-8 literal nouns describing the main subject.
+         - secondarySubject: 3-6 supporting objects, materials, or props.
+         - action: 3-5 specific dynamic verbs or physical states.
+         - environment: 3-5 location, background, and lighting terms.
+         - commercialConcept: 4-6 business/abstract themes (e.g. "digital transformation", "financial stability", "environmental stewardship").
+         - useCases: 3-5 placement formats ("hero header", "editorial", "website banner").
+         - styleAndComposition: 3-5 visual attributes ("aerial view", "minimalist", "copy space", "selective focus").
+         - industry: 2-4 economic verticals ("Technology", "Healthcare", "Finance", "Renewable Energy").
+         - longTailPhrases: 4-6 multi-word search phrases.
+      
+      5. TITLE REQUIREMENTS FOR ${marketConfig.name.toUpperCase()}:
          ${marketConfig.titleDirectives}
-         - Must explicitly describe: Main subject + specific action/state + environment/background.
-         - NO keyword spamming in title. NO repetitive words.
+         - Must sound like professional stock metadata written by someone who understands commercial photography & visual communication.
+         - Under 70 characters for Adobe Stock. Concise, descriptive, natural, searchable, commercial.
+         - NO keyword spamming in title. NO poetic fluff. NO robotic repetitive phrases.
       
-      4. KEYWORD PRECISION FOR ${marketConfig.name.toUpperCase()} (${marketConfig.targetKeywordCount} unique keywords):
+      6. KEYWORD HIERARCHY & ORDERING FOR ${marketConfig.name.toUpperCase()} (${marketConfig.targetKeywordCount} unique keywords):
          ${marketConfig.keywordDirectives}
-         - HIERARCHY:
-           * Ranks 1 to 10: HIGHEST-VALUE BUYER SEARCH PHRASES & CORE SUBJECT.
-           * Ranks 11 to 20: Strong supporting visual elements and specific actions.
-           * Ranks 21 to 30: Context, commercial use cases, setting, perspective.
-           * Ranks 31 to 40+: Conceptual themes, emotions, and relevant industry terms.
-         - STRICT PROHIBITIONS:
-           * NO trademarked brand names (e.g. no "iPhone", "Photoshop", "Instagram", "Sony", "Nike") unless explicitly historical/editorial.
-           * NO duplicate or near-identical keyword spam.
-           * NO camera equipment terms (e.g., no "Canon 5D", "iso 100", "f/1.8").
-           * Each keyword must be clean lowercase single or 2-word phrase.
+         - SLOTS 1 TO 10 MUST BE THE STRONGEST SEARCH CONCEPTS (Primary subject + dynamic action + highest-intent long-tail phrases). Adobe Stock weights these heaviest.
+         - Slots 11 to 25: Secondary subject, environment, industry context, and commercial use cases.
+         - Slots 26+: Conceptual themes, visual composition, and emotional relevance.
+         - NO trademarked brands (e.g. no iPhone, Sony, Nike, MacBook).
+         - NO duplicate keywords or plural/singular duplicates.
       
-      5. ADOBE STOCK CATEGORY:
-         - Select the most accurate category from:
-           "Business", "People", "Technology", "Graphic Resources", "The Environment", "Food", "Drinks", "Landscapes", "Buildings and Architecture", "Animals", "Lifestyle", "Industry", "Plants and Flowers", "Culture and Religion", "Science", "Social Issues", "Sports", "Transport", "Travel", "States of Mind", "Hobbies and Leisure".
+      7. ADOBE STOCK CATEGORY:
+         Select the most accurate category from:
+         "Business", "People", "Technology", "Graphic Resources", "The Environment", "Food", "Drinks", "Landscapes", "Buildings and Architecture", "Animals", "Lifestyle", "Industry", "Plants and Flowers", "Culture and Religion", "Science", "Social Issues", "Sports", "Transport", "Travel", "States of Mind", "Hobbies and Leisure".
       
-      6. QUALITY & RELEVANCE SCORING:
-         - "metadataQualityScore": 0-100 internal score based on visual accuracy, primary keyword strength, natural language, and anti-spam cleanliness.
-         - "visualTruthConfidence": "HIGH CONFIDENCE" | "MEDIUM CONFIDENCE" | "REVIEW NEEDED".
-         - "salesPotentialScore": 0-100 commercial buyer demand score on ${marketConfig.name}.
-         - "technicalQualityScore": 0-100 evaluation of focus, lighting balance, exposure, and clean artifact-free pixels.
-         - "acceptanceProbability": Realistic score (0-100%) of passing microstock inspection.
-      
-      7. TRADEMARK & INTELLECTUAL PROPERTY SHIELD:
-         - Check apparel, footwear, tech gadgets, car grills, recognizable building silhouettes.
+      8. QUALITY CONTROL & LEGAL SHIELD:
+         - "metadataQualityScore": 0-100 internal quality score based on visual accuracy and search optimization.
+         - "salesPotentialScore": 0-100 buyer demand score.
+         - "technicalQualityScore": 0-100 technical quality evaluation.
+         - "acceptanceProbability": 0-100 percentage.
          - "detectedTrademarks": list any detected logos/trademarks or ["None detected"].
          - "trademarkRisk": "none" | "low" | "medium" | "high".
-      
-      8. LEGAL RELEASE COMPLIANCE:
-         - "modelReleaseRequired": true if any recognizable human face, profile, or distinctive body feature is present.
-         - "propertyReleaseRequired": true if private property, modern architectural landmark, recognizable interior, or vehicle is present.
-         - "releaseExplanation": Clear, actionable advice for contributor.
+         - "modelReleaseRequired": true if recognizable people are present.
+         - "propertyReleaseRequired": true if private property/landmarks present.
+         - "releaseExplanation": Clear legal advice.
       `;
 
       const response = await callGeminiUnified(clientApiKey, async (ai) => {
@@ -796,6 +873,8 @@ DIRECTIVE FOR PHOTOSHOP PSD: Generate high-ranking commercial microstock title a
                 shortDescription: { type: Type.STRING },
                 keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
                 priorityKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+                longTailKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+                commercialProblemSolved: { type: Type.STRING },
                 category: { type: Type.STRING, description: "Adobe Stock category" },
                 visualSubject: { type: Type.STRING },
                 visualAction: { type: Type.STRING },
@@ -806,6 +885,20 @@ DIRECTIVE FOR PHOTOSHOP PSD: Generate high-ranking commercial microstock title a
                 secondarySearchIntent: { type: Type.STRING },
                 commercialUseCases: { type: Type.ARRAY, items: { type: Type.STRING } },
                 targetBuyer: { type: Type.STRING },
+                keywordTaxonomy: {
+                  type: Type.OBJECT,
+                  properties: {
+                    primarySubject: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    secondarySubject: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    action: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    environment: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    commercialConcept: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    useCases: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    styleAndComposition: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    industry: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    longTailPhrases: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  }
+                },
                 visualTruthConfidence: { type: Type.STRING, description: "HIGH CONFIDENCE | MEDIUM CONFIDENCE | REVIEW NEEDED" },
                 metadataQualityScore: { type: Type.INTEGER },
                 salesPotentialScore: { type: Type.INTEGER, description: "Score from 0 to 100 indicating viral/sales potential" },
@@ -904,6 +997,107 @@ DIRECTIVE FOR PHOTOSHOP PSD: Generate high-ranking commercial microstock title a
 
       // Adobe Stock Category
       parsed.category = parsed.category || "Business";
+
+      // Long-tail search intelligence layer post-processing
+      const rawLongTail = Array.isArray(parsed.longTailKeywords) ? parsed.longTailKeywords : [];
+      const sanitizedLongTail: string[] = [];
+      const seenLongTail = new Set<string>();
+      for (const lt of rawLongTail) {
+        if (!lt) continue;
+        const norm = String(lt).toLowerCase().replace(/[^\w\s-]/g, '').trim();
+        if (norm.length > 5 && !seenLongTail.has(norm)) {
+          seenLongTail.add(norm);
+          sanitizedLongTail.push(norm);
+        }
+      }
+      parsed.longTailKeywords = sanitizedLongTail.slice(0, 8);
+
+      // Commercial Problem / Concept Solved
+      parsed.commercialProblemSolved = typeof parsed.commercialProblemSolved === 'string' && parsed.commercialProblemSolved.trim().length > 0
+        ? parsed.commercialProblemSolved.trim()
+        : `Illustrates commercial ${parsed.category || 'Business'} workflow with authentic visual communication for marketing and editorial publications.`;
+
+      // Keyword Taxonomy Classification Post-Processing & Validation
+      const rawTaxonomy = parsed.keywordTaxonomy && typeof parsed.keywordTaxonomy === 'object' ? parsed.keywordTaxonomy : {};
+      const cleanTaxList = (arr: any) => {
+        if (!Array.isArray(arr)) return [];
+        return arr.map(x => String(x || '').toLowerCase().replace(/[^\w\s-]/g, '').trim()).filter(x => x.length > 1);
+      };
+
+      parsed.keywordTaxonomy = {
+        primarySubject: cleanTaxList(rawTaxonomy.primarySubject).slice(0, 8),
+        secondarySubject: cleanTaxList(rawTaxonomy.secondarySubject).slice(0, 6),
+        action: cleanTaxList(rawTaxonomy.action).slice(0, 5),
+        environment: cleanTaxList(rawTaxonomy.environment).slice(0, 5),
+        commercialConcept: cleanTaxList(rawTaxonomy.commercialConcept).slice(0, 6),
+        useCases: cleanTaxList(rawTaxonomy.useCases).slice(0, 5),
+        styleAndComposition: cleanTaxList(rawTaxonomy.styleAndComposition).slice(0, 5),
+        industry: cleanTaxList(rawTaxonomy.industry).slice(0, 4),
+        longTailPhrases: (cleanTaxList(rawTaxonomy.longTailPhrases).length > 0 ? cleanTaxList(rawTaxonomy.longTailPhrases) : parsed.longTailKeywords).slice(0, 6)
+      };
+
+      // Quality Control: Re-order keywords placing primary subject, dynamic action, and top long-tail intent at slots 1-10
+      const eliteFirstTen: string[] = [];
+      const usedTokens = new Set<string>();
+      const addElite = (term: string) => {
+        const norm = term.toLowerCase().trim();
+        if (norm.length > 1 && !usedTokens.has(norm)) {
+          usedTokens.add(norm);
+          eliteFirstTen.push(norm);
+        }
+      };
+
+      // 0. Rank #1 Search Locking: The exact search query MUST be locked at Slot #1 for maximum search ranking influence
+      if (targetSearchQuery && typeof targetSearchQuery === 'string' && targetSearchQuery.trim()) {
+        addElite(targetSearchQuery.trim());
+      } else if (parsed.primarySearchIntent && typeof parsed.primarySearchIntent === 'string' && parsed.primarySearchIntent.trim()) {
+        addElite(parsed.primarySearchIntent.trim());
+      }
+
+      // 1. Primary Subject
+      for (const ps of parsed.keywordTaxonomy.primarySubject) {
+        if (eliteFirstTen.length < 4) addElite(ps);
+      }
+      // 2. Dynamic Action
+      for (const act of parsed.keywordTaxonomy.action) {
+        if (eliteFirstTen.length < 6) addElite(act);
+      }
+      // 3. High-Intent Long Tail
+      for (const lt of parsed.longTailKeywords) {
+        if (eliteFirstTen.length < 8) addElite(lt);
+      }
+      // 4. Fill to 10 from priority or main keywords
+      for (const pk of sanitizedPriority) {
+        if (eliteFirstTen.length < 10) addElite(pk);
+      }
+      for (const kw of parsed.keywords) {
+        if (eliteFirstTen.length < 10) addElite(kw);
+      }
+
+      // Re-stitch entire keyword list: elite first 10 + remaining distinct keywords
+      const finalKeywords: string[] = [...eliteFirstTen];
+      for (const kw of parsed.keywords) {
+        if (!usedTokens.has(kw.toLowerCase().trim())) {
+          usedTokens.add(kw.toLowerCase().trim());
+          finalKeywords.push(kw);
+        }
+      }
+      parsed.keywords = finalKeywords.slice(0, marketConfig.maxKeywords);
+      parsed.priorityKeywords = eliteFirstTen.slice(0, 10);
+
+      // Metadata Versioning Initialization
+      parsed.versions = [
+        {
+          versionNumber: 1,
+          timestamp: Date.now(),
+          title: parsed.recommendedTitle,
+          keywords: parsed.keywords,
+          category: parsed.category,
+          mode: regenerationMode || 'initial',
+          qualityScore: parsed.metadataQualityScore
+        }
+      ];
+      parsed.activeVersionIndex = 0;
 
       // Visual Analysis Data
       parsed.visualAnalysis = {
