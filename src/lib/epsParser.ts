@@ -37,6 +37,40 @@ export function isEpsFile(file: File): boolean {
  */
 export async function parseEpsFile(file: File): Promise<ParsedEpsData> {
   try {
+    // Convert file to base64 cleanly using native FileReader
+    const epsBase64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const res = (reader.result as string) || '';
+        resolve(res.includes(',') ? res.split(',')[1] : res);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    // PRIORITY 1: High-Performance Server-Side Multi-Stage EPS Visual Engine
+    // Renders the true visual vector artwork into a crisp, high-res JPEG image, exactly as Adobe Stock does!
+    try {
+      const res = await fetch('/api/render-eps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ epsBase64, fileName: file.name })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.previewUrl) {
+          return {
+            previewUrl: data.previewUrl,
+            base64ForAi: data.base64ForAi || data.previewUrl.split(',')[1] || '',
+            hasEmbeddedThumbnail: true,
+            metadata: data.metadata || {},
+          };
+        }
+      }
+    } catch (serverErr) {
+      console.warn('Server EPS render endpoint error, trying client-side extraction:', serverErr);
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
 
@@ -45,10 +79,10 @@ export async function parseEpsFile(file: File): Promise<ParsedEpsData> {
     // 0..3: 0xC5 0xD0 0xD3 0xC6 (magic number)
     // 4..7: PostScript start offset (little endian uint32)
     // 8..11: PostScript length
-    // 12..15: TIFF start offset
-    // 16..19: TIFF length
-    // 20..23: WMF start offset
-    // 24..27: WMF length
+    // 12..15: WMF start offset
+    // 16..19: WMF length
+    // 20..23: TIFF start offset
+    // 24..27: TIFF length
     const isDosBinary =
       uint8.length >= 30 &&
       uint8[0] === 0xc5 &&
@@ -65,8 +99,8 @@ export async function parseEpsFile(file: File): Promise<ParsedEpsData> {
       const view = new DataView(arrayBuffer);
       psStart = view.getUint32(4, true);
       psLength = view.getUint32(8, true);
-      tiffStart = view.getUint32(12, true);
-      tiffLength = view.getUint32(16, true);
+      tiffStart = view.getUint32(20, true);
+      tiffLength = view.getUint32(24, true);
     }
 
     // Attempt 1: If DOS header contains embedded TIFF thumbnail
@@ -282,8 +316,8 @@ function extractMetadataFromText(text: string): ParsedEpsData['metadata'] {
  * Attempts to extract an Illustrator JPEG/PNG thumbnail embedded in PostScript comments.
  */
 function extractIllustratorThumbnail(text: string): string | null {
-  // Look for %AI9_Data_Thumbnail or %AI12_Data_Thumbnail
-  const thumbMatch = text.match(/%(?:AI9|AI12)_Data_Thumbnail:\s*([0-9a-fA-F\s\r\n]+)/);
+  // Look for %AI9_Data_Thumbnail or %AI12_Data_Thumbnail or %AI7_Thumbnail block
+  const thumbMatch = text.match(/%(?:AI9|AI12|AI7)_Data_Thumbnail:?[^\r\n]*[\r\n]+([\s\S]*?)(?:%%EndPreview|%%EndComments|%AI9_Data_Thumbnail_End|[\r\n][^%])/i);
   if (thumbMatch && thumbMatch[1]) {
     try {
       const hex = thumbMatch[1].replace(/[\s\r\n%]+/g, '');
@@ -292,7 +326,7 @@ function extractIllustratorThumbnail(text: string): string | null {
         for (let i = 0; i < hex.length; i += 2) {
           bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
         }
-        // Check for JPEG magic number (0xFFD8) or PNG (0x89504E47)
+        // Check for JPEG magic number (0xFFD8)
         if (bytes[0] === 0xff && bytes[1] === 0xd8) {
           let binary = '';
           for (let i = 0; i < bytes.length; i++) {
@@ -300,6 +334,7 @@ function extractIllustratorThumbnail(text: string): string | null {
           }
           return `data:image/jpeg;base64,${btoa(binary)}`;
         }
+        // Check for PNG (0x89504E47)
         if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
           let binary = '';
           for (let i = 0; i < bytes.length; i++) {

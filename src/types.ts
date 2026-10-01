@@ -88,6 +88,7 @@ export interface BulkItem {
     title?: string;
     keywords?: string[];
     description?: string;
+    creator?: string;
     boundingBox?: any;
     colorPalette?: string[];
   };

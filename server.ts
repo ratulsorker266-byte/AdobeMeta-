@@ -1,8 +1,14 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
+import os from "os";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { findMonthlyTrends, MONTHLY_TRENDS_KNOWLEDGE } from "./monthlyTrends.js";
+
+const execFileAsync = promisify(execFile);
 
 async function startServer() {
   const app = express();
@@ -59,6 +65,286 @@ async function startServer() {
   </url>
 </urlset>`;
     res.send(sitemapXml);
+  });
+
+  // High-Performance Vector EPS / AI to JPEG Server-Side Visual Rendering Engine
+  // Renders PostScript vector files into true JPEG images with 100% visual fidelity for preview and Gemini vision analysis
+  app.post("/api/render-eps", async (req, res) => {
+    let tmpEps = "";
+    let tmpJpg = "";
+    let tmpTiff = "";
+    let tmpWmf = "";
+    let tmpPdf = "";
+    try {
+      const { epsBase64, fileName } = req.body;
+      if (!epsBase64 || typeof epsBase64 !== "string") {
+        return res.status(400).json({ error: "Missing EPS base64 data" });
+      }
+
+      const rawBase64 = (epsBase64.includes(",") ? epsBase64.split(",")[1] : epsBase64).replace(/\s+/g, "");
+      const buffer = Buffer.from(rawBase64, "base64");
+
+      if (buffer.length === 0) {
+        return res.status(400).json({ error: "Empty EPS buffer" });
+      }
+
+      // Check for DOS binary EPS header (0xC5 0xD0 0xD3 0xC6)
+      let psBuffer = buffer;
+
+      const isDosBinary =
+        buffer.length >= 30 &&
+        buffer[0] === 0xc5 &&
+        buffer[1] === 0xd0 &&
+        buffer[2] === 0xd3 &&
+        buffer[3] === 0xc6;
+
+      if (isDosBinary) {
+        const psStart = buffer.readUInt32LE(4);
+        const psLength = buffer.readUInt32LE(8);
+        if (psStart < buffer.length) {
+          psBuffer = buffer.subarray(psStart, Math.min(buffer.length, psStart + psLength));
+        }
+      }
+
+      const uid = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      tmpEps = path.join(os.tmpdir(), `vector_${uid}.eps`);
+      tmpJpg = path.join(os.tmpdir(), `vector_${uid}.jpg`);
+      tmpTiff = path.join(os.tmpdir(), `vector_${uid}.tiff`);
+      tmpWmf = path.join(os.tmpdir(), `vector_${uid}.wmf`);
+      tmpPdf = path.join(os.tmpdir(), `vector_${uid}.pdf`);
+
+      fs.writeFileSync(tmpEps, psBuffer);
+
+      let renderSuccess = false;
+
+      // STAGE 1: Embedded TIFF Thumbnail Extraction from DOS EPS Binary Header
+      // Almost all Adobe Illustrator EPS files (EPS 10, CS6, CC) store an authentic, pixel-perfect TIFF preview here!
+      if (isDosBinary && !renderSuccess) {
+        try {
+          const tiffStart = buffer.readUInt32LE(20);
+          const tiffLength = buffer.readUInt32LE(24);
+          if (tiffStart > 0 && tiffLength > 0 && tiffStart + tiffLength <= buffer.length) {
+            const tiffBytes = buffer.subarray(tiffStart, tiffStart + tiffLength);
+            // Verify TIFF header (0x49 0x49 'II' or 0x4D 0x4D 'MM')
+            if ((tiffBytes[0] === 0x49 && tiffBytes[1] === 0x49) || (tiffBytes[0] === 0x4d && tiffBytes[1] === 0x4d)) {
+              fs.writeFileSync(tmpTiff, tiffBytes);
+              await execFileAsync("convert", [tmpTiff, "-quality", "95", tmpJpg]);
+              if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
+                renderSuccess = true;
+              }
+            }
+          }
+        } catch (tiffErr: any) {
+          // Fall through to next stage
+        }
+      }
+
+      // STAGE 2: Embedded WMF Thumbnail Extraction from DOS EPS Binary Header
+      if (isDosBinary && !renderSuccess) {
+        try {
+          const wmfStart = buffer.readUInt32LE(12);
+          const wmfLength = buffer.readUInt32LE(16);
+          if (wmfStart > 0 && wmfLength > 0 && wmfStart + wmfLength <= buffer.length) {
+            const wmfBytes = buffer.subarray(wmfStart, wmfStart + wmfLength);
+            fs.writeFileSync(tmpWmf, wmfBytes);
+            await execFileAsync("convert", [tmpWmf, "-quality", "95", tmpJpg]);
+            if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
+              renderSuccess = true;
+            }
+          }
+        } catch (wmfErr: any) {
+          // Fall through to next stage
+        }
+      }
+
+      // STAGE 3: ps2pdf + Ghostscript PDF-to-JPEG Pipeline
+      // Converts PostScript vector streams reliably bypassing Illustrator-specific PostScript syntax quirks
+      if (!renderSuccess) {
+        try {
+          await execFileAsync("ps2pdf", [tmpEps, tmpPdf]);
+          if (fs.existsSync(tmpPdf) && fs.statSync(tmpPdf).size > 100) {
+            await execFileAsync("gs", [
+              "-q",
+              "-dSAFER",
+              "-dBATCH",
+              "-dNOPAUSE",
+              "-sDEVICE=jpeg",
+              "-dJPEGQ=95",
+              "-r150",
+              "-dFirstPage=1",
+              "-dLastPage=1",
+              `-sOutputFile=${tmpJpg}`,
+              tmpPdf
+            ]);
+            if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
+              renderSuccess = true;
+            }
+          }
+        } catch (ps2pdfErr: any) {
+          // Fall through to Ghostscript direct
+        }
+      }
+
+      // STAGE 4: Direct Ghostscript with -dEPSCrop and Alpha Smoothing
+      if (!renderSuccess) {
+        try {
+          await execFileAsync("gs", [
+            "-q",
+            "-dSAFER",
+            "-dBATCH",
+            "-dNOPAUSE",
+            "-sDEVICE=jpeg",
+            "-dJPEGQ=95",
+            "-r150",
+            "-dALLOWPSTRANSPARENCY",
+            "-dTextAlphaBits=4",
+            "-dGraphicsAlphaBits=4",
+            "-dEPSCrop",
+            `-sOutputFile=${tmpJpg}`,
+            tmpEps
+          ]);
+          if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
+            renderSuccess = true;
+          }
+        } catch (gsErr1: any) {
+          // Try fixed media
+          try {
+            await execFileAsync("gs", [
+              "-q",
+              "-dSAFER",
+              "-dBATCH",
+              "-dNOPAUSE",
+              "-sDEVICE=jpeg",
+              "-dJPEGQ=95",
+              "-r150",
+              "-dALLOWPSTRANSPARENCY",
+              "-dDEVICEWIDTHPOINTS=1024",
+              "-dDEVICEHEIGHTPOINTS=1024",
+              "-dFIXEDMEDIA",
+              `-sOutputFile=${tmpJpg}`,
+              tmpEps
+            ]);
+            if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
+              renderSuccess = true;
+            }
+          } catch (gsErr2: any) {}
+        }
+      }
+
+      // STAGE 5: Embedded Raw JPEG Stream Scanner in PostScript / PDF Stream
+      if (!renderSuccess) {
+        try {
+          for (let i = 0; i < buffer.length - 200; i++) {
+            if (buffer[i] === 0xff && buffer[i + 1] === 0xd8 && buffer[i + 2] === 0xff) {
+              let lastEoi = -1;
+              const maxSearch = Math.min(buffer.length - 1, i + 8000000);
+              for (let j = i + 100; j < maxSearch; j++) {
+                if (buffer[j] === 0xff && buffer[j + 1] === 0xd9) {
+                  lastEoi = j + 2;
+                }
+              }
+              if (lastEoi > i + 200) {
+                const candidateJpg = buffer.subarray(i, lastEoi);
+                fs.writeFileSync(tmpJpg, candidateJpg);
+                try {
+                  await execFileAsync("convert", [tmpJpg, "-quality", "95", tmpJpg]);
+                  if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
+                    renderSuccess = true;
+                    break;
+                  }
+                } catch (_) {}
+              }
+            }
+          }
+        } catch (rawJpegErr: any) {}
+      }
+
+      // Metadata extraction from PostScript text
+      const sampleText = psBuffer.toString("latin1", 0, Math.min(psBuffer.length, 120000));
+      const titleMatch = sampleText.match(/%%Title:\s*([^\r\n]+)/i);
+      const creatorMatch = sampleText.match(/%%Creator:\s*([^\r\n]+)/i);
+      const bboxMatch = sampleText.match(/%%BoundingBox:\s*(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)/i);
+      const kwMatch = sampleText.match(/%%Keywords:\s*([^\r\n]+)/i);
+      const subjectMatch = sampleText.match(/%%Subject:\s*([^\r\n]+)/i);
+
+      let extractedTitle = titleMatch ? titleMatch[1].trim().replace(/^\(+|\)+$/g, "") : "";
+      if (extractedTitle.startsWith("Untitled") || extractedTitle.length < 2) extractedTitle = "";
+
+      let extractedKeywords: string[] = [];
+      if (kwMatch && kwMatch[1]) {
+        extractedKeywords = kwMatch[1]
+          .split(/[,;]+/)
+          .map((k) => k.trim())
+          .filter((k) => k.length > 1);
+      }
+
+      let extractedBbox: any = null;
+      if (bboxMatch) {
+        const x1 = parseInt(bboxMatch[1], 10);
+        const y1 = parseInt(bboxMatch[2], 10);
+        const x2 = parseInt(bboxMatch[3], 10);
+        const y2 = parseInt(bboxMatch[4], 10);
+        extractedBbox = { x1, y1, x2, y2, width: Math.abs(x2 - x1), height: Math.abs(y2 - y1) };
+      }
+
+      // XMP Metadata Extraction
+      const xmpMatch = sampleText.match(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/i);
+      if (xmpMatch) {
+        const xmpText = xmpMatch[0];
+        const dcTitle = xmpText.match(/<dc:title>[\s\S]*?<rdf:li[^>]*>([^<]+)<\/rdf:li>/i);
+        if (dcTitle && dcTitle[1] && !extractedTitle) {
+          extractedTitle = dcTitle[1].trim();
+        }
+        const dcSubject = xmpText.match(/<dc:subject>[\s\S]*?<\/dc:subject>/i);
+        if (dcSubject && extractedKeywords.length === 0) {
+          const tagRegex = /<rdf:li>([^<]+)<\/rdf:li>/gi;
+          let m;
+          while ((m = tagRegex.exec(dcSubject[0])) !== null) {
+            if (m[1]) extractedKeywords.push(m[1].trim());
+          }
+        }
+      }
+
+      if (renderSuccess && fs.existsSync(tmpJpg)) {
+        const jpgBytes = fs.readFileSync(tmpJpg);
+        const base64Jpg = jpgBytes.toString("base64");
+        return res.json({
+          success: true,
+          previewUrl: `data:image/jpeg;base64,${base64Jpg}`,
+          base64ForAi: base64Jpg,
+          hasRealVisualPreview: true,
+          fileSize: buffer.length,
+          metadata: {
+            title: extractedTitle || undefined,
+            keywords: extractedKeywords.length > 0 ? extractedKeywords : undefined,
+            description: subjectMatch ? subjectMatch[1].trim() : undefined,
+            creator: creatorMatch ? creatorMatch[1].trim() : undefined,
+            boundingBox: extractedBbox
+          }
+        });
+      }
+
+      return res.json({
+        success: false,
+        error: "Ghostscript rendering incomplete",
+        metadata: {
+          title: extractedTitle || undefined,
+          keywords: extractedKeywords.length > 0 ? extractedKeywords : undefined,
+          creator: creatorMatch ? creatorMatch[1].trim() : undefined,
+          boundingBox: extractedBbox
+        }
+      });
+    } catch (e: any) {
+      console.error("render-eps API error:", e);
+      return res.status(500).json({ error: e?.message || "Failed to render EPS" });
+    } finally {
+      const toClean = [tmpEps, tmpJpg, tmpTiff, tmpWmf, tmpPdf];
+      for (const p of toClean) {
+        if (p && fs.existsSync(p)) {
+          try { fs.unlinkSync(p); } catch (_) {}
+        }
+      }
+    }
   });
 
   let cachedGeneralTrends: any = null;
@@ -639,12 +925,19 @@ Key Directives:
       };
     } else if (norm.includes('vector') || norm.includes('eps')) {
       return {
-        name: 'Vector / EPS',
+        name: 'Vector / EPS (Scalable Graphic)',
         directive: `
-        - ASSET TYPE: Scalable Vector Graphic (EPS / AI / SVG).
-        - TITLE: Must denote graphic or vector style (e.g., "...vector illustration", "...graphic template", "...vector banner").
-        - KEYWORDS: MUST include vector terminology: "vector, eps, scalable, illustration, graphic, editable, design element, flat design, modern graphic".
-        - FORBIDDEN: NEVER include camera or photo terms (e.g., no "dslr, shot, photo, camera, lens, bokeh, depth of field").`
+        - ASSET TYPE: Scalable Vector Artwork / Illustration (EPS / AI / SVG).
+        - DOWNLOAD-WINNING TITLE FORMULA: [Primary Buyer Search Query] + [Exact Visual Subject] + [Art Style / Usage] (5 to 10 words, under 70 characters for Adobe Stock).
+          * Example 1: "Ramadan Kareem Golden Crescent Lantern Banner Vector Illustration"
+          * Example 2: "Vintage Coffee Shop Emblem Logo Badge Vector Design"
+          * Example 3: "Isometric Delivery Van Truck with Cargo Boxes Vector Graphic"
+          * NEVER use vague or poetic fluff ("stunning design", "beautiful art", "creative background").
+        - CRITICAL SEARCH RANKING RULE FOR KEYWORD SLOTS 1 TO 5 (ADOBE STOCK 75% SEARCH WEIGHT):
+          * Slots 1 to 5 MUST BE RESERVED EXCLUSIVELY for the specific visual subject, primary buyer search phrase, and high-demand commercial intent!
+          * NEVER put generic format words ("vector", "eps", "illustration", "graphic", "background") in slots 1 to 5!
+          * Put format tags ("vector, eps, scalable, editable, design element, flat design") in slots 25 to 49 so they do not steal the top 75% ranking power from the primary search terms.
+        - FORBIDDEN: NEVER include camera or photo terms (no "dslr, shot, photo, camera, lens, bokeh, depth of field, real life").`
       };
     } else if (norm.includes('png') || norm.includes('transparent')) {
       return {

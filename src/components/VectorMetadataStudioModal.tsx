@@ -21,6 +21,7 @@ import {
   FileCheck
 } from 'lucide-react';
 import { generateXmpSidecarXml, embedMetadataIntoEps } from '../lib/metadataEmbedder';
+import { parseEpsFile } from '../lib/epsParser';
 
 interface VectorMetadataStudioModalProps {
   isOpen: boolean;
@@ -47,6 +48,7 @@ export function VectorMetadataStudioModal({
   const [previewTab, setPreviewTab] = useState<'editor' | 'xmp_preview' | 'postscript_preview'>('editor');
   const [extractedHeader, setExtractedHeader] = useState<{ title?: string; creator?: string; boundingBox?: string }>({});
   const [copiedXmp, setCopiedXmp] = useState(false);
+  const [vectorPreviewUrl, setVectorPreviewUrl] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,55 +66,49 @@ export function VectorMetadataStudioModal({
     setDescription('');
     setKeywords([]);
     setExtractedHeader({});
+    setVectorPreviewUrl('');
 
-    // Read first 32KB to parse existing PostScript comments (%%Title, %%Creator, %%BoundingBox, %%Keywords)
-    try {
-      const slice = await uploadedFile.slice(0, 32768).text();
-      const titleMatch = slice.match(/%%Title:\s*(.+)/i);
-      const creatorMatch = slice.match(/%%Creator:\s*(.+)/i);
-      const bboxMatch = slice.match(/%%BoundingBox:\s*(.+)/i);
-      const kwMatch = slice.match(/%%Keywords:\s*(.+)/i);
-
-      const parsedTitle = titleMatch ? titleMatch[1].replace(/[\r\n]/g, '').trim() : '';
-      const parsedCreator = creatorMatch ? creatorMatch[1].replace(/[\r\n]/g, '').trim() : '';
-      const parsedBbox = bboxMatch ? bboxMatch[1].replace(/[\r\n]/g, '').trim() : '';
-
-      setExtractedHeader({
-        title: parsedTitle || undefined,
-        creator: parsedCreator || undefined,
-        boundingBox: parsedBbox || undefined
-      });
-
-      if (parsedTitle) {
-        setTitle(parsedTitle);
-        setDescription(`${parsedTitle} scalable vector graphic illustration template.`);
-      } else {
-        const cleanName = uploadedFile.name
-          .replace(/\.(eps|ai)$/i, '')
-          .replace(/[-_]+/g, ' ')
-          .trim();
-        setTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1) + ' Vector Illustration');
-        setDescription(`${cleanName} editable scalable vector background template.`);
-      }
-
-      if (kwMatch && kwMatch[1]) {
-        const existingTags = kwMatch[1]
-          .split(/[,;]+/)
-          .map(k => k.trim())
-          .filter(Boolean);
-        if (existingTags.length > 0) {
-          setKeywords(Array.from(new Set([...existingTags, 'vector', 'eps', 'scalable', 'graphic'])));
-        } else {
-          setKeywords(['vector', 'eps', 'illustration', 'graphic', 'editable', 'design element']);
+    // High-Performance Vector Preview & Metadata Parser (Ghostscript visual engine)
+    parseEpsFile(uploadedFile)
+      .then((epsData) => {
+        if (epsData.previewUrl) {
+          setVectorPreviewUrl(epsData.previewUrl);
         }
-      } else {
-        setKeywords(['vector', 'eps', 'illustration', 'graphic', 'editable', 'design element', 'scalable']);
-      }
+        if (epsData.metadata.title) {
+          setTitle(epsData.metadata.title);
+          setDescription(`${epsData.metadata.title} scalable vector illustration.`);
+        } else {
+          const cleanName = uploadedFile.name
+            .replace(/\.(eps|ai)$/i, '')
+            .replace(/[-_]+/g, ' ')
+            .trim();
+          setTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1) + ' Vector Illustration');
+          setDescription(`${cleanName} editable scalable vector background template.`);
+        }
 
-      onToast(`Loaded ${uploadedFile.name} successfully!`);
-    } catch (err) {
-      console.warn('EPS parse error:', err);
-    }
+        if (epsData.metadata.keywords && epsData.metadata.keywords.length > 0) {
+          setKeywords(epsData.metadata.keywords);
+        } else {
+          setKeywords(['vector', 'eps', 'illustration', 'graphic', 'editable', 'design element', 'scalable']);
+        }
+
+        if (epsData.metadata.description) {
+          setDescription(epsData.metadata.description);
+        }
+
+        setExtractedHeader({
+          title: epsData.metadata.title || undefined,
+          creator: epsData.metadata.creator || undefined,
+          boundingBox: epsData.metadata.boundingBox
+            ? `${epsData.metadata.boundingBox.x1} ${epsData.metadata.boundingBox.y1} ${epsData.metadata.boundingBox.x2} ${epsData.metadata.boundingBox.y2}`
+            : undefined,
+        });
+
+        onToast(`✓ Visual preview loaded for ${uploadedFile.name}!`);
+      })
+      .catch((err) => {
+        console.warn('EPS parse error:', err);
+      });
   };
 
   const handleAiSuggest = async () => {
@@ -122,7 +118,43 @@ export function VectorMetadataStudioModal({
     }
 
     setIsGeneratingAI(true);
-    onToast('Generating high-ranking vector metadata with Gemini AI...');
+    onToast('Analyzing true vector artwork visual with Gemini AI...');
+
+    // If real visual JPEG preview was rendered by Ghostscript, send it directly to /api/analyze!
+    if (vectorPreviewUrl && vectorPreviewUrl.startsWith('data:image/')) {
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(customApiKey ? { 'x-api-key': customApiKey } : {})
+          },
+          body: JSON.stringify({
+            imageBase64: vectorPreviewUrl.split(',')[1],
+            mimeType: 'image/jpeg',
+            marketplace: 'adobe_stock',
+            assetType: 'Vector / EPS',
+            language: 'English',
+            isAiGenerated: false,
+            fileName: file?.name
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.recommendedTitle) setTitle(data.recommendedTitle);
+          if (data.shortDescription) setDescription(data.shortDescription);
+          if (Array.isArray(data.keywords) && data.keywords.length > 0) {
+            setKeywords(data.keywords);
+          }
+          setIsGeneratingAI(false);
+          onToast('✓ 100% Visual Vector Metadata Generated from Artwork!');
+          return;
+        }
+      } catch (err) {
+        console.warn('Visual vector analysis failed, using fallback:', err);
+      }
+    }
 
     try {
       const res = await fetch('/api/chat', {
@@ -334,11 +366,24 @@ Return ONLY valid raw JSON.`
           ) : (
             <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                  <FileCode className="w-6 h-6" />
-                </div>
+                {vectorPreviewUrl ? (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-amber-500/40 bg-slate-900 shrink-0 shadow-md">
+                    <img src={vectorPreviewUrl} alt={file.name} className="w-full h-full object-contain bg-white/5" />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                    <FileCode className="w-6 h-6" />
+                  </div>
+                )}
                 <div>
-                  <h4 className="text-sm font-bold text-slate-200">{file.name}</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-slate-200">{file.name}</h4>
+                    {vectorPreviewUrl && (
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        Visual Rendered
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
                     <span>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
                     {extractedHeader.creator && (

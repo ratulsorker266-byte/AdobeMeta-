@@ -271,5 +271,96 @@ export const SAMPLE_SHOWCASE_ASSETS: {
         detectedDefects: []
       }
     }
+  },
+  {
+    label: 'Modern Tech Startup Team Vector Illustration',
+    category: 'Vector / EPS Illustration',
+    badge: 'Vector EPS Master ($3.80 RPD)',
+    item: {
+      id: 'demo-sample-4',
+      file: new File([''], 'modern_tech_startup_team_workspace.eps', { type: 'application/postscript' }),
+      previewUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80',
+      status: 'completed',
+      progress: 100,
+      epsHint: {
+        title: 'Modern Tech Startup Team Workspace Vector Illustration',
+        creator: 'Adobe Illustrator Vector Engine',
+        boundingBox: { x1: 0, y1: 0, x2: 1200, y2: 800, width: 1200, height: 800 },
+        keywords: ['vector', 'eps', 'illustration', 'startup', 'team', 'workspace', 'graphic', 'modern']
+      },
+      result: {
+        recommendedTitle: 'Modern Tech Startup Team Working in Creative Office Vector Illustration',
+        shortDescription: 'Flat modern vector illustration showing diverse software engineers and designers collaborating in a creative open-plan tech office workspace.',
+        category: 'Graphic Resources',
+        priorityKeywords: [
+          'vector',
+          'eps',
+          'vector illustration',
+          'startup team',
+          'creative workspace',
+          'flat design',
+          'office collaboration',
+          'software developers',
+          'graphic template',
+          'tech industry'
+        ],
+        keywords: [
+          'vector',
+          'eps',
+          'vector illustration',
+          'startup team',
+          'creative workspace',
+          'flat design',
+          'office collaboration',
+          'software developers',
+          'graphic template',
+          'tech industry',
+          'business character',
+          'teamwork concept',
+          'isometric illustration',
+          'modern graphic',
+          'coworking space',
+          'ui ux design team',
+          'digital marketing',
+          'remote team meetup',
+          'scrum meeting',
+          'tech innovation'
+        ],
+        keywordTaxonomy: {
+          primarySubject: ['startup team', 'vector illustration', 'office workspace'],
+          secondarySubject: ['software developers', 'laptops', 'creative studio'],
+          action: ['collaborating', 'coding', 'brainstorming', 'working'],
+          environment: ['creative office', 'coworking space', 'modern interior'],
+          commercialConcept: ['teamwork', 'digital innovation', 'business agility', 'tech growth'],
+          useCases: ['SaaS marketing website', 'corporate recruitment banner', 'mobile app onboarding screen'],
+          styleAndComposition: ['flat design vector', 'vibrant color palette', 'clean character art'],
+          industry: ['Software & SaaS', 'Information Technology', 'Creative Agencies'],
+          longTailPhrases: [
+            'modern tech startup team vector illustration',
+            'creative office collaboration flat vector graphic',
+            'software developers brainstorming workspace vector',
+            'digital business teamwork flat design illustration'
+          ]
+        },
+        searchIntent: {
+          primaryIntent: 'SaaS tech startups, app developers, and marketing agencies seeking high-converting flat vector illustrations for websites and apps.',
+          commercialUseCases: [
+            'SaaS landing page hero illustration',
+            'Mobile app welcome onboarding screen',
+            'Corporate blog article header'
+          ],
+          targetBuyer: 'Web Designers, UI/UX Directors, Marketing Agencies & Product Managers'
+        },
+        visualTruthConfidence: 'HIGH CONFIDENCE',
+        metadataQualityScore: 99,
+        technicalQualityScore: 99,
+        salesPotentialScore: 98,
+        overallSubmissionRiskScore: 1,
+        riskLabel: 'SAFE FOR COMMERCIAL USE',
+        copyrightRiskScore: 0,
+        explanation: 'Clean original vector artwork with 100% commercially compliant graphic elements.',
+        detectedDefects: []
+      }
+    }
   }
 ];

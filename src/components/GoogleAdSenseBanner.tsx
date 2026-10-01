@@ -3,7 +3,7 @@ import { DollarSign, ExternalLink, Sparkles, TrendingUp, ShieldCheck, Zap, Star 
 
 interface GoogleAdSenseBannerProps {
   slotId?: string;
-  format?: 'leaderboard' | 'rectangle' | 'in-feed';
+  format?: 'leaderboard' | 'rectangle' | 'in-feed' | 'sticky-footer';
   showAdPlaceholder?: boolean;
   themeMode?: 'light' | 'dark';
 }
@@ -160,6 +160,45 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
           </div>
         </div>
         <span className={`text-[9px] ${isLight ? 'text-slate-400' : 'text-slate-600'} uppercase tracking-wider mt-1`}>Google AdSense Placement Zone</span>
+      </div>
+    );
+  }
+
+  // STICKY FOOTER ANCHOR AD (Highest AdSense RPM on mobile and desktop)
+  if (format === 'sticky-footer') {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 z-40 p-2 sm:p-3 pointer-events-none flex justify-center animate-slide-up">
+        <div className={`pointer-events-auto max-w-4xl w-full ${isLight ? 'bg-white/95 border-slate-200/90 text-slate-800 shadow-2xl' : 'bg-slate-900/95 border-indigo-500/40 text-slate-100 shadow-[0_10px_40px_rgba(0,0,0,0.8)]'} backdrop-blur-xl border rounded-2xl p-3 flex items-center justify-between gap-3`}>
+          <div className="flex items-center gap-3">
+            <span className={`text-[9px] font-black uppercase ${isLight ? 'bg-indigo-100 text-indigo-700' : 'bg-indigo-500/20 text-indigo-300'} px-2 py-0.5 rounded-md border border-indigo-500/30`}>
+              Sponsored
+            </span>
+            <div className="text-xs">
+              <span className="font-bold mr-1.5">Wirestock AI Contributor:</span>
+              <span className={isLight ? 'text-slate-600' : 'text-slate-300'}>
+                Auto-distribute stock vectors and photos to 7+ global agencies in 1-click.
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href="https://wirestock.io/?ref=adobemeta"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
+            >
+              <span>Explore Deal</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+            <button
+              onClick={() => setAdDismissed(true)}
+              className={`${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-slate-500 hover:text-slate-300'} p-1 text-xs hover:bg-slate-800/40 rounded-lg transition`}
+              title="Close Ad"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe, Gamepad2, Phone, PhoneCall, Heart, Headphones, Mic, Compass, Grid, Sun, Moon, Volume2, VolumeX } from 'lucide-react';
+import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, CheckCircle2, Camera, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe, Gamepad2, Phone, PhoneCall, Heart, Headphones, Mic, Compass, Grid, Sun, Moon, Volume2, VolumeX, Award } from 'lucide-react';
 import { BulkItem, TargetMarketplace, TrendData, MetadataResult, MetadataVersion } from './types';
 import { embedJpegMetadata, generateXmpSidecarXml, embedMetadataIntoEps } from './lib/metadataEmbedder';
 import { playShutterSound, playTickSound, playChimeSound, isSoundEnabled, setSoundEnabled } from './lib/audioFeedback';
@@ -45,6 +45,8 @@ import { EarningMonetizationModal } from './components/EarningMonetizationModal'
 import { WebsiteFooter } from './components/WebsiteFooter';
 import { InteractiveSpatialHouse, SpatialRoom } from './components/InteractiveSpatialHouse';
 import { CommandPaletteModal } from './components/CommandPaletteModal';
+import { MonetizationHubView } from './components/MonetizationHubView';
+import { SeoRankBoosterView } from './components/SeoRankBoosterView';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   useEffect(() => {
@@ -650,7 +652,7 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [loginTransition, setLoginTransition] = useState<'idle' | 'authenticating' | 'leaving' | 'welcome'>('idle');
 
-  const [currentView, setCurrentView] = useState<'upload' | 'trends' | 'competitor' | 'prompts' | 'calendar'>('upload');
+  const [currentView, setCurrentView] = useState<'upload' | 'monetize' | 'seo-rank' | 'trends' | 'competitor' | 'prompts' | 'calendar'>('upload');
   const [showMultiCsvModal, setShowMultiCsvModal] = useState<boolean>(false);
   const [trendSearchPreload, setTrendSearchPreload] = useState<string>('');
   const [promptStudioPreloadConcept, setPromptStudioPreloadConcept] = useState<string>('');
@@ -772,6 +774,23 @@ export default function App() {
 
   const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
   const [isAudioActive, setIsAudioActive] = useState<boolean>(() => isSoundEnabled());
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: -500, y: -500 });
+  const [isPointerActive, setIsPointerActive] = useState<boolean>(false);
+
+  useEffect(() => {
+    let idleTimer: any;
+    const onPointerMove = (e: PointerEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+      setIsPointerActive(true);
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => setIsPointerActive(false), 2500);
+    };
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      clearTimeout(idleTimer);
+    };
+  }, []);
 
   const handleLoadSampleAsset = (sample: BulkItem) => {
     const newItem: BulkItem = {
@@ -1278,18 +1297,39 @@ export default function App() {
     setLoginTransition('idle');
   };
 
+  const handleAttachScreenshot = (itemId: string, file: File) => {
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      setItems((prev) =>
+        prev.map((it) =>
+          it.id === itemId
+            ? { ...it, previewUrl }
+            : it
+        )
+      );
+      showToast('Visual preview screenshot attached! AI will analyze this exact visual artwork.');
+    } catch (e) {
+      console.warn('Screenshot attach error:', e);
+    }
+  };
+
   const processFiles = (files: File[]) => {
     const selectedFiles = files.slice(0, 100);
 
-    // Look for accompanying companion preview JPEGs (e.g., artwork.eps + artwork.jpg)
+    // Look for accompanying companion preview JPEGs (e.g., artwork.eps + artwork.jpg or screenshot)
+    const imageFiles: File[] = [];
     const jpgMap = new Map<string, File>();
     selectedFiles.forEach((f) => {
       const ext = f.name.split('.').pop()?.toLowerCase() || '';
       if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+        imageFiles.push(f);
         const base = f.name.replace(/\.[^/.]+$/, '').toLowerCase();
         jpgMap.set(base, f);
       }
     });
+
+    const vectorFiles = selectedFiles.filter(f => isEpsFile(f));
+    const singleVectorSingleImage = vectorFiles.length === 1 && imageFiles.length === 1;
 
     const newItems: BulkItem[] = selectedFiles.map((f, i) => {
       const ext = f.name.split('.').pop()?.toLowerCase() || '';
@@ -1297,7 +1337,7 @@ export default function App() {
       const isEps = isEpsFile(f);
       const isPsd = isPsdFile(f);
       const baseName = f.name.replace(/\.[^/.]+$/, '').toLowerCase();
-      const companionJpg = isEps ? jpgMap.get(baseName) : undefined;
+      const companionJpg = isEps ? (jpgMap.get(baseName) || (singleVectorSingleImage ? imageFiles[0] : undefined)) : undefined;
       
       const initialUrl = companionJpg
         ? URL.createObjectURL(companionJpg)
@@ -2739,18 +2779,43 @@ export default function App() {
       {customBgUrl && (
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px] z-0 pointer-events-none" />
       )}
-      {/* Background ambient architectural lighting */}
-      {!customBgUrl && themeMode === 'light' ? (
-        <>
-          <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-slate-200/40 blur-[130px] pointer-events-none z-0" />
-          <div className="fixed bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-100/30 blur-[140px] pointer-events-none z-0" />
-        </>
-      ) : !customBgUrl ? (
-        <>
-          <div className="fixed top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-900/10 blur-[150px] pointer-events-none z-0" />
-          <div className="fixed bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-purple-900/10 blur-[150px] pointer-events-none z-0" />
-        </>
-      ) : null}
+      {/* World-Class Continuous Living Aurora Atmosphere */}
+      {!customBgUrl && (
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+          <div className={`absolute top-[-15%] left-[-15%] w-[680px] h-[680px] rounded-full blur-[140px] animate-aurora-1 ${
+            themeMode === 'light' ? 'bg-indigo-300/35' : 'bg-indigo-600/18'
+          }`} />
+          <div className={`absolute top-[35%] right-[-12%] w-[620px] h-[620px] rounded-full blur-[150px] animate-aurora-2 ${
+            themeMode === 'light' ? 'bg-purple-300/30' : 'bg-purple-600/18'
+          }`} />
+          <div className={`absolute bottom-[-15%] left-[20%] w-[720px] h-[720px] rounded-full blur-[160px] animate-aurora-3 ${
+            themeMode === 'light' ? 'bg-emerald-200/35' : 'bg-teal-600/15'
+          }`} />
+
+          {/* Interactive Responsive Pointer Spotlight Aura */}
+          <div
+            className="absolute rounded-full pointer-events-none transition-transform duration-300 ease-out"
+            style={{
+              top: -240,
+              left: -240,
+              width: 480,
+              height: 480,
+              transform: `translate3d(${mousePos.x}px, ${mousePos.y}px, 0)`,
+              background: themeMode === 'light'
+                ? 'radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.05) 45%, transparent 70%)'
+                : 'radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, rgba(168, 85, 247, 0.1) 45%, transparent 70%)',
+              opacity: isPointerActive ? 1 : 0.35,
+              transition: 'opacity 0.6s ease'
+            }}
+          />
+
+          {/* Subtle Ambient Micro-Particles */}
+          <div className="absolute top-[20%] left-[15%] w-1.5 h-1.5 rounded-full bg-indigo-400/40 animate-float-slow" />
+          <div className="absolute top-[60%] left-[8%] w-2 h-2 rounded-full bg-purple-400/30 animate-float-slow-rev" />
+          <div className="absolute top-[30%] right-[18%] w-1.5 h-1.5 rounded-full bg-emerald-400/40 animate-float-slow" />
+          <div className="absolute top-[75%] right-[22%] w-2 h-2 rounded-full bg-pink-400/30 animate-float-slow-rev" />
+        </div>
+      )}
 
       <motion.div 
         variants={containerVariants}
@@ -2806,6 +2871,39 @@ export default function App() {
               >
                 <Layers className="w-3.5 h-3.5" />
                 <span>Studio</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentView('monetize')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                  currentView === 'monetize'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                    : themeMode === 'light'
+                    ? 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50'
+                    : 'text-emerald-400 hover:text-white hover:bg-emerald-950/40'
+                }`}
+                title="Google Monetize & Microstock Contributor Earning Center"
+              >
+                <DollarSign className="w-3.5 h-3.5 text-emerald-300" />
+                <span>Monetize &amp; Earning</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentView('seo-rank')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                  currentView === 'seo-rank'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : themeMode === 'light'
+                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+                title="100% Rank #1 Algorithm Optimizer for EPS Vectors & Photos"
+              >
+                <Award className="w-3.5 h-3.5 text-indigo-400" />
+                <span>100% Rank SEO</span>
               </button>
 
               <button
@@ -2884,17 +2982,6 @@ export default function App() {
 
               <button
                 type="button"
-                onClick={() => setShowEarningMonetizeModal(true)}
-                className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:brightness-110 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-600/20 shrink-0 border border-emerald-400/30 cursor-pointer"
-                title="Open Contributor Earning & Google Monetization Center ($)"
-              >
-                <DollarSign className="w-3.5 h-3.5 text-emerald-200" />
-                <span className="hidden sm:inline">Earning & Monetize</span>
-                <span className="bg-emerald-950/60 text-emerald-300 text-[10px] px-1.5 py-0.2 rounded-full font-black border border-emerald-400/30">$</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setShowToolsHubModal(true)}
                 className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:brightness-110 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0 border border-indigo-400/30 cursor-pointer"
                 title="Open All 12 Contributor Tools Hub (Vector, IP Shield, Rank, Niche, Releases, AI Prompts & Mini-Games)"
@@ -2934,14 +3021,25 @@ export default function App() {
                   if (next) playShutterSound();
                   showToast(next ? "Acoustic Haptics: ON (Tactile mechanical soundscapes)" : "Acoustic Haptics: Muted");
                 }}
-                className={`p-2 rounded-xl transition border cursor-pointer ${
+                className={`p-2 rounded-xl transition border cursor-pointer flex items-center gap-1 ${
                   themeMode === 'light'
                     ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
                 }`}
                 title={isAudioActive ? "Mute Acoustic Shutter & Haptics" : "Enable Tactile Mechanical Soundscapes"}
               >
-                {isAudioActive ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
+                {isAudioActive ? (
+                  <>
+                    <Volume2 className="w-4 h-4 text-emerald-400" />
+                    <span className="flex items-end gap-0.5 h-3 ml-0.5">
+                      <span className="w-0.5 bg-emerald-400 rounded-full animate-[spectrumEqualizer_0.7s_ease-in-out_infinite]" />
+                      <span className="w-0.5 bg-emerald-400 rounded-full animate-[spectrumEqualizer_1.1s_ease-in-out_0.2s_infinite]" />
+                      <span className="w-0.5 bg-emerald-400 rounded-full animate-[spectrumEqualizer_0.8s_ease-in-out_0.4s_infinite]" />
+                    </span>
+                  </>
+                ) : (
+                  <VolumeX className="w-4 h-4 text-slate-500" />
+                )}
               </button>
 
               <button
@@ -3036,23 +3134,23 @@ export default function App() {
                 </button>
                 <span className="text-slate-400">/</span>
                 <span className={`${themeMode === 'light' ? 'text-slate-800' : 'text-slate-300'} font-bold uppercase tracking-wider text-[11px]`}>
-                  {currentView === 'trends' ? 'Market Trends Analytics' : currentView === 'prompts' ? 'AI Prompt Studio' : currentView === 'calendar' ? 'Seasonal Demand Calendar' : 'Competitor Tag Spy'}
+                  {currentView === 'monetize'
+                    ? 'Google Monetization & Contributor Earning Center'
+                    : currentView === 'seo-rank'
+                    ? '100% Rank #1 SEO Algorithm Engine'
+                    : currentView === 'trends'
+                    ? 'Market Trends Analytics'
+                    : currentView === 'prompts'
+                    ? 'AI Prompt Studio'
+                    : currentView === 'calendar'
+                    ? 'Seasonal Demand Calendar'
+                    : 'Competitor Tag Spy'}
                 </span>
               </div>
             )}
 
-            {/* Right: Key Portals (Earning & Monetize, Multi-CSV) */}
+            {/* Right: Multi-CSV Portal */}
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowEarningMonetizeModal(true)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border border-emerald-500/40 shrink-0 shadow-sm cursor-pointer"
-                title="Microstock Royalties & Google AdSense Monetization Hub"
-              >
-                <DollarSign className="w-3.5 h-3.5 text-emerald-100" />
-                <span>Earning & Monetize</span>
-              </button>
-
               <button
                 type="button"
                 onClick={() => setShowMultiCsvModal(true)}
@@ -3060,7 +3158,7 @@ export default function App() {
                 title="1-Click Multi-Marketplace CSV Exporter (Adobe Stock, Shutterstock, Freepik, Getty)"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Multi-CSV</span>
+                <span>Multi-Agency CSV Hub</span>
               </button>
             </div>
           </div>
@@ -3161,7 +3259,26 @@ export default function App() {
         </AnimatePresence>
 
         <AnimatePresence mode="wait">
-          {currentView === 'trends' ? (
+          {currentView === 'monetize' ? (
+            <MonetizationHubView
+              key="monetize"
+              onBackToStudio={() => setCurrentView('upload')}
+              onOpenMultiCsv={() => setShowMultiCsvModal(true)}
+              showToast={showToast}
+              themeMode={themeMode}
+            />
+          ) : currentView === 'seo-rank' ? (
+            <SeoRankBoosterView
+              key="seo-rank"
+              onBackToStudio={() => setCurrentView('upload')}
+              onApplyQueryToStudio={(query) => {
+                setTrendSearchPreload(query);
+                showToast(`✓ Locked target query "${query}" into Slot #1!`);
+              }}
+              showToast={showToast}
+              themeMode={themeMode}
+            />
+          ) : currentView === 'trends' ? (
             <TrendsDashboard
               key="trends"
               onBack={() => setCurrentView('upload')}
@@ -3315,15 +3432,18 @@ export default function App() {
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                   onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
                   onDrop={handleDrop}
-                  className={`border-2 border-dashed transition-all rounded-xl p-12 text-center relative group overflow-hidden ${
+                  className={`border-2 border-dashed transition-all rounded-xl p-12 text-center relative group overflow-hidden shimmer-container ${
                     isDragging 
-                      ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_50px_rgba(99,102,241,0.2)]' 
+                      ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_60px_rgba(99,102,241,0.35)] scale-[1.01]' 
                       : themeMode === 'light'
-                      ? 'border-slate-300 bg-slate-50/70 hover:bg-slate-100/70'
-                      : 'border-slate-800 bg-slate-900/40 hover:bg-slate-800/60'
+                      ? 'border-slate-300 bg-slate-50/70 hover:bg-slate-100/80 shadow-sm'
+                      : 'border-slate-800 bg-slate-900/40 hover:bg-slate-800/60 shadow-lg'
                   }`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                  {/* Continuous Cyber Laser Scanline Beam */}
+                  <div className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent shadow-[0_0_15px_rgba(99,102,241,0.9)] animate-laser-scan pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity" />
+
+                  <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/8 via-purple-500/4 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                   <input
                     type="file"
                     multiple
@@ -3334,30 +3454,31 @@ export default function App() {
                   />
                   <label htmlFor="bulkInput" className="cursor-pointer space-y-4 block relative z-10">
                     <motion.div 
-                      whileHover={{ y: -5 }}
-                      className={`w-16 h-16 ${themeMode === 'light' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-indigo-900/30 border-indigo-500/20 text-indigo-400'} rounded-2xl flex items-center justify-center mx-auto border shadow-sm`}
+                      whileHover={{ y: -6, rotate: 2 }}
+                      className={`w-16 h-16 ${themeMode === 'light' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-indigo-900/30 border-indigo-500/20 text-indigo-400'} rounded-2xl flex items-center justify-center mx-auto border shadow-md relative group`}
                     >
-                      <Upload className="w-8 h-8" />
+                      <div className="absolute inset-0 rounded-2xl bg-indigo-500/20 animate-ping opacity-20" />
+                      <Upload className="w-8 h-8 relative z-10 animate-bounce duration-1000" />
                     </motion.div>
-                    <h3 className={`text-xl font-bold ${themeMode === 'light' ? 'text-slate-900' : 'text-slate-100'}`}>
-                      {isDragging ? 'Drop your PSD/SPD, EPS, Photos or Videos here!' : 'Drag & Drop files or Click to select'}
+                    <h3 className={`text-xl font-bold ${themeMode === 'light' ? 'text-slate-900' : 'text-slate-100'} tracking-tight`}>
+                      {isDragging ? 'Drop your EPS, PSD, Photos or Videos here!' : 'Drag & Drop files or Click to select'}
                     </h3>
-                    <p className={`text-base font-bold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'}`}>Selected: <span className="text-indigo-600 font-black">{items.length}</span>/100 Files</p>
+                    <p className={`text-base font-bold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'}`}>Selected: <span className="text-indigo-500 font-black">{items.length}</span>/100 Files</p>
                     <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-sky-500/20 text-sky-300 border-sky-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1`}>
+                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-sky-500/20 text-sky-300 border-sky-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs animate-float-slow`}>
                         <Layers className="w-3 h-3 text-sky-500" /> Photoshop: .PSD / .SPD / .PSB
                       </span>
-                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1`}>
+                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs animate-float-slow-rev`}>
                         <FileCode className="w-3 h-3 text-amber-500" /> Vector: .EPS / .AI / .SVG
                       </span>
-                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1`}>
+                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs animate-float-slow`}>
                         <ImageIcon className="w-3 h-3 text-indigo-500" /> Photo: .JPG / .PNG / .WEBP
                       </span>
-                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1`}>
+                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs animate-float-slow-rev`}>
                         <Video className="w-3 h-3 text-purple-500" /> 4K Video: .MP4 / .MOV
                       </span>
                     </div>
-                    <p className={`text-xs ${themeMode === 'light' ? 'text-slate-500' : 'text-slate-400'} font-medium`}>Automatic Photoshop composite canvas rendering, PostScript DSC parsing & Adobe XMP sidecar generation</p>
+                    <p className={`text-xs ${themeMode === 'light' ? 'text-slate-500' : 'text-slate-400'} font-medium`}>Automatic 6-Stage Vector EPS Rasterizer, Photoshop Layer Parser & Adobe XMP sidecars</p>
                   </label>
                 </motion.div>
 
@@ -3531,18 +3652,25 @@ export default function App() {
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-xl p-4 flex flex-wrap items-center gap-4 justify-between shadow-[0_4px_30px_rgba(0,0,0,0.1)] hover:border-indigo-500/50 hover:bg-slate-900/60 transition-all duration-300"
+                        className="cinema-glass-card rounded-2xl p-4 sm:p-5 flex flex-wrap items-center gap-4 justify-between transition-all duration-300 relative group overflow-hidden"
                       >
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <div className="w-16 h-16 rounded-lg overflow-hidden border border-slate-800 shadow-inner bg-slate-900 flex items-center justify-center relative">
+                          <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-800 shadow-md bg-slate-900 flex items-center justify-center relative group/thumb">
                             {item.previewUrl ? (
                               <>
-                                <img src={item.previewUrl} alt="preview" className="w-full h-full object-cover" />
+                                <img src={item.previewUrl} alt="preview" className="w-full h-full object-cover transition-transform duration-500 group-hover/thumb:scale-110" />
                                 {item.file.name.match(/\.(eps|ai)$/i) && (
-                                  <span className="absolute top-1 left-1 bg-amber-500 text-slate-950 px-1 py-0.2 rounded text-[8px] font-black shadow-sm">
-                                    EPS
-                                  </span>
+                                  <>
+                                    <span className="absolute top-1 left-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 px-1.5 py-0.2 rounded text-[8px] font-black shadow-sm flex items-center gap-1 z-10">
+                                      <span className="w-1 h-1 rounded-full bg-white animate-ping" />
+                                      EPS
+                                    </span>
+                                    {/* Active Vector Laser Scanline */}
+                                    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl">
+                                      <div className="absolute left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-laser-scan opacity-70" />
+                                    </div>
+                                  </>
                                 )}
                               </>
                             ) : item.file.name.match(/\.(eps|ai)$/i) ? (
@@ -3571,6 +3699,29 @@ export default function App() {
                             {item.isHistory && <span className="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded uppercase tracking-widest">History</span>}
                           </p>
                           {!item.isHistory && <p className="text-xs text-slate-500 font-medium mt-0.5">{(item.file.size / (1024 * 1024)).toFixed(1)} MB</p>}
+                          {item.file.name.match(/\.(eps|ai)$/i) && (
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                              <label className="cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition-all shadow-xs">
+                                <Camera className="w-3 h-3 text-amber-400" />
+                                <span>{item.previewUrl ? 'Replace Screenshot' : 'Link Screenshot JPG'}</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) handleAttachScreenshot(item.id, f);
+                                  }}
+                                />
+                              </label>
+                              {item.previewUrl && (
+                                <span className="text-[9px] text-emerald-400 flex items-center gap-0.5 font-medium">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                  Visual Active
+                                </span>
+                              )}
+                            </div>
+                          )}
                           {item.result && (
                             <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase border ${
                               item.result.riskLabel === 'Low risk' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
@@ -4692,6 +4843,9 @@ export default function App() {
       <TermsOfServiceModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
       <EarningsDisclaimerModal isOpen={showDisclaimerModal} onClose={() => setShowDisclaimerModal(false)} />
       <ContactSupportModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />
+
+      {/* Persistent High-RPM Google AdSense Sticky Footer Anchor */}
+      <GoogleAdSenseBanner format="sticky-footer" themeMode={themeMode} />
 
       {/* Toast Notification */}
       <AnimatePresence>
