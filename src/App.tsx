@@ -47,6 +47,10 @@ import { InteractiveSpatialHouse, SpatialRoom } from './components/InteractiveSp
 import { CommandPaletteModal } from './components/CommandPaletteModal';
 import { MonetizationHubView } from './components/MonetizationHubView';
 import { SeoRankBoosterView } from './components/SeoRankBoosterView';
+import { SAMPLE_SHOWCASE_ASSETS } from './lib/sampleAssets';
+import { EditorialHeroSection } from './components/EditorialHeroSection';
+import { AboutModal, PricingModal, ResourcesModal } from './components/EditorialModals';
+import { AdobeMetaProLogo } from './components/AdobeMetaProLogo';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   useEffect(() => {
@@ -657,7 +661,14 @@ export default function App() {
   const [trendSearchPreload, setTrendSearchPreload] = useState<string>('');
   const [promptStudioPreloadConcept, setPromptStudioPreloadConcept] = useState<string>('');
 
-  const [items, setItems] = useState<BulkItem[]>([]);
+  const [items, setItems] = useState<BulkItem[]>(() => {
+    try {
+      if (typeof SAMPLE_SHOWCASE_ASSETS !== 'undefined' && SAMPLE_SHOWCASE_ASSETS.length > 3) {
+        return [SAMPLE_SHOWCASE_ASSETS[3].item];
+      }
+    } catch (e) {}
+    return [];
+  });
 
   const [targetMarketplace, setTargetMarketplace] = useState<TargetMarketplace>('adobe_stock');
   const [assetType, setAssetType] = useState<string>("Photo / JPG");
@@ -744,28 +755,37 @@ export default function App() {
   const [showTermsModal, setShowTermsModal] = useState<boolean>(false);
   const [showDisclaimerModal, setShowDisclaimerModal] = useState<boolean>(false);
   const [showContactModal, setShowContactModal] = useState<boolean>(false);
+  const [showAboutModal, setShowAboutModal] = useState<boolean>(false);
+  const [showPricingModal, setShowPricingModal] = useState<boolean>(false);
+  const [showResourcesModal, setShowResourcesModal] = useState<boolean>(false);
 
-  // Architectural Theme: Modernist Midnight Obsidian (Default)
+  // Refined White Minimalist Architecture (Default)
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
     try {
       const stored = localStorage.getItem('adobemeta_theme');
-      if (stored === 'light' && localStorage.getItem('adobemeta_theme_user_chosen') === 'true') {
-        return 'light';
+      if (stored === 'dark' && localStorage.getItem('adobemeta_theme_user_chosen') === 'true') {
+        return 'dark';
       }
-      // Default to sleek modernist dark theme as requested
-      localStorage.setItem('adobemeta_theme', 'dark');
-      return 'dark';
+      localStorage.setItem('adobemeta_theme', 'light');
+      return 'light';
     } catch {
-      return 'dark';
+      return 'light';
     }
   });
 
-  // Architectural Digital Space State
+  // Unified Luxury Studio Workspace Default (Clean, Minimalist, Breathtaking)
   const [workspaceMode, setWorkspaceMode] = useState<'spatial' | 'classic'>(() => {
     try {
-      return (localStorage.getItem('adobemeta_workspace_mode') as 'spatial' | 'classic') || 'spatial';
+      const v2Key = localStorage.getItem('adobemeta_studio_v2');
+      if (v2Key === 'true') {
+        const saved = localStorage.getItem('adobemeta_workspace_mode');
+        if (saved === 'spatial' || saved === 'classic') return saved;
+      }
+      localStorage.setItem('adobemeta_studio_v2', 'true');
+      localStorage.setItem('adobemeta_workspace_mode', 'classic');
+      return 'classic';
     } catch {
-      return 'spatial';
+      return 'classic';
     }
   });
   const [spatialRoom, setSpatialRoom] = useState<SpatialRoom>('studio');
@@ -1108,7 +1128,11 @@ export default function App() {
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       clearTimeout(safetyTimer);
-      setUser(currentUser);
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(DEFAULT_FOUNDER_USER);
+      }
       setIsAuthLoading(false);
       if (currentUser) {
         // Load user profile & credits
@@ -1293,8 +1317,33 @@ export default function App() {
     try {
       await signOut(auth);
     } catch (e) {}
-    setUser(null);
+    setUser(DEFAULT_FOUNDER_USER);
     setLoginTransition('idle');
+    showToast('Signed out. Active in VIP Contributor Workspace.');
+  };
+
+  const handleWatchDemo = () => {
+    if (items.length === 0 && typeof SAMPLE_SHOWCASE_ASSETS !== 'undefined' && SAMPLE_SHOWCASE_ASSETS.length > 0) {
+      handleLoadSampleAsset(SAMPLE_SHOWCASE_ASSETS[0].item);
+    }
+    showToast('✨ Interactive Demo: Live metadata inspection & 100% Adobe Stock compliance active.');
+    const el = document.getElementById('studio-workspace');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleStartGenerating = () => {
+    const el = document.getElementById('studio-workspace');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+    setTimeout(() => {
+      const inputEl = document.getElementById('bulkInput') as HTMLInputElement | null;
+      if (inputEl) {
+        inputEl.click();
+      }
+    }, 400);
   };
 
   const handleAttachScreenshot = (itemId: string, file: File) => {
@@ -2626,131 +2675,9 @@ export default function App() {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-3">
         <RefreshCw className="animate-spin text-indigo-500 w-8 h-8" />
-      </div>
-    );
-  }
-
-  if (!user || loginTransition === 'authenticating' || loginTransition === 'leaving') {
-    const isLeaving = loginTransition === 'leaving';
-    const isAuthenticating = loginTransition === 'authenticating';
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden font-sans">
-        {/* Glows */}
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-600/20 blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-purple-600/20 blur-[120px] pointer-events-none" />
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={isLeaving ? { x: '120vw', rotate: 5, opacity: 0 } : { opacity: 1, y: 0, x: 0, rotate: 0 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: isLeaving ? 80 : 120, 
-            damping: isLeaving ? 15 : 18,
-            mass: 1
-          }}
-          className="relative z-10 w-full max-w-md flex flex-col items-center"
-        >
-          {/* The Bike */}
-          <motion.div
-            animate={{ y: [0, -4, 0] }}
-            transition={{ repeat: Infinity, duration: 0.3 }}
-            className="text-7xl mb-2 drop-shadow-2xl z-20"
-            style={{ transform: 'scaleX(-1)' }}
-          >
-            🏍️💨
-          </motion.div>
-          
-          {/* Connecting rope */}
-          <div className="w-1 h-8 bg-gradient-to-b from-slate-500 to-transparent z-10"></div>
-
-          {/* Login Card */}
-          <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-10 rounded-3xl shadow-2xl w-full text-center relative z-20">
-             <div className="w-24 h-24 mx-auto mb-6 rounded-2xl overflow-hidden shadow-2xl border border-indigo-500/50">
-               <img src={ratulLogo} alt="AdobeMeta Pro Logo" className="w-full h-full object-cover" />
-             </div>
-             
-             <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
-               AdobeMeta <span className="text-indigo-400">Pro</span>
-             </h1>
-             
-             <p className="text-slate-400 text-sm mb-4">
-               The Ultimate Bulk Asset Metadata & Compliance Platform for Stock Contributors.
-             </p>
-
-             {/* 1-Month Free Unlimited Pro Announcement */}
-             <div className="mb-6 bg-gradient-to-r from-amber-500/15 via-indigo-500/15 to-purple-500/15 border border-amber-500/30 rounded-2xl p-3.5 text-center">
-               <div className="flex items-center justify-center gap-1.5 text-amber-400 text-xs font-black uppercase tracking-wider mb-1">
-                 <Sparkles className="w-3.5 h-3.5" />
-                 <span>Launch Offer: 1 Month FREE</span>
-               </div>
-               <p className="text-xs text-slate-200 font-medium leading-relaxed">
-                 Enjoy <strong className="text-amber-300">100% Unlimited Pro Version</strong> free for your first 30 days! No credit card needed.
-               </p>
-             </div>
-             
-             <motion.button
-               whileHover={{ scale: 1.03 }}
-               whileTap={{ scale: 0.97 }}
-               onClick={handleGoogleLogin}
-               disabled={isLeaving || isAuthenticating}
-               className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold py-3.5 px-6 rounded-xl transition flex items-center justify-center gap-3 shadow-lg disabled:opacity-80"
-             >
-               <svg className="w-5 h-5" viewBox="0 0 24 24">
-                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-               </svg>
-               {isLeaving ? 'Hold on tight! 💨' : isAuthenticating ? 'Waiting for Auth...' : 'Continue with Google'}
-             </motion.button>
-
-             <motion.button
-               whileHover={{ scale: 1.02 }}
-               whileTap={{ scale: 0.98 }}
-               onClick={() => {
-                 setUser(DEFAULT_FOUNDER_USER);
-                 setIsPro(true);
-                 setProDaysLeft(30);
-                 setCredits(999999);
-                 setPlanType('premium');
-                 setLoginTransition('idle');
-                 showToast('✨ Welcome back Ratul Sorker! VIP Contributor Workspace unlocked.');
-               }}
-               disabled={isLeaving || isAuthenticating}
-               className="w-full mt-3 bg-gradient-to-r from-amber-500/20 via-indigo-600/30 to-purple-600/30 hover:from-amber-500/30 hover:to-purple-600/50 text-amber-200 hover:text-white border border-amber-500/40 font-bold py-3.5 px-5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg"
-             >
-               <Sparkles className="w-4 h-4 text-amber-400" />
-               <span>⚡ Quick Enter as Ratul Sorker (Founder VIP)</span>
-             </motion.button>
-
-             <motion.button
-               whileHover={{ scale: 1.02 }}
-               whileTap={{ scale: 0.98 }}
-               onClick={handleGuestLogin}
-               disabled={isLeaving || isAuthenticating}
-               className="w-full mt-3 bg-gradient-to-r from-indigo-600/30 to-purple-600/30 hover:from-indigo-600/50 hover:to-purple-600/50 text-indigo-200 hover:text-white border border-indigo-500/40 font-semibold py-3 px-5 rounded-xl transition flex items-center justify-center gap-2 shadow"
-             >
-               <Sparkles className="w-4 h-4 text-amber-400" />
-               <span>Instant Access as Guest Contributor</span>
-             </motion.button>
-
-             <button
-               onClick={handleGuestLogin}
-               className="mt-3 text-xs text-slate-400 hover:text-slate-200 underline underline-offset-4 transition"
-             >
-               Skip sign-in and start uploading assets directly →
-             </button>
-
-             <div className="mt-8 pt-6 border-t border-slate-800">
-                <div className="text-center flex flex-col justify-center items-center">
-                   <span className="text-[10px] uppercase tracking-[0.2em] text-indigo-400 font-bold mb-1">Founder</span>
-                   <span className="text-sm font-black tracking-wide text-slate-100">Ratul Sorker</span>
-                </div>
-             </div>
-          </div>
-        </motion.div>
+        <span className="text-xs text-slate-400 font-medium">Initializing Contributor & Monetization Workspace...</span>
       </div>
     );
   }
@@ -2779,49 +2706,126 @@ export default function App() {
       {customBgUrl && (
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px] z-0 pointer-events-none" />
       )}
-      {/* World-Class Continuous Living Aurora Atmosphere */}
-      {!customBgUrl && (
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-          <div className={`absolute top-[-15%] left-[-15%] w-[680px] h-[680px] rounded-full blur-[140px] animate-aurora-1 ${
-            themeMode === 'light' ? 'bg-indigo-300/35' : 'bg-indigo-600/18'
-          }`} />
-          <div className={`absolute top-[35%] right-[-12%] w-[620px] h-[620px] rounded-full blur-[150px] animate-aurora-2 ${
-            themeMode === 'light' ? 'bg-purple-300/30' : 'bg-purple-600/18'
-          }`} />
-          <div className={`absolute bottom-[-15%] left-[20%] w-[720px] h-[720px] rounded-full blur-[160px] animate-aurora-3 ${
-            themeMode === 'light' ? 'bg-emerald-200/35' : 'bg-teal-600/15'
-          }`} />
+      {/* Top Main Editorial Hero Section (Exact Reference Design) - Active on Main Upload/Studio View */}
+      {currentView === 'upload' && (
+        <EditorialHeroSection
+          onStartGenerating={handleStartGenerating}
+          onWatchDemo={handleWatchDemo}
+          onOpenPricing={() => setShowPricingModal(true)}
+          onOpenResources={() => setShowResourcesModal(true)}
+          onOpenAbout={() => setShowAboutModal(true)}
+          onOpenFeatures={() => {
+            const el = document.getElementById('why-choose-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          onOpenLogin={() => setShowLoginModal(true)}
+          onToggleTheme={() => setThemeMode(prev => prev === 'light' ? 'dark' : 'light')}
+          themeMode={themeMode}
+          user={user}
+          onNavigateView={(v) => {
+            setCurrentView(v as any);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          currentView={currentView}
+          itemsCount={items.length}
+        />
+      )}
 
-          {/* Interactive Responsive Pointer Spotlight Aura */}
-          <div
-            className="absolute rounded-full pointer-events-none transition-transform duration-300 ease-out"
-            style={{
-              top: -240,
-              left: -240,
-              width: 480,
-              height: 480,
-              transform: `translate3d(${mousePos.x}px, ${mousePos.y}px, 0)`,
-              background: themeMode === 'light'
-                ? 'radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.05) 45%, transparent 70%)'
-                : 'radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, rgba(168, 85, 247, 0.1) 45%, transparent 70%)',
-              opacity: isPointerActive ? 1 : 0.35,
-              transition: 'opacity 0.6s ease'
-            }}
-          />
+      {/* Top Header for Secondary Views (Monetize, SEO Rank, Trends, Prompts, Calendar, Competitor) */}
+      {currentView !== 'upload' && (
+        <header className="sticky top-0 z-40 bg-[#faf8f5]/95 backdrop-blur-md border-b border-stone-200/90 py-3.5 px-6 sm:px-10 lg:px-14 flex items-center justify-between gap-4">
+          <AdobeMetaProLogo size="md" showText={true} onClick={() => setCurrentView('upload')} />
 
-          {/* Subtle Ambient Micro-Particles */}
-          <div className="absolute top-[20%] left-[15%] w-1.5 h-1.5 rounded-full bg-indigo-400/40 animate-float-slow" />
-          <div className="absolute top-[60%] left-[8%] w-2 h-2 rounded-full bg-purple-400/30 animate-float-slow-rev" />
-          <div className="absolute top-[30%] right-[18%] w-1.5 h-1.5 rounded-full bg-emerald-400/40 animate-float-slow" />
-          <div className="absolute top-[75%] right-[22%] w-2 h-2 rounded-full bg-pink-400/30 animate-float-slow-rev" />
-        </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
+            <button
+              onClick={() => setCurrentView('upload')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
+                currentView === 'upload'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+              }`}
+            >
+              Studio
+            </button>
+            <button
+              onClick={() => setCurrentView('monetize')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
+                currentView === 'monetize'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+              }`}
+            >
+              <DollarSign className="w-3.5 h-3.5 text-[#c49e63]" />
+              <span>Monetize &amp; Earning</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('seo-rank')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
+                currentView === 'seo-rank'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+              }`}
+            >
+              100% Rank SEO
+            </button>
+            <button
+              onClick={() => setCurrentView('trends')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
+                currentView === 'trends'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+              }`}
+            >
+              Market Trends
+            </button>
+            <button
+              onClick={() => setCurrentView('prompts')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
+                currentView === 'prompts'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+              }`}
+            >
+              AI Prompts
+            </button>
+            <button
+              onClick={() => setCurrentView('calendar')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
+                currentView === 'calendar'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+              }`}
+            >
+              Calendar
+            </button>
+            <button
+              onClick={() => setCurrentView('competitor')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
+                currentView === 'competitor'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+              }`}
+            >
+              Competitor Spy
+            </button>
+          </div>
+
+          <button
+            onClick={() => setCurrentView('upload')}
+            className="text-xs font-semibold text-neutral-800 hover:text-black flex items-center gap-1.5 bg-white border border-stone-200 px-3.5 py-1.5 rounded-full transition shadow-xs hover:shadow-sm cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Studio</span>
+          </button>
+        </header>
       )}
 
       <motion.div 
+        id="studio-workspace"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-7xl mx-auto space-y-6 relative z-10"
+        className="max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 space-y-6 relative z-10 pt-4"
       >
         {/* Master Architectural Command Center - Unified Seamless Navigation */}
         <motion.header
@@ -2843,15 +2847,12 @@ export default function App() {
                 <div className="flex items-center gap-2">
                   <h1 className={`text-lg sm:text-xl font-black tracking-tight ${themeMode === 'light' ? 'text-slate-900' : 'text-white'} flex items-center gap-1.5`}>
                     <span>AdobeMeta</span>
-                    <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Pro</span>
+                    <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 bg-clip-text text-transparent">Pro</span>
                   </h1>
-                  <span className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-medium ${themeMode === 'light' ? 'text-slate-600 bg-slate-100 border-slate-200' : 'text-slate-300 bg-slate-800/80 border-slate-700'} px-2 py-0.5 rounded-md border`}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    Architectural Edition
-                  </span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
                 </div>
                 <p className={`text-[11px] ${themeMode === 'light' ? 'text-slate-500 font-medium' : 'text-slate-400 font-normal'} hidden sm:block`}>
-                  Curated Stock Contributor Suite · Founder Ratul Sorker
+                  Stock Contributor Earning Suite · Founder Ratul Sorker
                 </p>
               </div>
             </div>
@@ -3042,6 +3043,17 @@ export default function App() {
                 )}
               </button>
 
+              {/* 1-Click Multi-Agency CSV Hub Shortcut */}
+              <button
+                type="button"
+                onClick={() => setShowMultiCsvModal(true)}
+                className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                title="1-Click Multi-Marketplace CSV Exporter (Adobe Stock, Shutterstock, Freepik, Getty)"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden xl:inline">Multi-CSV</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setShowShortcutsModal(true)}
@@ -3070,112 +3082,45 @@ export default function App() {
               </button>
             </div>
           </div>
-
-          {/* TIER 2: Studio Workspace Controls & Monetization Portals */}
-          <div className={`${themeMode === 'light' ? 'bg-slate-50/90' : 'bg-slate-900/60'} px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3`}>
-            {/* Left: Spatial 3D House vs Classic Grid Switch */}
-            {currentView === 'upload' ? (
-              <div className="flex items-center gap-2">
-                <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'text-slate-500' : 'text-slate-400'} uppercase tracking-wider hidden sm:inline`}>
-                  Interface:
-                </span>
-                <div className={`flex items-center gap-1 ${themeMode === 'light' ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-950/90 border-slate-800'} p-1 rounded-xl border`}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWorkspaceMode('spatial');
-                      localStorage.setItem('adobemeta_workspace_mode', 'spatial');
-                      showToast('Entered Architectural Digital Space');
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                      workspaceMode === 'spatial'
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
-                        : themeMode === 'light'
-                        ? 'text-slate-600 hover:text-slate-900'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                    title="Enter Modern Architectural Contributor Space"
-                  >
-                    <Compass className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Architectural Space</span>
-                    <span className="text-[9px] bg-emerald-500/20 text-emerald-600 px-1 py-0.2 rounded font-black">3D</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWorkspaceMode('classic');
-                      localStorage.setItem('adobemeta_workspace_mode', 'classic');
-                      showToast('Switched to Classic Batch Grid');
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                      workspaceMode === 'classic'
-                        ? 'bg-indigo-600 text-white shadow-md'
-                        : themeMode === 'light'
-                        ? 'text-slate-600 hover:text-slate-900'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                    title="Switch to Classic Batch Grid"
-                  >
-                    <Grid className={`w-3.5 h-3.5 ${themeMode === 'light' ? 'text-slate-600' : 'text-slate-300'}`} />
-                    <span>Classic Grid</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                <button
-                  type="button"
-                  onClick={() => setCurrentView('upload')}
-                  className="flex items-center gap-1 text-indigo-600 hover:text-indigo-500 font-bold transition"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Return to Studio</span>
-                </button>
-                <span className="text-slate-400">/</span>
-                <span className={`${themeMode === 'light' ? 'text-slate-800' : 'text-slate-300'} font-bold uppercase tracking-wider text-[11px]`}>
-                  {currentView === 'monetize'
-                    ? 'Google Monetization & Contributor Earning Center'
-                    : currentView === 'seo-rank'
-                    ? '100% Rank #1 SEO Algorithm Engine'
-                    : currentView === 'trends'
-                    ? 'Market Trends Analytics'
-                    : currentView === 'prompts'
-                    ? 'AI Prompt Studio'
-                    : currentView === 'calendar'
-                    ? 'Seasonal Demand Calendar'
-                    : 'Competitor Tag Spy'}
-                </span>
-              </div>
-            )}
-
-            {/* Right: Multi-CSV Portal */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowMultiCsvModal(true)}
-                className={`${themeMode === 'light' ? 'bg-slate-100 hover:bg-slate-200 text-emerald-700 border-slate-200' : 'bg-slate-800 hover:bg-slate-700 text-emerald-300 hover:text-emerald-200 border-emerald-500/30'} text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border shrink-0 shadow-xs cursor-pointer`}
-                title="1-Click Multi-Marketplace CSV Exporter (Adobe Stock, Shutterstock, Freepik, Getty)"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Multi-Agency CSV Hub</span>
-              </button>
-            </div>
-          </div>
-
-          {/* TIER 3: Seamless Integrated Live Demand Ticker */}
-          <div className={themeMode === 'light' ? 'bg-white/90' : 'bg-slate-950/80'}>
-            <LiveTrendingTicker
-              themeMode={themeMode}
-              onSelectTrend={(tag) => {
-                setTrendSearchPreload(tag);
-                setPromptStudioPreloadConcept(tag);
-                showToast(`✓ Applied trending tag "${tag}" to Market Trends & AI Prompts!`);
-              }}
-              showToast={showToast}
-            />
-          </div>
         </motion.header>
+
+        {/* Clean Contextual Floating Breadcrumb (only when not in Studio) */}
+        {currentView !== 'upload' && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex items-center justify-between gap-3 px-5 py-3 rounded-2xl border ${
+              themeMode === 'light'
+                ? 'bg-white/95 border-slate-200 shadow-sm text-slate-800'
+                : 'bg-slate-950/85 border-slate-800/90 shadow-xl text-slate-200 backdrop-blur-xl'
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => setCurrentView('upload')}
+              className="flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 font-bold text-xs sm:text-sm transition cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Return to Studio</span>
+            </button>
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <span className="text-slate-500">/</span>
+              <span className="text-emerald-400 font-bold uppercase tracking-wider text-[11px]">
+                {currentView === 'monetize'
+                  ? 'Google Monetization & Contributor Earning Center'
+                  : currentView === 'seo-rank'
+                  ? '100% Rank #1 SEO Algorithm Engine'
+                  : currentView === 'trends'
+                  ? 'Market Trends Analytics'
+                  : currentView === 'prompts'
+                  ? 'AI Prompt Studio'
+                  : currentView === 'calendar'
+                  ? 'Seasonal Demand Calendar'
+                  : 'Competitor Tag Spy'}
+              </span>
+            </div>
+          </motion.div>
+        )}
 
         
         <AnimatePresence>
@@ -3351,99 +3296,131 @@ export default function App() {
                 />
               ) : (
                 <>
+                  {/* Cinematic Inspiring Hero Section (World-Class Aesthetics) */}
+                  {items.length === 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                      className="text-center py-6 sm:py-10 max-w-4xl mx-auto space-y-4 px-2"
+                    >
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-emerald-500/10 border border-indigo-500/30 text-indigo-300 shadow-xs">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Enterprise Vector Intelligence &amp; Google Monetization</span>
+                      </div>
+
+                      <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-white">
+                        Rank #1 on Adobe Stock.{' '}
+                        <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-emerald-400 bg-clip-text text-transparent">
+                          Monetize with Google.
+                        </span>
+                      </h2>
+
+                      <p className={`text-sm sm:text-base ${themeMode === 'light' ? 'text-slate-600' : 'text-slate-400'} max-w-2xl mx-auto leading-relaxed`}>
+                        The ultimate intelligent studio for vector EPS artists and microstock photographers. 6-stage true visual rasterizer, 100% search algorithm optimization, and automated high-eCPM earning.
+                      </p>
+
+                      <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-slate-400 pt-2">
+                        <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Slot #1 Algorithm Lock</span>
+                        <span aria-hidden="true" className="text-slate-700">·</span>
+                        <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> 6-Stage EPS Visual Engine</span>
+                        <span aria-hidden="true" className="text-slate-700">·</span>
+                        <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> 1-Click IPTC &amp; CSV Export</span>
+                        <span aria-hidden="true" className="text-slate-700">·</span>
+                        <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> ads.txt Authorized</span>
+                      </div>
+                    </motion.div>
+                  )}
+
                   {/* Top High-RPM Monetization Leaderboard */}
                   <GoogleAdSenseBanner format="leaderboard" themeMode={themeMode} />
 
                   {/* Studio Metadata Settings Bar */}
                   <div className={`${themeMode === 'light' ? 'bg-white/95 border-slate-200/90 text-slate-800 shadow-sm' : 'bg-slate-900/90 border-slate-800 text-slate-100'} backdrop-blur-md border rounded-2xl p-4 shadow-xl`}>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  <div>
-                    <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'} block mb-1.5 flex items-center gap-1.5`}>
-                      <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>Asset Type</span>
-                    </label>
-                    <select
-                      value={assetType}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setAssetType(val);
-                        if (val.includes('Generative AI')) {
-                          setIsAiGenerated(true);
-                        }
-                      }}
-                      className={`w-full ${themeMode === 'light' ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white' : 'bg-slate-950/80 border-slate-700 text-white'} border text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner`}
-                    >
-                      <option value="Photo / JPG">Photo / JPG</option>
-                      <option value="Photoshop PSD / Template">Photoshop PSD / Template (.PSD, .SPD, .PSB)</option>
-                      <option value="Vector / EPS">Vector / EPS (Scalable Vector)</option>
-                      <option value="Stock Video / Footage (4K / HD)">Stock Video / Footage (4K / HD)</option>
-                      <option value="PNG (Transparent)">PNG (Transparent Background)</option>
-                      <option value="Illustration">Illustration / Clipart</option>
-                      <option value="3D Render">3D Render / CGI</option>
-                      <option value="Generative AI">Generative AI Art</option>
-                    </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                      <div>
+                        <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'} block mb-1.5 flex items-center gap-1.5`}>
+                          <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                          <span>Asset Type</span>
+                        </label>
+                        <select
+                          value={assetType}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setAssetType(val);
+                            if (val.includes('Generative AI')) {
+                              setIsAiGenerated(true);
+                            }
+                          }}
+                          className={`w-full ${themeMode === 'light' ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white' : 'bg-slate-950/80 border-slate-700 text-white'} border text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner`}
+                        >
+                          <option value="Photo / JPG">Photo / JPG</option>
+                          <option value="Photoshop PSD / Template">Photoshop PSD / Template (.PSD, .SPD, .PSB)</option>
+                          <option value="Vector / EPS">Vector / EPS (Scalable Vector)</option>
+                          <option value="Stock Video / Footage (4K / HD)">Stock Video / Footage (4K / HD)</option>
+                          <option value="PNG (Transparent)">PNG (Transparent Background)</option>
+                          <option value="Illustration">Illustration / Clipart</option>
+                          <option value="3D Render">3D Render / CGI</option>
+                          <option value="Generative AI">Generative AI Art</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'} block mb-1.5 flex items-center gap-1.5`}>
+                          <Target className="w-3.5 h-3.5 text-indigo-500" />
+                          <span>Target Marketplace</span>
+                        </label>
+                        <select
+                          value={targetMarketplace}
+                          onChange={(e) => setTargetMarketplace(e.target.value as TargetMarketplace)}
+                          className={`w-full ${themeMode === 'light' ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white' : 'bg-slate-950/80 border-slate-700 text-white'} border text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner`}
+                        >
+                          <option value="adobe_stock">Adobe Stock (Top 10 Ranked, 49 KW)</option>
+                          <option value="shutterstock">Shutterstock (5+ Words Title, 50 KW)</option>
+                          <option value="freepik">Freepik (Design Tags, 30 Max)</option>
+                          <option value="vecteezy">Vecteezy (Vector &amp; Art Focus, 35 KW)</option>
+                          <option value="getty">Getty Images / iStock (35 KW)</option>
+                          <option value="123rf">123RF (45 KW)</option>
+                          <option value="dreamstime">Dreamstime (45 KW)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'} block mb-1.5 flex items-center gap-1.5`}>
+                          <Globe className="w-3.5 h-3.5 text-indigo-500" />
+                          <span>Language</span>
+                        </label>
+                        <select
+                          value={language}
+                          onChange={(e) => setLanguage(e.target.value)}
+                          className={`w-full ${themeMode === 'light' ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white' : 'bg-slate-950/80 border-slate-700 text-white'} border text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner`}
+                        >
+                          <option value="English">English (Global Default)</option>
+                          <option value="Spanish">Spanish (Español)</option>
+                          <option value="French">French (Français)</option>
+                          <option value="German">German (Deutsch)</option>
+                          <option value="Italian">Italian (Italiano)</option>
+                          <option value="Portuguese">Portuguese (Português)</option>
+                          <option value="Japanese">Japanese (日本語)</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'} block mb-1.5 flex items-center gap-1.5`}>
-                      <Target className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>Target Marketplace</span>
-                    </label>
-                    <select
-                      value={targetMarketplace}
-                      onChange={(e) => setTargetMarketplace(e.target.value as TargetMarketplace)}
-                      className={`w-full ${themeMode === 'light' ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white' : 'bg-slate-950/80 border-slate-700 text-white'} border text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner`}
-                    >
-                      <option value="adobe_stock">Adobe Stock (Top 10 Ranked, 49 KW)</option>
-                      <option value="shutterstock">Shutterstock (5+ Words Title, 50 KW)</option>
-                      <option value="freepik">Freepik (Design Tags, 30 Max)</option>
-                      <option value="vecteezy">Vecteezy (Vector & Art Focus, 35 KW)</option>
-                      <option value="getty">Getty Images / iStock (35 KW)</option>
-                      <option value="123rf">123RF (45 KW)</option>
-                      <option value="dreamstime">Dreamstime (45 KW)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'} block mb-1.5 flex items-center gap-1.5`}>
-                      <Globe className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>Language</span>
-                    </label>
-                    <select
-                      value={language}
-                      onChange={(e) => setLanguage(e.target.value)}
-                      className={`w-full ${themeMode === 'light' ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white' : 'bg-slate-950/80 border-slate-700 text-white'} border text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner`}
-                    >
-                      <option value="English">English (Global Default)</option>
-                      <option value="Spanish">Spanish (Español)</option>
-                      <option value="French">French (Français)</option>
-                      <option value="German">German (Deutsch)</option>
-                      <option value="Italian">Italian (Italiano)</option>
-                      <option value="Portuguese">Portuguese (Português)</option>
-                      <option value="Japanese">Japanese (日本語)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <motion.div variants={itemVariants} className={`${themeMode === 'light' ? 'bg-white/95 border-slate-200/90 shadow-sm' : 'bg-slate-950/80 border-slate-800 shadow-2xl'} backdrop-blur-xl border rounded-2xl p-6 space-y-5`}>
+              <motion.div variants={itemVariants} className="space-y-4">
                 <motion.div 
-                  whileHover={{ scale: 1.01, borderColor: "rgba(99, 102, 241, 0.8)" }}
+                  whileHover={{ scale: 1.004 }}
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                   onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
                   onDrop={handleDrop}
-                  className={`border-2 border-dashed transition-all rounded-xl p-12 text-center relative group overflow-hidden shimmer-container ${
+                  className={`border-2 border-dashed transition-all duration-300 rounded-3xl p-10 sm:p-14 text-center relative group overflow-hidden ${
                     isDragging 
-                      ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_60px_rgba(99,102,241,0.35)] scale-[1.01]' 
+                      ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_50px_rgba(99,102,241,0.25)] scale-[1.008]' 
                       : themeMode === 'light'
-                      ? 'border-slate-300 bg-slate-50/70 hover:bg-slate-100/80 shadow-sm'
-                      : 'border-slate-800 bg-slate-900/40 hover:bg-slate-800/60 shadow-lg'
+                      ? 'border-slate-300 bg-white/95 hover:border-indigo-400 shadow-sm'
+                      : 'border-slate-800/90 bg-slate-950/80 hover:border-indigo-500/40 shadow-xl'
                   }`}
                 >
-                  {/* Continuous Cyber Laser Scanline Beam */}
-                  <div className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent shadow-[0_0_15px_rgba(99,102,241,0.9)] animate-laser-scan pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity" />
-
-                  <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/8 via-purple-500/4 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                   <input
                     type="file"
                     multiple
@@ -3454,63 +3431,112 @@ export default function App() {
                   />
                   <label htmlFor="bulkInput" className="cursor-pointer space-y-4 block relative z-10">
                     <motion.div 
-                      whileHover={{ y: -6, rotate: 2 }}
-                      className={`w-16 h-16 ${themeMode === 'light' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-indigo-900/30 border-indigo-500/20 text-indigo-400'} rounded-2xl flex items-center justify-center mx-auto border shadow-md relative group`}
+                      whileHover={{ scale: 1.08 }}
+                      className={`w-16 h-16 ${themeMode === 'light' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-indigo-950/50 border-indigo-500/30 text-indigo-400'} rounded-2xl flex items-center justify-center mx-auto border shadow-md transition`}
                     >
-                      <div className="absolute inset-0 rounded-2xl bg-indigo-500/20 animate-ping opacity-20" />
-                      <Upload className="w-8 h-8 relative z-10 animate-bounce duration-1000" />
+                      <Upload className="w-8 h-8" />
                     </motion.div>
-                    <h3 className={`text-xl font-bold ${themeMode === 'light' ? 'text-slate-900' : 'text-slate-100'} tracking-tight`}>
-                      {isDragging ? 'Drop your EPS, PSD, Photos or Videos here!' : 'Drag & Drop files or Click to select'}
-                    </h3>
-                    <p className={`text-base font-bold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'}`}>Selected: <span className="text-indigo-500 font-black">{items.length}</span>/100 Files</p>
-                    <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-sky-500/20 text-sky-300 border-sky-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs animate-float-slow`}>
-                        <Layers className="w-3 h-3 text-sky-500" /> Photoshop: .PSD / .SPD / .PSB
-                      </span>
-                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs animate-float-slow-rev`}>
-                        <FileCode className="w-3 h-3 text-amber-500" /> Vector: .EPS / .AI / .SVG
-                      </span>
-                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs animate-float-slow`}>
-                        <ImageIcon className="w-3 h-3 text-indigo-500" /> Photo: .JPG / .PNG / .WEBP
-                      </span>
-                      <span className={`text-[11px] font-bold ${themeMode === 'light' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'} border px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs animate-float-slow-rev`}>
-                        <Video className="w-3 h-3 text-purple-500" /> 4K Video: .MP4 / .MOV
-                      </span>
-                    </div>
-                    <p className={`text-xs ${themeMode === 'light' ? 'text-slate-500' : 'text-slate-400'} font-medium`}>Automatic 6-Stage Vector EPS Rasterizer, Photoshop Layer Parser & Adobe XMP sidecars</p>
-                  </label>
-                </motion.div>
-
-                {/* Direct Vector EPS/AI Metadata Studio Shortcut Banner */}
-                <div className="bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-slate-900 border border-amber-500/30 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-                      <FileCode className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <span>EPS & AI Vector Metadata Studio</span>
-                        <span className="text-[9px] bg-amber-500/30 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 rounded font-black">DIRECT TOOL</span>
-                      </h4>
-                      <p className="text-[11px] text-slate-400">
-                        Upload individual EPS/AI files to directly edit titles, tags, export .XMP sidecars, or write internal PostScript DSC metadata.
+                    
+                    <div className="space-y-1.5">
+                      <h3 className={`text-xl sm:text-2xl font-black ${themeMode === 'light' ? 'text-slate-900' : 'text-white'} tracking-tight`}>
+                        {isDragging ? 'Drop Files Here to Analyze' : 'Drag & Drop Vector EPS, PSD, or Photos'}
+                      </h3>
+                      <p className={`text-xs sm:text-sm ${themeMode === 'light' ? 'text-slate-500' : 'text-slate-400'} max-w-lg mx-auto`}>
+                        Automatic 6-stage PostScript vector rasterizer, IPTC metadata embedder &amp; agency CSV generator
                       </p>
                     </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowVectorStudioModal(true)}
-                    className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm"
-                  >
-                    <FileCode className="w-3.5 h-3.5" />
-                    <span>Open Vector Studio</span>
-                  </button>
-                </div>
+
+                    <div className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl transition shadow-md shadow-indigo-600/25">
+                      <Plus className="w-4 h-4" />
+                      <span>Browse Files</span>
+                    </div>
+
+                    <div className="pt-2 flex items-center justify-center gap-2 text-[11px] text-slate-500 font-medium">
+                      <span>Vector EPS</span>
+                      <span aria-hidden="true">·</span>
+                      <span>Illustrator AI</span>
+                      <span aria-hidden="true">·</span>
+                      <span>Photoshop PSD</span>
+                      <span aria-hidden="true">·</span>
+                      <span>High-Res JPG</span>
+                      <span aria-hidden="true">·</span>
+                      <span>PNG</span>
+                      <span aria-hidden="true">·</span>
+                      <span>4K Footage</span>
+                    </div>
+                  </label>
+                </motion.div>
               </motion.div>
 
+              {/* 1-Click Master Test-Drive Showcase (when empty) */}
+              {items.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`rounded-2xl p-6 border ${
+                    themeMode === 'light'
+                      ? 'bg-white border-slate-200/90 shadow-lg text-slate-900'
+                      : 'bg-gradient-to-r from-slate-900/95 via-indigo-950/20 to-slate-900/95 border-indigo-500/30 shadow-2xl text-white'
+                  } space-y-4`}
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      <h4 className="text-xs font-black uppercase tracking-wider">
+                        Instant 1-Click Master Test-Drive — Experience True Vector EPS &amp; Metadata Intelligence
+                      </h4>
+                    </div>
+                    <span className="text-[11px] text-slate-400">
+                      Click any curated master asset below to load real previews &amp; 100% Rank #1 metadata in 1 second:
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    {SAMPLE_SHOWCASE_ASSETS.map((sample, sIdx) => (
+                      <button
+                        key={sIdx}
+                        type="button"
+                        onClick={() => handleLoadSampleAsset(sample.item)}
+                        className={`group p-3.5 rounded-xl border text-left transition hover:scale-[1.02] active:scale-[0.99] cursor-pointer flex flex-col justify-between gap-3 ${
+                          themeMode === 'light'
+                            ? 'bg-slate-50 hover:bg-white border-slate-200 hover:border-indigo-500/50 shadow-xs'
+                            : 'bg-slate-950/80 hover:bg-slate-900 border-slate-800 hover:border-indigo-500/60 shadow-md'
+                        }`}
+                      >
+                        <div className="space-y-2.5">
+                          <div className="aspect-video w-full rounded-lg overflow-hidden border border-white/10 relative">
+                            <img
+                              src={sample.item.previewUrl}
+                              alt={sample.label}
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                            />
+                            <span className="absolute top-1.5 left-1.5 bg-black/80 backdrop-blur-xs text-[9px] font-black text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded shadow">
+                              {sample.badge}
+                            </span>
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-bold text-white group-hover:text-indigo-400 transition leading-snug">
+                              {sample.label}
+                            </h5>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{sample.category}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] font-bold text-indigo-400 pt-2 border-t border-white/5">
+                          <span>Test-Drive Asset</span>
+                          <Sparkles className="w-3.5 h-3.5 group-hover:rotate-12 transition" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
               {/* Contributor Milestone Goal Widget */}
-              <ContributorGoalWidget completedCount={items.filter((i) => i.result).length} />
+              <ContributorGoalWidget
+                completedCount={items.filter((i) => i.result).length}
+                onOpenMonetize={() => setCurrentView('monetize')}
+                themeMode={themeMode}
+              />
 
               {/* Dedicated Top Action Bar for instant visibility of download buttons */}
               {items.length > 0 && (
@@ -3723,12 +3749,18 @@ export default function App() {
                             </div>
                           )}
                           {item.result && (
-                            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase border ${
-                              item.result.riskLabel === 'Low risk' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                              item.result.riskLabel === 'Medium risk' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'
-                            }`}>
-                              {item.result.riskLabel}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase border ${
+                                item.result.riskLabel === 'Low risk' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                item.result.riskLabel === 'Medium risk' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'
+                              }`}>
+                                {item.result.riskLabel}
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide text-emerald-400 bg-emerald-500/10 border border-emerald-500/30">
+                                <DollarSign className="w-2.5 h-2.5" />
+                                <span>Est. ${(item.result.priorityKeywords.length * 4.2 + 130).toFixed(0)}/yr</span>
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -3803,6 +3835,19 @@ export default function App() {
 
                       {item.result && (
                         <div className="flex flex-wrap items-center gap-2">
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              setCurrentView('monetize');
+                              showToast('💰 Opened Monetization & Earning Hub for royalty & ad revenue forecast');
+                            }}
+                            className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                            title="Simulate Asset Royalties & Google AdSense Revenue"
+                          >
+                            <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Monetize</span>
+                          </motion.button>
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -3962,7 +4007,7 @@ export default function App() {
                         </div>
                       )}
                     </motion.div>
-                    {(index + 1) % 3 === 0 && (
+                    {(index === 0 || (index + 1) % 3 === 0) && (
                       <GoogleAdSenseBanner format="in-feed" themeMode={themeMode} />
                     )}
                   </React.Fragment>
@@ -4843,6 +4888,11 @@ export default function App() {
       <TermsOfServiceModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
       <EarningsDisclaimerModal isOpen={showDisclaimerModal} onClose={() => setShowDisclaimerModal(false)} />
       <ContactSupportModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />
+
+      {/* Editorial Navigation Modals */}
+      <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
+      <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
+      <ResourcesModal isOpen={showResourcesModal} onClose={() => setShowResourcesModal(false)} />
 
       {/* Persistent High-RPM Google AdSense Sticky Footer Anchor */}
       <GoogleAdSenseBanner format="sticky-footer" themeMode={themeMode} />

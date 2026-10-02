@@ -1,6 +1,7 @@
 import React from 'react';
 import { DollarSign, Shield, FileText, Mail, Sparkles, TrendingUp, Layers, ExternalLink } from 'lucide-react';
 import { GoogleAdSenseBanner } from './GoogleAdSenseBanner';
+import { AdobeMetaProLogo } from './AdobeMetaProLogo';
 
 interface WebsiteFooterProps {
   onOpenPrivacy: () => void;
@@ -23,45 +24,33 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
   onOpenNicheRadar,
   onOpenGuideHub,
   onOpenMultiCsv,
-  themeMode = 'dark',
+  themeMode = 'light',
 }) => {
   const isLight = themeMode === 'light';
 
   return (
-    <footer className={`w-full mt-16 pt-10 pb-8 border-t ${
-      isLight ? 'border-slate-200 bg-white/90 text-slate-800' : 'border-slate-800/80 bg-slate-950/80 text-slate-100'
-    } backdrop-blur-xl relative z-10 transition-colors duration-200`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
+    <footer className={`w-full mt-20 pt-12 pb-10 border-t ${
+      isLight ? 'border-stone-200/90 bg-[#faf8f5] text-neutral-800' : 'border-stone-800/80 bg-neutral-950 text-neutral-100'
+    } relative z-10 transition-colors duration-200 font-sans`}>
+      <div className="max-w-[1360px] mx-auto px-6 sm:px-10 lg:px-14 space-y-10">
         {/* Bottom Leaderboard Ad Banner (Policy Compliant) */}
         <div className="w-full">
           <GoogleAdSenseBanner format="leaderboard" themeMode={themeMode} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pt-4">
           {/* Brand Info */}
-          <div className="md:col-span-4 space-y-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md">
-                AM
-              </div>
-              <span className={`text-lg font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                AdobeMeta <span className="text-indigo-500">Pro</span>
-              </span>
-            </div>
-            <p className={`text-xs leading-relaxed max-w-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-              The premier AI-powered metadata optimization, computer vision quality inspector, and Google monetization suite for professional microstock contributors.
+          <div className="md:col-span-4 space-y-4">
+            <AdobeMetaProLogo size="md" showText={true} theme={isLight ? 'light' : 'dark'} />
+            <p className={`text-[12.5px] leading-relaxed max-w-sm ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
+              The premier metadata intelligence, image understanding, and Google monetization suite for professional microstock contributors on Adobe Stock, Shutterstock, and Freepik.
             </p>
-            <div className="flex items-center gap-2 pt-1">
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                isLight ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
-              }`}>
-                ✓ 100% Agency Compliant
-              </span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-                isLight ? 'text-indigo-700 bg-indigo-50 border-indigo-200' : 'text-indigo-300 bg-indigo-500/10 border-indigo-500/30'
-              }`}>
-                Google AdSense Ready
-              </span>
+            <div className="flex items-center gap-3 pt-1 text-[11px] text-neutral-500 font-medium">
+              <span>August 2026 Guidelines</span>
+              <span>·</span>
+              <span>Top 10 Ranked</span>
+              <span>·</span>
+              <span>Zero IP Risk</span>
             </div>
           </div>
 
