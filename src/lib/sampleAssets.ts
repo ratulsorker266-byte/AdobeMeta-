@@ -1,4 +1,8 @@
 import { BulkItem } from '../types';
+import coffyBrandingPack from '../assets/images/coffy_branding_pack_1791019025042.jpg';
+import coffyVectorArt from '../assets/images/coffy_vector_art_1791019002718.jpg';
+import coffyCinemaFilm from '../assets/images/coffy_cinema_film_1791019014036.jpg';
+import coffyMotionGraphics from '../assets/images/coffy_motion_graphics_1791019037281.jpg';
 
 // Instant 1-Click Master Samples for Immediate Test-Drive
 export const SAMPLE_SHOWCASE_ASSETS: {
@@ -14,7 +18,7 @@ export const SAMPLE_SHOWCASE_ASSETS: {
     item: {
       id: 'demo-sample-1',
       file: new File([''], 'modern_biophilic_villa_sunset.jpg', { type: 'image/jpeg' }),
-      previewUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+      previewUrl: coffyBrandingPack,
       status: 'completed',
       progress: 100,
       result: {
@@ -109,7 +113,7 @@ export const SAMPLE_SHOWCASE_ASSETS: {
     item: {
       id: 'demo-sample-2',
       file: new File([''], 'industrial_robotics_semiconductor_cleanroom.jpg', { type: 'image/jpeg' }),
-      previewUrl: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80',
+      previewUrl: coffyVectorArt,
       status: 'completed',
       progress: 100,
       result: {
@@ -194,7 +198,7 @@ export const SAMPLE_SHOWCASE_ASSETS: {
     item: {
       id: 'demo-sample-3',
       file: new File([''], 'offshore_wind_turbines_ocean_renewable.jpg', { type: 'image/jpeg' }),
-      previewUrl: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&w=1200&q=80',
+      previewUrl: coffyCinemaFilm,
       status: 'completed',
       progress: 100,
       result: {
@@ -279,7 +283,7 @@ export const SAMPLE_SHOWCASE_ASSETS: {
     item: {
       id: 'demo-sample-4',
       file: new File([''], 'modern_tech_startup_team_workspace.eps', { type: 'application/postscript' }),
-      previewUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80',
+      previewUrl: coffyMotionGraphics,
       status: 'completed',
       progress: 100,
       epsHint: {

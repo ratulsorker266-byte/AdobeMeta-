@@ -49,6 +49,7 @@ export function VectorMetadataStudioModal({
   const [extractedHeader, setExtractedHeader] = useState<{ title?: string; creator?: string; boundingBox?: string }>({});
   const [copiedXmp, setCopiedXmp] = useState(false);
   const [vectorPreviewUrl, setVectorPreviewUrl] = useState('');
+  const [hasRealVisualPreview, setHasRealVisualPreview] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -67,12 +68,14 @@ export function VectorMetadataStudioModal({
     setKeywords([]);
     setExtractedHeader({});
     setVectorPreviewUrl('');
+    setHasRealVisualPreview(false);
 
     // High-Performance Vector Preview & Metadata Parser (Ghostscript visual engine)
     parseEpsFile(uploadedFile)
       .then((epsData) => {
         if (epsData.previewUrl) {
           setVectorPreviewUrl(epsData.previewUrl);
+          setHasRealVisualPreview(Boolean(epsData.hasEmbeddedThumbnail));
         }
         if (epsData.metadata.title) {
           setTitle(epsData.metadata.title);
@@ -120,8 +123,8 @@ export function VectorMetadataStudioModal({
     setIsGeneratingAI(true);
     onToast('Analyzing true vector artwork visual with Gemini AI...');
 
-    // If real visual JPEG preview was rendered by Ghostscript, send it directly to /api/analyze!
-    if (vectorPreviewUrl && vectorPreviewUrl.startsWith('data:image/')) {
+    // If real visual JPEG preview was rendered, send it directly to /api/analyze!
+    if (hasRealVisualPreview && vectorPreviewUrl && vectorPreviewUrl.startsWith('data:image/')) {
       try {
         const res = await fetch('/api/analyze', {
           method: 'POST',
@@ -136,7 +139,13 @@ export function VectorMetadataStudioModal({
             assetType: 'Vector / EPS',
             language: 'English',
             isAiGenerated: false,
-            fileName: file?.name
+            fileName: file?.name,
+            vectorMetadataHint: {
+              title: title || extractedHeader.title,
+              keywords: keywords.length > 0 ? keywords : undefined,
+              description: description,
+              creator: extractedHeader.creator,
+            }
           })
         });
 

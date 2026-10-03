@@ -1432,6 +1432,7 @@ export default function App() {
                     // If companion JPG was provided, keep companion JPG preview, otherwise use parsed EPS canvas
                     previewUrl: it.previewUrl || epsData.previewUrl,
                     epsHint: epsData.metadata,
+                    hasRealVisualPreview: Boolean(it.hasRealVisualPreview || epsData.hasEmbeddedThumbnail),
                   }
                 : it
             )
@@ -1848,41 +1849,54 @@ export default function App() {
       // If file is an EPS or AI vector, use parsed high-fidelity preview, companion preview, or parse directly
       if (ext === 'eps' || ext === 'ai' || isEpsFile(file)) {
         try {
-          if (item.previewUrl && item.previewUrl.startsWith('data:image/')) {
-            const b64 = item.previewUrl.split(',')[1];
-            if (b64) return b64;
-          }
-          if (item.previewUrl && item.previewUrl.startsWith('blob:')) {
-            try {
-              const res = await fetch(item.previewUrl);
-              const blob = await res.blob();
-              if (typeof createImageBitmap === 'function') {
-                const bmp = await createImageBitmap(blob);
-                const canvas = document.createElement('canvas');
-                canvas.width = Math.min(bmp.width, 512);
-                canvas.height = Math.min(bmp.height, 512);
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                  ctx.fillStyle = '#FFFFFF';
-                  ctx.fillRect(0, 0, canvas.width, canvas.height);
-                  ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-                  const b64 = canvas.toDataURL('image/jpeg', 0.82).split(',')[1];
+          if (item.hasRealVisualPreview) {
+            if (item.previewUrl && item.previewUrl.startsWith('data:image/')) {
+              const b64 = item.previewUrl.split(',')[1];
+              if (b64) return b64;
+            }
+            if (item.previewUrl && item.previewUrl.startsWith('blob:')) {
+              try {
+                const res = await fetch(item.previewUrl);
+                const blob = await res.blob();
+                if (typeof createImageBitmap === 'function') {
+                  const bmp = await createImageBitmap(blob);
+                  const canvas = document.createElement('canvas');
+                  canvas.width = Math.min(bmp.width, 512);
+                  canvas.height = Math.min(bmp.height, 512);
+                  const ctx = canvas.getContext('2d');
+                  if (ctx) {
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+                    const b64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+                    if (bmp.close) bmp.close();
+                    if (b64) return b64;
+                  }
                   if (bmp.close) bmp.close();
-                  if (b64) return b64;
                 }
-                if (bmp.close) bmp.close();
-              }
-            } catch (_) {}
+              } catch (_) {}
+            }
           }
+
+          // If real visual preview not yet cached, parse/render now with ultra-fast engine (~119ms)
           const epsData = await parseEpsFile(file);
-          if (epsData.previewUrl && epsData.previewUrl.startsWith('data:image/')) {
-            // Update preview URL in state so user sees the preview immediately
+          if (epsData.previewUrl) {
             setItems((prev) =>
               prev.map((it) =>
-                it.id === item.id ? { ...it, previewUrl: epsData.previewUrl, epsHint: epsData.metadata } : it
+                it.id === item.id
+                  ? {
+                      ...it,
+                      previewUrl: epsData.previewUrl,
+                      epsHint: epsData.metadata,
+                      hasRealVisualPreview: epsData.hasEmbeddedThumbnail,
+                    }
+                  : it
               )
             );
-            return epsData.base64ForAi || epsData.previewUrl.split(',')[1] || '';
+            if (epsData.hasEmbeddedThumbnail) {
+              const b64 = epsData.base64ForAi || (epsData.previewUrl.startsWith('data:image/') ? epsData.previewUrl.split(',')[1] : '');
+              if (b64) return b64;
+            }
           }
         } catch (e) {
           console.warn("EPS preview compression error:", e);
@@ -2692,9 +2706,9 @@ export default function App() {
     <div 
       className={`min-h-screen ${
         themeMode === 'light' 
-          ? 'bg-[#fcfdfd] text-slate-900 architectural-white-grid' 
-          : 'bg-[#0b0f19] text-slate-100'
-      } p-4 sm:p-6 font-sans relative overflow-x-hidden transition-colors duration-300`}
+          ? 'bg-white text-[#111215]' 
+          : 'bg-[#08090b] text-[#f2f2f0]'
+      } font-sans relative overflow-x-hidden transition-colors duration-300`}
       style={customBgUrl ? {
         backgroundImage: `url(${customBgUrl})`,
         backgroundSize: 'cover',
@@ -2718,7 +2732,7 @@ export default function App() {
             const el = document.getElementById('why-choose-section');
             if (el) el.scrollIntoView({ behavior: 'smooth' });
           }}
-          onOpenLogin={() => setShowLoginModal(true)}
+          onOpenLogin={handleGoogleLogin}
           onToggleTheme={() => setThemeMode(prev => prev === 'light' ? 'dark' : 'light')}
           themeMode={themeMode}
           user={user}
@@ -2733,16 +2747,20 @@ export default function App() {
 
       {/* Top Header for Secondary Views (Monetize, SEO Rank, Trends, Prompts, Calendar, Competitor) */}
       {currentView !== 'upload' && (
-        <header className="sticky top-0 z-40 bg-[#faf8f5]/95 backdrop-blur-md border-b border-stone-200/90 py-3.5 px-6 sm:px-10 lg:px-14 flex items-center justify-between gap-4">
-          <AdobeMetaProLogo size="md" showText={true} onClick={() => setCurrentView('upload')} />
+        <header className={`sticky top-0 z-40 ${
+          themeMode === 'light'
+            ? 'bg-[#faf8f5]/95 border-stone-200/90 text-neutral-900'
+            : 'bg-[#0a0c10]/95 border-stone-800 text-neutral-100'
+        } backdrop-blur-md border-b py-3 px-6 sm:px-10 lg:px-14 flex items-center justify-between gap-4 transition-colors duration-200`}>
+          <AdobeMetaProLogo size="md" showText={true} theme={themeMode === 'light' ? 'light' : 'dark'} onClick={() => setCurrentView('upload')} />
 
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
             <button
               onClick={() => setCurrentView('upload')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
-                currentView === 'upload'
-                  ? 'bg-neutral-900 text-white'
-                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+                themeMode === 'light'
+                  ? 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+                  : 'text-neutral-400 hover:text-white hover:bg-stone-800'
               }`}
             >
               Studio
@@ -2751,8 +2769,8 @@ export default function App() {
               onClick={() => setCurrentView('monetize')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
                 currentView === 'monetize'
-                  ? 'bg-neutral-900 text-white'
-                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+                  ? (themeMode === 'light' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-950 font-semibold shadow-sm')
+                  : (themeMode === 'light' ? 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60' : 'text-neutral-400 hover:text-white hover:bg-stone-800')
               }`}
             >
               <DollarSign className="w-3.5 h-3.5 text-[#c49e63]" />
@@ -2762,8 +2780,8 @@ export default function App() {
               onClick={() => setCurrentView('seo-rank')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
                 currentView === 'seo-rank'
-                  ? 'bg-neutral-900 text-white'
-                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+                  ? (themeMode === 'light' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-950 font-semibold shadow-sm')
+                  : (themeMode === 'light' ? 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60' : 'text-neutral-400 hover:text-white hover:bg-stone-800')
               }`}
             >
               100% Rank SEO
@@ -2772,8 +2790,8 @@ export default function App() {
               onClick={() => setCurrentView('trends')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
                 currentView === 'trends'
-                  ? 'bg-neutral-900 text-white'
-                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+                  ? (themeMode === 'light' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-950 font-semibold shadow-sm')
+                  : (themeMode === 'light' ? 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60' : 'text-neutral-400 hover:text-white hover:bg-stone-800')
               }`}
             >
               Market Trends
@@ -2782,8 +2800,8 @@ export default function App() {
               onClick={() => setCurrentView('prompts')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
                 currentView === 'prompts'
-                  ? 'bg-neutral-900 text-white'
-                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+                  ? (themeMode === 'light' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-950 font-semibold shadow-sm')
+                  : (themeMode === 'light' ? 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60' : 'text-neutral-400 hover:text-white hover:bg-stone-800')
               }`}
             >
               AI Prompts
@@ -2792,8 +2810,8 @@ export default function App() {
               onClick={() => setCurrentView('calendar')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
                 currentView === 'calendar'
-                  ? 'bg-neutral-900 text-white'
-                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+                  ? (themeMode === 'light' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-950 font-semibold shadow-sm')
+                  : (themeMode === 'light' ? 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60' : 'text-neutral-400 hover:text-white hover:bg-stone-800')
               }`}
             >
               Calendar
@@ -2802,21 +2820,48 @@ export default function App() {
               onClick={() => setCurrentView('competitor')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
                 currentView === 'competitor'
-                  ? 'bg-neutral-900 text-white'
-                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60'
+                  ? (themeMode === 'light' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-950 font-semibold shadow-sm')
+                  : (themeMode === 'light' ? 'text-neutral-600 hover:text-neutral-950 hover:bg-stone-200/60' : 'text-neutral-400 hover:text-white hover:bg-stone-800')
               }`}
             >
               Competitor Spy
             </button>
           </div>
 
-          <button
-            onClick={() => setCurrentView('upload')}
-            className="text-xs font-semibold text-neutral-800 hover:text-black flex items-center gap-1.5 bg-white border border-stone-200 px-3.5 py-1.5 rounded-full transition shadow-xs hover:shadow-sm cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Studio</span>
-          </button>
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setThemeMode(prev => prev === 'light' ? 'dark' : 'light')}
+              aria-label="Toggle theme mode"
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer ${
+                themeMode === 'light'
+                  ? 'text-neutral-700 hover:text-neutral-950 hover:bg-stone-200/50'
+                  : 'text-neutral-300 hover:text-white hover:bg-stone-800'
+              }`}
+              title="Toggle Day/Night view"
+            >
+              {themeMode === 'light' ? (
+                <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              ) : (
+                <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              )}
+            </button>
+
+            <button
+              onClick={() => setCurrentView('upload')}
+              className={`text-xs font-semibold flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition shadow-xs hover:shadow-sm cursor-pointer ${
+                themeMode === 'light'
+                  ? 'text-neutral-800 hover:text-black bg-white border border-stone-200'
+                  : 'text-neutral-200 hover:text-white bg-stone-900 border border-stone-700'
+              }`}
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Studio</span>
+            </button>
+          </div>
         </header>
       )}
 
@@ -2827,47 +2872,39 @@ export default function App() {
         animate="visible"
         className="max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 space-y-6 relative z-10 pt-4"
       >
-        {/* Master Architectural Command Center - Unified Seamless Navigation */}
+        {/* Master Architectural Studio Concourse - Unified Minimalist Luxury Navigation */}
         <motion.header
           variants={itemVariants}
           className={`${
             themeMode === 'light'
-              ? 'bg-white/95 backdrop-blur-2xl border-slate-200/90 shadow-xl shadow-slate-200/40 divide-slate-100 text-slate-900'
-              : 'bg-slate-950/90 backdrop-blur-2xl border-slate-800/90 shadow-2xl divide-slate-800/60 text-slate-100'
-          } rounded-2xl sm:rounded-3xl border overflow-hidden divide-y transition-colors duration-300`}
+              ? 'bg-white/95 backdrop-blur-2xl border-stone-200/90 shadow-sm shadow-stone-200/30 text-neutral-900'
+              : 'bg-[#131417]/95 backdrop-blur-2xl border-stone-800 shadow-xl text-neutral-100'
+          } rounded-2xl border p-2 sm:p-2.5 transition-colors duration-300`}
         >
-          {/* TIER 1: Primary Brand Identity & Core Workspace Switcher */}
-          <div className="px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-            {/* Left: Brand Identity */}
-            <div className="flex items-center gap-3">
-              <motion.div whileHover={{ scale: 1.05 }} className="w-10 h-10 rounded-xl overflow-hidden shadow-md border border-indigo-500/30 shrink-0">
-                <img src={ratulLogo} alt="AdobeMeta Pro Logo" className="w-full h-full object-cover" />
-              </motion.div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className={`text-lg sm:text-xl font-black tracking-tight ${themeMode === 'light' ? 'text-slate-900' : 'text-white'} flex items-center gap-1.5`}>
-                    <span>AdobeMeta</span>
-                    <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 bg-clip-text text-transparent">Pro</span>
-                  </h1>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
-                </div>
-                <p className={`text-[11px] ${themeMode === 'light' ? 'text-slate-500 font-medium' : 'text-slate-400 font-normal'} hidden sm:block`}>
-                  Stock Contributor Earning Suite · Founder Ratul Sorker
-                </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Left: Studio Identity & Counter */}
+            <div className="flex items-center gap-2.5 pl-2">
+              <AdobeMetaProLogo size="sm" showText={false} onClick={() => setCurrentView('upload')} />
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-semibold text-neutral-900 dark:text-white tracking-tight">Studio Deck</span>
+                <span className="text-neutral-300 dark:text-neutral-700">·</span>
+                <span className="text-neutral-500 font-medium text-[11.5px]">
+                  {items.length === 0 ? 'Light Table Ready' : `${items.length} ${items.length === 1 ? 'asset' : 'assets'} queued`}
+                </span>
               </div>
             </div>
 
-            {/* Center: Primary Workspaces Concourse */}
-            <div className={`flex items-center gap-1 ${themeMode === 'light' ? 'bg-slate-100/90 border-slate-200' : 'bg-slate-900/90 border-slate-800/80'} p-1 rounded-xl border overflow-x-auto scrollbar-none`}>
+            {/* Center: Primary Workspaces Concourse (Swiss Typography Segmented Bar) */}
+            <div className={`flex items-center gap-1 ${themeMode === 'light' ? 'bg-[#f4f2ee] border-stone-200/80' : 'bg-stone-900/90 border-stone-800'} p-1 rounded-xl border overflow-x-auto scrollbar-none`}>
               <button
                 type="button"
                 onClick={() => setCurrentView('upload')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   currentView === 'upload'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    ? 'bg-neutral-900 text-white shadow-xs font-semibold'
                     : themeMode === 'light'
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'text-neutral-600 hover:text-neutral-900 hover:bg-stone-200/60'
+                    : 'text-neutral-400 hover:text-white hover:bg-stone-800/60'
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
@@ -2877,93 +2914,92 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setCurrentView('monetize')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   currentView === 'monetize'
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                    ? 'bg-neutral-900 text-white shadow-xs font-semibold'
                     : themeMode === 'light'
-                    ? 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50'
-                    : 'text-emerald-400 hover:text-white hover:bg-emerald-950/40'
+                    ? 'text-neutral-600 hover:text-neutral-900 hover:bg-stone-200/60'
+                    : 'text-neutral-400 hover:text-white hover:bg-stone-800/60'
                 }`}
                 title="Google Monetize & Microstock Contributor Earning Center"
               >
-                <DollarSign className="w-3.5 h-3.5 text-emerald-300" />
+                <DollarSign className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 <span>Monetize &amp; Earning</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setCurrentView('seo-rank')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   currentView === 'seo-rank'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    ? 'bg-neutral-900 text-white shadow-xs font-semibold'
                     : themeMode === 'light'
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'text-neutral-600 hover:text-neutral-900 hover:bg-stone-200/60'
+                    : 'text-neutral-400 hover:text-white hover:bg-stone-800/60'
                 }`}
                 title="100% Rank #1 Algorithm Optimizer for EPS Vectors & Photos"
               >
-                <Award className="w-3.5 h-3.5 text-indigo-400" />
+                <Award className="w-3.5 h-3.5 text-neutral-500" />
                 <span>100% Rank SEO</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setCurrentView('trends')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   currentView === 'trends'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    ? 'bg-neutral-900 text-white shadow-xs font-semibold'
                     : themeMode === 'light'
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'text-neutral-600 hover:text-neutral-900 hover:bg-stone-200/60'
+                    : 'text-neutral-400 hover:text-white hover:bg-stone-800/60'
                 }`}
               >
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                <TrendingUp className="w-3.5 h-3.5 text-neutral-500" />
                 <span>Market Trends</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setCurrentView('prompts')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   currentView === 'prompts'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    ? 'bg-neutral-900 text-white shadow-xs font-semibold'
                     : themeMode === 'light'
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'text-neutral-600 hover:text-neutral-900 hover:bg-stone-200/60'
+                    : 'text-neutral-400 hover:text-white hover:bg-stone-800/60'
                 }`}
               >
-                <Wand2 className="w-3.5 h-3.5 text-purple-500" />
+                <Wand2 className="w-3.5 h-3.5 text-neutral-500" />
                 <span>AI Prompts</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setCurrentView('calendar')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   currentView === 'calendar'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    ? 'bg-neutral-900 text-white shadow-xs font-semibold'
                     : themeMode === 'light'
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'text-neutral-600 hover:text-neutral-900 hover:bg-stone-200/60'
+                    : 'text-neutral-400 hover:text-white hover:bg-stone-800/60'
                 }`}
               >
-                <CalendarDays className="w-3.5 h-3.5 text-amber-500" />
+                <CalendarDays className="w-3.5 h-3.5 text-neutral-500" />
                 <span>Calendar</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setCurrentView('competitor')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   currentView === 'competitor'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    ? 'bg-neutral-900 text-white shadow-xs font-semibold'
                     : themeMode === 'light'
-                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'text-neutral-600 hover:text-neutral-900 hover:bg-stone-200/60'
+                    : 'text-neutral-400 hover:text-white hover:bg-stone-800/60'
                 }`}
               >
-                <Search className="w-3.5 h-3.5 text-cyan-500" />
+                <Search className="w-3.5 h-3.5 text-neutral-500" />
                 <span>Competitor Spy</span>
               </button>
             </div>
@@ -2973,26 +3009,30 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setShowCommandPalette(true)}
-                className={`hidden lg:flex items-center gap-2 ${themeMode === 'light' ? 'bg-slate-100 hover:bg-slate-200/80 border-slate-200 text-slate-600 hover:text-slate-900' : 'bg-slate-900/90 hover:bg-slate-800 border-slate-700/80 text-slate-400 hover:text-slate-200'} border px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer`}
+                className={`hidden lg:flex items-center gap-2 ${themeMode === 'light' ? 'bg-[#f4f2ee] hover:bg-stone-200/80 border-stone-200/90 text-neutral-600 hover:text-neutral-900' : 'bg-stone-900/90 hover:bg-stone-800 border-stone-700/80 text-neutral-400 hover:text-neutral-200'} border px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer`}
                 title="Search tools, actions or exports (⌘K)"
               >
-                <Search className="w-3.5 h-3.5 text-indigo-500" />
+                <Search className="w-3.5 h-3.5 text-neutral-500" />
                 <span>Search</span>
-                <kbd className={`font-mono text-[10px] ${themeMode === 'light' ? 'bg-white border-slate-200 text-slate-600' : 'bg-slate-800 border-slate-700 text-slate-300'} border px-1 py-0.2 rounded`}>⌘K</kbd>
+                <kbd className={`font-mono text-[10px] ${themeMode === 'light' ? 'bg-white border-stone-200 text-neutral-600' : 'bg-stone-800 border-stone-700 text-neutral-300'} border px-1 py-0.2 rounded`}>⌘K</kbd>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowToolsHubModal(true)}
-                className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:brightness-110 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 shrink-0 border border-indigo-400/30 cursor-pointer"
+                className={`text-xs font-medium px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shrink-0 border cursor-pointer ${
+                  themeMode === 'light'
+                    ? 'bg-white hover:bg-stone-50 border-stone-300/80 text-neutral-900 shadow-xs'
+                    : 'bg-stone-900 hover:bg-stone-800 border-stone-700 text-white'
+                }`}
                 title="Open All 12 Contributor Tools Hub (Vector, IP Shield, Rank, Niche, Releases, AI Prompts & Mini-Games)"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 <span className="hidden sm:inline">Tools Hub</span>
-                <span className="bg-black/40 text-[10px] px-1.5 py-0.2 rounded-full font-black">12</span>
+                <span className="bg-stone-100 dark:bg-stone-800 text-[10px] px-1.5 py-0.2 rounded-full font-semibold border border-stone-200/60 dark:border-stone-700">12</span>
               </button>
 
-              {/* Architectural Theme Switcher: Modernist Midnight (Default) vs Gallery White */}
+              {/* Architectural Theme Switcher */}
               <button
                 type="button"
                 onClick={() => {
@@ -3000,19 +3040,19 @@ export default function App() {
                   setThemeMode(next);
                   localStorage.setItem('adobemeta_theme', next);
                   localStorage.setItem('adobemeta_theme_user_chosen', 'true');
-                  showToast(`Switched to ${next === 'light' ? 'Architectural Gallery (White)' : 'Modernist Obsidian (Dark)'}`);
+                  showToast(`Switched to ${next === 'light' ? 'Warm Alabaster (Light)' : 'Obsidian Gallery (Dark)'}`);
                 }}
                 className={`p-2 rounded-xl transition border cursor-pointer ${
                   themeMode === 'light'
-                    ? 'bg-slate-100 hover:bg-slate-200 text-amber-600 border-slate-200 shadow-xs'
-                    : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700'
+                    ? 'bg-[#f4f2ee] hover:bg-stone-200 text-amber-700 border-stone-200/80'
+                    : 'bg-stone-800 hover:bg-stone-700 text-amber-300 border-stone-700'
                 }`}
-                title={themeMode === 'light' ? 'Switch to Modernist Dark' : 'Switch to Gallery White'}
+                title={themeMode === 'light' ? 'Switch to Dark Mode' : 'Switch to Warm Alabaster'}
               >
                 {themeMode === 'light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
 
-              {/* Tactile Audio Feedback Switcher (Leica Shutter & Harmonic Chimes) */}
+              {/* Tactile Audio Feedback Switcher (Leica Shutter) */}
               <button
                 type="button"
                 onClick={() => {
@@ -3020,26 +3060,19 @@ export default function App() {
                   setIsAudioActive(next);
                   setSoundEnabled(next);
                   if (next) playShutterSound();
-                  showToast(next ? "Acoustic Haptics: ON (Tactile mechanical soundscapes)" : "Acoustic Haptics: Muted");
+                  showToast(next ? "Acoustic Haptics: ON" : "Acoustic Haptics: Muted");
                 }}
                 className={`p-2 rounded-xl transition border cursor-pointer flex items-center gap-1 ${
                   themeMode === 'light'
-                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                    ? 'bg-[#f4f2ee] hover:bg-stone-200 text-neutral-700 border-stone-200/80'
+                    : 'bg-stone-800 hover:bg-stone-700 text-neutral-300 border-stone-700'
                 }`}
-                title={isAudioActive ? "Mute Acoustic Shutter & Haptics" : "Enable Tactile Mechanical Soundscapes"}
+                title={isAudioActive ? "Mute Acoustic Shutter" : "Enable Tactile Mechanical Soundscapes"}
               >
                 {isAudioActive ? (
-                  <>
-                    <Volume2 className="w-4 h-4 text-emerald-400" />
-                    <span className="flex items-end gap-0.5 h-3 ml-0.5">
-                      <span className="w-0.5 bg-emerald-400 rounded-full animate-[spectrumEqualizer_0.7s_ease-in-out_infinite]" />
-                      <span className="w-0.5 bg-emerald-400 rounded-full animate-[spectrumEqualizer_1.1s_ease-in-out_0.2s_infinite]" />
-                      <span className="w-0.5 bg-emerald-400 rounded-full animate-[spectrumEqualizer_0.8s_ease-in-out_0.4s_infinite]" />
-                    </span>
-                  </>
+                  <Volume2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 ) : (
-                  <VolumeX className="w-4 h-4 text-slate-500" />
+                  <VolumeX className="w-4 h-4 text-neutral-400" />
                 )}
               </button>
 
@@ -3047,26 +3080,21 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setShowMultiCsvModal(true)}
-                className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                className={`text-xs font-medium px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 border cursor-pointer ${
+                  themeMode === 'light'
+                    ? 'bg-stone-50 hover:bg-stone-100 text-neutral-800 border-stone-300/80'
+                    : 'bg-stone-900 hover:bg-stone-800 text-neutral-200 border-stone-700'
+                }`}
                 title="1-Click Multi-Marketplace CSV Exporter (Adobe Stock, Shutterstock, Freepik, Getty)"
               >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                <FileSpreadsheet className="w-3.5 h-3.5 text-neutral-500" />
                 <span className="hidden xl:inline">Multi-CSV</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setShowShortcutsModal(true)}
-                className={`p-2 rounded-xl ${themeMode === 'light' ? 'hover:bg-slate-100 text-slate-500 hover:text-slate-900 border-slate-200' : 'hover:bg-slate-800 text-slate-400 hover:text-white border-slate-800'} transition border`}
-                title="Keyboard Shortcuts (?)"
-              >
-                <Keyboard className="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setShowSettings(true)}
-                className={`p-2 rounded-xl ${themeMode === 'light' ? 'hover:bg-slate-100 text-slate-500 hover:text-slate-900 border-slate-200' : 'hover:bg-slate-800 text-slate-400 hover:text-white border-slate-800'} transition border`}
+                className={`p-2 rounded-xl ${themeMode === 'light' ? 'hover:bg-stone-100 text-neutral-500 hover:text-neutral-900 border-stone-200/80' : 'hover:bg-stone-800 text-neutral-400 hover:text-white border-stone-800'} transition border cursor-pointer`}
                 title="Settings & Custom API Key"
               >
                 <Settings className="w-4 h-4" />
@@ -3075,7 +3103,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="p-2 rounded-xl hover:bg-red-500/10 text-red-500 transition border border-transparent hover:border-red-200"
+                className="p-2 rounded-xl hover:bg-red-50 text-neutral-400 hover:text-red-600 transition border border-transparent hover:border-red-200 cursor-pointer"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -3296,52 +3324,16 @@ export default function App() {
                 />
               ) : (
                 <>
-                  {/* Cinematic Inspiring Hero Section (World-Class Aesthetics) */}
-                  {items.length === 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                      className="text-center py-6 sm:py-10 max-w-4xl mx-auto space-y-4 px-2"
-                    >
-                      <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-emerald-500/10 border border-indigo-500/30 text-indigo-300 shadow-xs">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Enterprise Vector Intelligence &amp; Google Monetization</span>
-                      </div>
-
-                      <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-white">
-                        Rank #1 on Adobe Stock.{' '}
-                        <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-emerald-400 bg-clip-text text-transparent">
-                          Monetize with Google.
-                        </span>
-                      </h2>
-
-                      <p className={`text-sm sm:text-base ${themeMode === 'light' ? 'text-slate-600' : 'text-slate-400'} max-w-2xl mx-auto leading-relaxed`}>
-                        The ultimate intelligent studio for vector EPS artists and microstock photographers. 6-stage true visual rasterizer, 100% search algorithm optimization, and automated high-eCPM earning.
-                      </p>
-
-                      <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-slate-400 pt-2">
-                        <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Slot #1 Algorithm Lock</span>
-                        <span aria-hidden="true" className="text-slate-700">·</span>
-                        <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> 6-Stage EPS Visual Engine</span>
-                        <span aria-hidden="true" className="text-slate-700">·</span>
-                        <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> 1-Click IPTC &amp; CSV Export</span>
-                        <span aria-hidden="true" className="text-slate-700">·</span>
-                        <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> ads.txt Authorized</span>
-                      </div>
-                    </motion.div>
-                  )}
-
                   {/* Top High-RPM Monetization Leaderboard */}
                   <GoogleAdSenseBanner format="leaderboard" themeMode={themeMode} />
 
-                  {/* Studio Metadata Settings Bar */}
-                  <div className={`${themeMode === 'light' ? 'bg-white/95 border-slate-200/90 text-slate-800 shadow-sm' : 'bg-slate-900/90 border-slate-800 text-slate-100'} backdrop-blur-md border rounded-2xl p-4 shadow-xl`}>
+                  {/* Studio Metadata Precision Control Deck */}
+                  <div className={`${themeMode === 'light' ? 'bg-white/95 border-stone-200/90 text-neutral-800 shadow-sm' : 'bg-[#131417]/95 border-stone-800 text-neutral-100'} backdrop-blur-md border rounded-2xl p-4 shadow-xs`}>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                       <div>
-                        <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'} block mb-1.5 flex items-center gap-1.5`}>
-                          <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                          <span>Asset Type</span>
+                        <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-neutral-700' : 'text-neutral-300'} block mb-1.5 flex items-center gap-1.5 tracking-tight`}>
+                          <Layers className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-400" />
+                          <span>Asset Format</span>
                         </label>
                         <select
                           value={assetType}
@@ -3352,11 +3344,11 @@ export default function App() {
                               setIsAiGenerated(true);
                             }
                           }}
-                          className={`w-full ${themeMode === 'light' ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white' : 'bg-slate-950/80 border-slate-700 text-white'} border text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner`}
+                          className={`w-full ${themeMode === 'light' ? 'bg-[#faf8f5] border-stone-200 text-neutral-900 focus:bg-white focus:border-neutral-900' : 'bg-stone-900 border-stone-700 text-white'} border text-xs sm:text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-1 focus:ring-neutral-900 focus:outline-none transition cursor-pointer`}
                         >
                           <option value="Photo / JPG">Photo / JPG</option>
                           <option value="Photoshop PSD / Template">Photoshop PSD / Template (.PSD, .SPD, .PSB)</option>
-                          <option value="Vector / EPS">Vector / EPS (Scalable Vector)</option>
+                          <option value="Vector / EPS">Vector / EPS (Scalable Vector Artwork)</option>
                           <option value="Stock Video / Footage (4K / HD)">Stock Video / Footage (4K / HD)</option>
                           <option value="PNG (Transparent)">PNG (Transparent Background)</option>
                           <option value="Illustration">Illustration / Clipart</option>
@@ -3366,19 +3358,19 @@ export default function App() {
                       </div>
 
                       <div>
-                        <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'} block mb-1.5 flex items-center gap-1.5`}>
-                          <Target className="w-3.5 h-3.5 text-indigo-500" />
-                          <span>Target Marketplace</span>
+                        <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-neutral-700' : 'text-neutral-300'} block mb-1.5 flex items-center gap-1.5 tracking-tight`}>
+                          <Target className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-400" />
+                          <span>Target Stock Engine</span>
                         </label>
                         <select
                           value={targetMarketplace}
                           onChange={(e) => setTargetMarketplace(e.target.value as TargetMarketplace)}
-                          className={`w-full ${themeMode === 'light' ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white' : 'bg-slate-950/80 border-slate-700 text-white'} border text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner`}
+                          className={`w-full ${themeMode === 'light' ? 'bg-[#faf8f5] border-stone-200 text-neutral-900 focus:bg-white focus:border-neutral-900' : 'bg-stone-900 border-stone-700 text-white'} border text-xs sm:text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-1 focus:ring-neutral-900 focus:outline-none transition cursor-pointer`}
                         >
-                          <option value="adobe_stock">Adobe Stock (Top 10 Ranked, 49 KW)</option>
-                          <option value="shutterstock">Shutterstock (5+ Words Title, 50 KW)</option>
-                          <option value="freepik">Freepik (Design Tags, 30 Max)</option>
-                          <option value="vecteezy">Vecteezy (Vector &amp; Art Focus, 35 KW)</option>
+                          <option value="adobe_stock">Adobe Stock (Aug 18 2026 Rules · 49 KW · &lt;70 chars)</option>
+                          <option value="shutterstock">Shutterstock (5+ Words Title · 50 KW)</option>
+                          <option value="freepik">Freepik (Design Vector Tags · 30 Max)</option>
+                          <option value="vecteezy">Vecteezy (Vector Properties · 35 KW)</option>
                           <option value="getty">Getty Images / iStock (35 KW)</option>
                           <option value="123rf">123RF (45 KW)</option>
                           <option value="dreamstime">Dreamstime (45 KW)</option>
@@ -3386,14 +3378,14 @@ export default function App() {
                       </div>
 
                       <div>
-                        <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-slate-700' : 'text-slate-300'} block mb-1.5 flex items-center gap-1.5`}>
-                          <Globe className="w-3.5 h-3.5 text-indigo-500" />
-                          <span>Language</span>
+                        <label className={`text-xs font-semibold ${themeMode === 'light' ? 'text-neutral-700' : 'text-neutral-300'} block mb-1.5 flex items-center gap-1.5 tracking-tight`}>
+                          <Globe className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-400" />
+                          <span>Metadata Language</span>
                         </label>
                         <select
                           value={language}
                           onChange={(e) => setLanguage(e.target.value)}
-                          className={`w-full ${themeMode === 'light' ? 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white' : 'bg-slate-950/80 border-slate-700 text-white'} border text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition shadow-inner`}
+                          className={`w-full ${themeMode === 'light' ? 'bg-[#faf8f5] border-stone-200 text-neutral-900 focus:bg-white focus:border-neutral-900' : 'bg-stone-900 border-stone-700 text-white'} border text-xs sm:text-sm rounded-xl px-3.5 py-2.5 font-medium focus:ring-1 focus:ring-neutral-900 focus:outline-none transition cursor-pointer`}
                         >
                           <option value="English">English (Global Default)</option>
                           <option value="Spanish">Spanish (Español)</option>
@@ -3409,16 +3401,16 @@ export default function App() {
 
               <motion.div variants={itemVariants} className="space-y-4">
                 <motion.div 
-                  whileHover={{ scale: 1.004 }}
+                  whileHover={{ scale: 1.002 }}
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                   onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
                   onDrop={handleDrop}
                   className={`border-2 border-dashed transition-all duration-300 rounded-3xl p-10 sm:p-14 text-center relative group overflow-hidden ${
                     isDragging 
-                      ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_50px_rgba(99,102,241,0.25)] scale-[1.008]' 
+                      ? 'border-neutral-900 bg-neutral-900/5 scale-[1.005]' 
                       : themeMode === 'light'
-                      ? 'border-slate-300 bg-white/95 hover:border-indigo-400 shadow-sm'
-                      : 'border-slate-800/90 bg-slate-950/80 hover:border-indigo-500/40 shadow-xl'
+                      ? 'border-stone-300/90 bg-white/70 hover:border-neutral-900 hover:bg-white shadow-xs'
+                      : 'border-stone-800 bg-[#131417]/80 hover:border-stone-600 shadow-xl'
                   }`}
                 >
                   <input
@@ -3431,37 +3423,39 @@ export default function App() {
                   />
                   <label htmlFor="bulkInput" className="cursor-pointer space-y-4 block relative z-10">
                     <motion.div 
-                      whileHover={{ scale: 1.08 }}
-                      className={`w-16 h-16 ${themeMode === 'light' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-indigo-950/50 border-indigo-500/30 text-indigo-400'} rounded-2xl flex items-center justify-center mx-auto border shadow-md transition`}
+                      whileHover={{ scale: 1.05 }}
+                      className={`w-14 h-14 ${themeMode === 'light' ? 'bg-[#f4f2ee] border-stone-200 text-neutral-800' : 'bg-stone-800 border-stone-700 text-neutral-200'} rounded-2xl flex items-center justify-center mx-auto border shadow-xs transition`}
                     >
-                      <Upload className="w-8 h-8" />
+                      <Upload className="w-6 h-6" />
                     </motion.div>
                     
-                    <div className="space-y-1.5">
-                      <h3 className={`text-xl sm:text-2xl font-black ${themeMode === 'light' ? 'text-slate-900' : 'text-white'} tracking-tight`}>
-                        {isDragging ? 'Drop Files Here to Analyze' : 'Drag & Drop Vector EPS, PSD, or Photos'}
+                    <div className="space-y-1">
+                      <h3 className={`font-editorial text-2xl sm:text-3xl ${themeMode === 'light' ? 'text-neutral-900' : 'text-white'} tracking-tight font-normal`}>
+                        {isDragging ? 'Release to Load Assets' : 'Drop Vector EPS, Photos or Footage'}
                       </h3>
-                      <p className={`text-xs sm:text-sm ${themeMode === 'light' ? 'text-slate-500' : 'text-slate-400'} max-w-lg mx-auto`}>
-                        Automatic 6-stage PostScript vector rasterizer, IPTC metadata embedder &amp; agency CSV generator
+                      <p className={`text-xs sm:text-[13px] ${themeMode === 'light' ? 'text-neutral-500' : 'text-neutral-400'} max-w-md mx-auto leading-relaxed`}>
+                        Instant 1ms vector preview · Ghostscript 119ms visual engine · Auto-calibrated for Adobe Stock
                       </p>
                     </div>
 
-                    <div className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl transition shadow-md shadow-indigo-600/25">
-                      <Plus className="w-4 h-4" />
-                      <span>Browse Files</span>
+                    <div className="pt-2">
+                      <div className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-black text-white font-medium text-xs sm:text-sm px-6 py-3 rounded-full transition shadow-xs hover:shadow active:scale-[0.98]">
+                        <Plus className="w-4 h-4" />
+                        <span>Select Files from Device</span>
+                      </div>
                     </div>
 
-                    <div className="pt-2 flex items-center justify-center gap-2 text-[11px] text-slate-500 font-medium">
+                    <div className="pt-3 flex flex-wrap items-center justify-center gap-2.5 text-[11px] text-neutral-500 font-medium">
                       <span>Vector EPS</span>
-                      <span aria-hidden="true">·</span>
+                      <span aria-hidden="true" className="text-stone-300 dark:text-stone-700">·</span>
                       <span>Illustrator AI</span>
-                      <span aria-hidden="true">·</span>
+                      <span aria-hidden="true" className="text-stone-300 dark:text-stone-700">·</span>
                       <span>Photoshop PSD</span>
-                      <span aria-hidden="true">·</span>
+                      <span aria-hidden="true" className="text-stone-300 dark:text-stone-700">·</span>
                       <span>High-Res JPG</span>
-                      <span aria-hidden="true">·</span>
+                      <span aria-hidden="true" className="text-stone-300 dark:text-stone-700">·</span>
                       <span>PNG</span>
-                      <span aria-hidden="true">·</span>
+                      <span aria-hidden="true" className="text-stone-300 dark:text-stone-700">·</span>
                       <span>4K Footage</span>
                     </div>
                   </label>

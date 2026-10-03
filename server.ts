@@ -14,7 +14,17 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Secure, bounded limit for base64 image uploads (50MB is safe and prevents OOM attacks)
+  // Secure, bounded limit for base64 and binary image uploads (50MB is safe and prevents OOM attacks)
+  app.use(express.raw({
+    type: [
+      "application/octet-stream",
+      "application/postscript",
+      "image/x-eps",
+      "application/eps",
+      "application/x-eps"
+    ],
+    limit: "50mb"
+  }));
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
@@ -76,16 +86,33 @@ async function startServer() {
     let tmpWmf = "";
     let tmpPdf = "";
     try {
-      const { epsBase64, fileName } = req.body;
-      if (!epsBase64 || typeof epsBase64 !== "string") {
-        return res.status(400).json({ error: "Missing EPS base64 data" });
+      let buffer: Buffer | null = null;
+      let fileName = "";
+
+      // Support binary streaming upload directly from client (0 browser CPU, 0 base64 latency)
+      if (Buffer.isBuffer(req.body) && req.body.length > 0) {
+        buffer = req.body;
+        const rawName = req.headers["x-file-name"];
+        if (typeof rawName === "string") {
+          try {
+            fileName = decodeURIComponent(rawName);
+          } catch (_) {
+            fileName = rawName;
+          }
+        }
+      } else if (req.body && typeof req.body === "object") {
+        const { epsBase64, fileName: fn } = req.body;
+        if (epsBase64 && typeof epsBase64 === "string") {
+          const rawBase64 = (epsBase64.includes(",") ? epsBase64.split(",")[1] : epsBase64).replace(/\s+/g, "");
+          buffer = Buffer.from(rawBase64, "base64");
+        }
+        if (fn && typeof fn === "string") {
+          fileName = fn;
+        }
       }
 
-      const rawBase64 = (epsBase64.includes(",") ? epsBase64.split(",")[1] : epsBase64).replace(/\s+/g, "");
-      const buffer = Buffer.from(rawBase64, "base64");
-
-      if (buffer.length === 0) {
-        return res.status(400).json({ error: "Empty EPS buffer" });
+      if (!buffer || buffer.length === 0) {
+        return res.status(400).json({ error: "Missing or empty EPS data" });
       }
 
       // Check for DOS binary EPS header (0xC5 0xD0 0xD3 0xC6)
@@ -117,8 +144,65 @@ async function startServer() {
 
       let renderSuccess = false;
 
-      // STAGE 1: Embedded TIFF Thumbnail Extraction from DOS EPS Binary Header
-      // Almost all Adobe Illustrator EPS files (EPS 10, CS6, CC) store an authentic, pixel-perfect TIFF preview here!
+      // STAGE 1: Fast Native C++ Buffer JPEG Search (Buffer.indexOf) - Runs in ~1ms!
+      try {
+        const soi = Buffer.from([0xff, 0xd8, 0xff]);
+        const eoi = Buffer.from([0xff, 0xd9]);
+        let searchIdx = 0;
+        let foundCount = 0;
+        while (searchIdx < buffer.length - 500 && foundCount < 6) {
+          const soiIdx = buffer.indexOf(soi, searchIdx);
+          if (soiIdx === -1) break;
+          const eoiIdx = buffer.indexOf(eoi, soiIdx + 64);
+          if (eoiIdx !== -1 && eoiIdx - soiIdx > 500 && eoiIdx - soiIdx < 8000000) {
+            const candidate = buffer.subarray(soiIdx, eoiIdx + 2);
+            // Verify valid JPEG application marker (JFIF 0xE0, Exif 0xE1, DQT 0xDB, Adobe 0xEE)
+            if (candidate[3] === 0xe0 || candidate[3] === 0xe1 || candidate[3] === 0xdb || candidate[3] === 0xee) {
+              fs.writeFileSync(tmpJpg, candidate);
+              renderSuccess = true;
+              break;
+            }
+          }
+          searchIdx = soiIdx + 3;
+          foundCount++;
+        }
+      } catch (_) {}
+
+      // STAGE 2: Fast Buffer-Based Illustrator Thumbnail Extraction (%AI9_Data_Thumbnail / %AI12_Data_Thumbnail / %BeginPhotoshop)
+      // Uses Buffer.indexOf without converting millions of characters to a Latin1 string
+      if (!renderSuccess) {
+        try {
+          const thumbMarkers = [
+            Buffer.from("%AI9_Data_Thumbnail"),
+            Buffer.from("%AI12_Data_Thumbnail"),
+            Buffer.from("%AI7_Thumbnail"),
+            Buffer.from("%BeginPhotoshop")
+          ];
+          for (const marker of thumbMarkers) {
+            const idx = psBuffer.indexOf(marker);
+            if (idx !== -1) {
+              const startData = psBuffer.indexOf(10, idx); // find \n after header
+              if (startData !== -1) {
+                // Read up to 2MB slice for thumbnail data
+                const slice = psBuffer.subarray(startData, Math.min(psBuffer.length, startData + 2500000)).toString("latin1");
+                const endIdx = slice.search(/%%EndPreview|%%EndComments|%AI9_Data_Thumbnail_End|%EndPhotoshop/i);
+                const thumbBlock = endIdx !== -1 ? slice.substring(0, endIdx) : slice.substring(0, 500000);
+                const hex = thumbBlock.replace(/[\s\r\n%]+/g, "");
+                if (hex.length > 200) {
+                  const rawBytes = Buffer.from(hex, "hex");
+                  if (rawBytes[0] === 0xff && rawBytes[1] === 0xd8) {
+                    fs.writeFileSync(tmpJpg, rawBytes);
+                    renderSuccess = true;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      // STAGE 3: Embedded TIFF Thumbnail Extraction from DOS EPS Binary Header (0xC5D0D3C6)
       if (isDosBinary && !renderSuccess) {
         try {
           const tiffStart = buffer.readUInt32LE(20);
@@ -128,64 +212,18 @@ async function startServer() {
             // Verify TIFF header (0x49 0x49 'II' or 0x4D 0x4D 'MM')
             if ((tiffBytes[0] === 0x49 && tiffBytes[1] === 0x49) || (tiffBytes[0] === 0x4d && tiffBytes[1] === 0x4d)) {
               fs.writeFileSync(tmpTiff, tiffBytes);
-              await execFileAsync("convert", [tmpTiff, "-quality", "95", tmpJpg]);
-              if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
-                renderSuccess = true;
-              }
+              try {
+                await execFileAsync("convert", [tmpTiff, "-quality", "92", tmpJpg], { timeout: 2000 });
+                if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
+                  renderSuccess = true;
+                }
+              } catch (_) {}
             }
           }
-        } catch (tiffErr: any) {
-          // Fall through to next stage
-        }
+        } catch (_) {}
       }
 
-      // STAGE 2: Embedded WMF Thumbnail Extraction from DOS EPS Binary Header
-      if (isDosBinary && !renderSuccess) {
-        try {
-          const wmfStart = buffer.readUInt32LE(12);
-          const wmfLength = buffer.readUInt32LE(16);
-          if (wmfStart > 0 && wmfLength > 0 && wmfStart + wmfLength <= buffer.length) {
-            const wmfBytes = buffer.subarray(wmfStart, wmfStart + wmfLength);
-            fs.writeFileSync(tmpWmf, wmfBytes);
-            await execFileAsync("convert", [tmpWmf, "-quality", "95", tmpJpg]);
-            if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
-              renderSuccess = true;
-            }
-          }
-        } catch (wmfErr: any) {
-          // Fall through to next stage
-        }
-      }
-
-      // STAGE 3: ps2pdf + Ghostscript PDF-to-JPEG Pipeline
-      // Converts PostScript vector streams reliably bypassing Illustrator-specific PostScript syntax quirks
-      if (!renderSuccess) {
-        try {
-          await execFileAsync("ps2pdf", [tmpEps, tmpPdf]);
-          if (fs.existsSync(tmpPdf) && fs.statSync(tmpPdf).size > 100) {
-            await execFileAsync("gs", [
-              "-q",
-              "-dSAFER",
-              "-dBATCH",
-              "-dNOPAUSE",
-              "-sDEVICE=jpeg",
-              "-dJPEGQ=95",
-              "-r150",
-              "-dFirstPage=1",
-              "-dLastPage=1",
-              `-sOutputFile=${tmpJpg}`,
-              tmpPdf
-            ]);
-            if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
-              renderSuccess = true;
-            }
-          }
-        } catch (ps2pdfErr: any) {
-          // Fall through to Ghostscript direct
-        }
-      }
-
-      // STAGE 4: Direct Ghostscript with -dEPSCrop and Alpha Smoothing
+      // STAGE 4: Direct Ghostscript with -dEPSCrop (Ultra-Fast 100-200ms rendering)
       if (!renderSuccess) {
         try {
           await execFileAsync("gs", [
@@ -194,20 +232,20 @@ async function startServer() {
             "-dBATCH",
             "-dNOPAUSE",
             "-sDEVICE=jpeg",
-            "-dJPEGQ=95",
-            "-r150",
+            "-dJPEGQ=90",
+            "-r120",
             "-dALLOWPSTRANSPARENCY",
             "-dTextAlphaBits=4",
             "-dGraphicsAlphaBits=4",
             "-dEPSCrop",
             `-sOutputFile=${tmpJpg}`,
             tmpEps
-          ]);
+          ], { timeout: 3000 });
           if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
             renderSuccess = true;
           }
-        } catch (gsErr1: any) {
-          // Try fixed media
+        } catch (_) {
+          // Fallback to fixed media
           try {
             await execFileAsync("gs", [
               "-q",
@@ -215,48 +253,20 @@ async function startServer() {
               "-dBATCH",
               "-dNOPAUSE",
               "-sDEVICE=jpeg",
-              "-dJPEGQ=95",
-              "-r150",
+              "-dJPEGQ=88",
+              "-r120",
               "-dALLOWPSTRANSPARENCY",
               "-dDEVICEWIDTHPOINTS=1024",
               "-dDEVICEHEIGHTPOINTS=1024",
               "-dFIXEDMEDIA",
               `-sOutputFile=${tmpJpg}`,
               tmpEps
-            ]);
+            ], { timeout: 2500 });
             if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
               renderSuccess = true;
             }
-          } catch (gsErr2: any) {}
+          } catch (_) {}
         }
-      }
-
-      // STAGE 5: Embedded Raw JPEG Stream Scanner in PostScript / PDF Stream
-      if (!renderSuccess) {
-        try {
-          for (let i = 0; i < buffer.length - 200; i++) {
-            if (buffer[i] === 0xff && buffer[i + 1] === 0xd8 && buffer[i + 2] === 0xff) {
-              let lastEoi = -1;
-              const maxSearch = Math.min(buffer.length - 1, i + 8000000);
-              for (let j = i + 100; j < maxSearch; j++) {
-                if (buffer[j] === 0xff && buffer[j + 1] === 0xd9) {
-                  lastEoi = j + 2;
-                }
-              }
-              if (lastEoi > i + 200) {
-                const candidateJpg = buffer.subarray(i, lastEoi);
-                fs.writeFileSync(tmpJpg, candidateJpg);
-                try {
-                  await execFileAsync("convert", [tmpJpg, "-quality", "95", tmpJpg]);
-                  if (fs.existsSync(tmpJpg) && fs.statSync(tmpJpg).size > 100) {
-                    renderSuccess = true;
-                    break;
-                  }
-                } catch (_) {}
-              }
-            }
-          }
-        } catch (rawJpegErr: any) {}
       }
 
       // Metadata extraction from PostScript text
@@ -302,6 +312,13 @@ async function startServer() {
           while ((m = tagRegex.exec(dcSubject[0])) !== null) {
             if (m[1]) extractedKeywords.push(m[1].trim());
           }
+        }
+      }
+
+      if (!extractedTitle && fileName) {
+        const cleanFn = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim();
+        if (cleanFn.length > 1) {
+          extractedTitle = cleanFn.charAt(0).toUpperCase() + cleanFn.slice(1);
         }
       }
 
@@ -1152,8 +1169,10 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
       
       5. TITLE REQUIREMENTS FOR ${marketConfig.name.toUpperCase()}:
          ${marketConfig.titleDirectives}
-         - Must sound like professional stock metadata written by someone who understands commercial photography & visual communication.
-         - Under 70 characters for Adobe Stock. Concise, descriptive, natural, searchable, commercial.
+         - ABSOLUTE VISUAL FIDELITY (Zero Hallucination): The Title MUST directly, specifically, and accurately describe the exact visual subject, primary objects, actions, and environment shown in this specific image or vector artwork.
+         - NEVER generate a generic or disconnected title: If the artwork depicts a cat with a yarn ball, the title MUST describe the cat and yarn ball. If it shows a doctor with a stethoscope, describe the doctor. If it shows a delivery truck, describe the delivery truck.
+         - FOR VECTORS & ILLUSTRATIONS: Clearly describe what is illustrated (e.g. 'Cute cartoon cat playing with red yarn ball vector illustration' or 'Isometric cloud computing server network graphic').
+         - Under 70 characters for Adobe Stock. Concise, natural, searchable, commercial microstock phrasing.
          - NO keyword spamming in title. NO poetic fluff. NO robotic repetitive phrases.
       
       6. KEYWORD HIERARCHY & ORDERING FOR ${marketConfig.name.toUpperCase()} (${marketConfig.targetKeywordCount} unique keywords):

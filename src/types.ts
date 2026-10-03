@@ -84,6 +84,7 @@ export interface BulkItem {
   error?: string;
   isHistory?: boolean;
   celebrated?: boolean;
+  hasRealVisualPreview?: boolean;
   epsHint?: {
     title?: string;
     keywords?: string[];

@@ -29,10 +29,10 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
   const isLight = themeMode === 'light';
 
   return (
-    <footer className={`w-full mt-20 pt-12 pb-10 border-t ${
-      isLight ? 'border-stone-200/90 bg-[#faf8f5] text-neutral-800' : 'border-stone-800/80 bg-neutral-950 text-neutral-100'
+    <footer id="coffy-contact" className={`w-full mt-20 pt-12 pb-10 border-t ${
+      isLight ? 'border-neutral-100 bg-white text-neutral-800' : 'border-neutral-900 bg-[#08090b] text-neutral-100'
     } relative z-10 transition-colors duration-200 font-sans`}>
-      <div className="max-w-[1360px] mx-auto px-6 sm:px-10 lg:px-14 space-y-10">
+      <div className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14 space-y-10">
         {/* Bottom Leaderboard Ad Banner (Policy Compliant) */}
         <div className="w-full">
           <GoogleAdSenseBanner format="leaderboard" themeMode={themeMode} />
