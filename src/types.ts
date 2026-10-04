@@ -52,6 +52,7 @@ export type MetadataResult = {
   visualAnalysis?: VisualAnalysisData;
   keywordTaxonomy?: KeywordTaxonomy;
   longTailKeywords?: string[];
+  buyerSearchPhrases?: string[];
   commercialProblemSolved?: string;
   versions?: MetadataVersion[];
   activeVersionIndex?: number;

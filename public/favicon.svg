@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#08090B" />
+  <rect x="1.5" y="1.5" width="61" height="61" rx="12.5" stroke="#26272B" stroke-width="1" />
+  <!-- Outer Swiss Geometric Frame & Aperture -->
+  <path d="M16 46L28.5 16H35.5L48 46H41.2L32 23.4L22.8 46H16Z" fill="#FFFFFF" />
+  <!-- Precision Golden Ratio Vector Node & Crossbar -->
+  <path d="M25.5 36.5L32 21L38.5 36.5H25.5Z" fill="#10B981" fill-opacity="0.18" />
+  <path d="M23.5 38H40.5L42.8 43.2H21.2L23.5 38Z" fill="#F59E0B" />
+  <circle cx="32" cy="14" r="2.5" fill="#10B981" />
+</svg>

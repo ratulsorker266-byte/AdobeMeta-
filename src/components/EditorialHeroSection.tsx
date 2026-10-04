@@ -2,32 +2,22 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, 
-  Play, 
   Copy, 
   Check, 
-  Sparkles, 
-  Layers, 
-  ChevronRight, 
-  TrendingUp, 
-  Award, 
-  Download, 
   Mail, 
   Sun, 
   Moon, 
-  DollarSign, 
-  Flame, 
-  ShieldCheck, 
-  Search, 
-  Compass, 
-  Zap, 
-  Maximize2 
+  MessageSquare
 } from 'lucide-react';
 import { AdobeMetaProLogo } from './AdobeMetaProLogo';
-import coffyVectorArt from '../assets/images/coffy_vector_art_1791019002718.jpg';
-import coffyCinemaFilm from '../assets/images/coffy_cinema_film_1791019014036.jpg';
-import coffyBrandingPack from '../assets/images/coffy_branding_pack_1791019025042.jpg';
-import coffyMotionGraphics from '../assets/images/coffy_motion_graphics_1791019037281.jpg';
-import alpineLakeImage from '../assets/images/alpine_lake_hero_1790944060377.jpg';
+import store01MetadataEps from '../assets/images/store01_metadata_eps_1791118931620.jpg';
+import storeCalendarHub from '../assets/images/store_calendar_hub_1791105379723.jpg';
+import storePromptStudio from '../assets/images/store_prompt_studio_1791105394619.jpg';
+import storeMonetizeVault from '../assets/images/store_monetize_vault_1791105408515.jpg';
+import store05Rank1Seo from '../assets/images/store05_rank1_seo_1791118951820.jpg';
+import store06MarketTrends from '../assets/images/store06_market_trends_1791118972607.jpg';
+import storeCompetitorSpy from '../assets/images/store_competitor_spy_1791105421040.jpg';
+import store08MultiCsvHub from '../assets/images/store08_multi_csv_hub_1791118986226.jpg';
 
 interface EditorialHeroProps {
   onStartGenerating: () => void;
@@ -41,241 +31,360 @@ interface EditorialHeroProps {
   themeMode: 'light' | 'dark';
   user: any;
   onNavigateView: (view: string) => void;
+  onOpenMultiCsv?: () => void;
+  onOpenToolsHub?: () => void;
+  onOpenChat?: () => void;
   currentView?: string;
   itemsCount?: number;
 }
 
+export interface BoutiqueStoreItem {
+  id: string;
+  storeNumber: string;
+  title: string;
+  category: string;
+  department: 'all' | 'metadata' | 'creative' | 'monetize';
+  image: string;
+  badge: string;
+  statLabel: string;
+  description: string;
+  features: string[];
+  ctaText: string;
+  actionType: 'view' | 'modal_csv' | 'modal_tools';
+  targetView?: string;
+  sampleKeywords?: string[];
+}
+
 export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   onStartGenerating,
-  onWatchDemo,
-  onOpenPricing,
-  onOpenResources,
   onOpenAbout,
-  onOpenFeatures,
-  onOpenLogin,
   onToggleTheme,
   themeMode,
-  user,
   onNavigateView,
-  currentView = 'upload',
+  onOpenMultiCsv,
+  onOpenToolsHub,
+  onOpenChat,
   itemsCount = 0
 }) => {
-  const [selectedProject, setSelectedProject] = useState<number | null>(null);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [activeDepartment, setActiveDepartment] = useState<'all' | 'metadata' | 'creative' | 'monetize'>('all');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const isLight = themeMode === 'light';
 
-  // Coffy Design Inspired Showcase Projects
-  const showcaseProjects = [
+  // 8 Specialized Creative Stores (Dokans) in the Coffy.net Market Grid
+  const marketStores: BoutiqueStoreItem[] = [
     {
-      id: 1,
-      title: 'Futuristic Cyber Data Architecture',
-      category: 'Vector EPS . 100% Rank SEO',
-      image: coffyVectorArt,
-      metaTitle: 'Futuristic Isometric Data Architecture with Cybernetic Neon Nodes',
-      keywords: ['isometric vector', 'cyber infrastructure', 'data architecture', 'artificial intelligence', 'quantum computing', 'network grid', 'cloud database', 'technology concept'],
-      description: 'Ultra-crisp 3D isometric vector illustration of next-gen cloud data servers, glowing fiber cables and floating cryptographic nodes.',
-      cpcRate: '$28.40 CPC',
-      downloads: '1.4k DLs'
+      id: 'store-metadata',
+      storeNumber: '01 . STORE',
+      title: 'Metadata & EPS Vector Studio',
+      category: 'METADATA · GHOSTSCRIPT EPS · 49 WEIGHTED TAGS',
+      department: 'metadata',
+      image: store01MetadataEps,
+      badge: 'FLAGSHIP STUDIO',
+      statLabel: `${itemsCount > 0 ? `${itemsCount} Queued` : '49/49 SEO'}`,
+      description: '5-layer conversion metadata with 119ms Ghostscript EPS preview and 75% First-10 Slot Lock for maximum downloads.',
+      features: ['119ms EPS Preview', '49 Weighted Tags', 'Direct IPTC & XMP'],
+      ctaText: 'Enter Store',
+      actionType: 'view',
+      targetView: 'upload',
+      sampleKeywords: ['isometric cloud security', 'cyber infrastructure', 'enterprise server', 'digital transformation', 'data protection']
     },
     {
-      id: 2,
-      title: 'Misty Alpine Spruce Forest Dawn',
-      category: 'Commercial Landscape . 49 Keywords',
-      image: coffyCinemaFilm,
-      metaTitle: 'Cinematic Misty Spruce Forest at Dawn with Golden Sun Rays',
-      keywords: ['misty forest', 'alpine trees', 'golden sun rays', 'dawn landscape', 'scenic wilderness', 'foggy morning', 'evergreen pine', 'nature photography'],
-      description: 'Anamorphic 35mm film photograph of dense coniferous spruce canopy immersed in golden dawn fog with radiant sunbeams.',
-      cpcRate: '$14.20 CPC',
-      downloads: '2.8k DLs'
+      id: 'store-calendar',
+      storeNumber: '02 . STORE',
+      title: 'Seasonal Demand Calendar',
+      category: 'CALENDAR · 12-MONTH EVENTS · BUYER TIMELINE',
+      department: 'creative',
+      image: storeCalendarHub,
+      badge: 'SEASONAL RADAR',
+      statLabel: '365-Day Forecast',
+      description: 'Discover high-demand microstock events, global holidays, and commercial buying windows 60 days ahead of search spikes.',
+      features: ['60-Day Lead Window', 'Holiday Niches', 'Prompt Sync'],
+      ctaText: 'Enter Store',
+      actionType: 'view',
+      targetView: 'calendar',
+      sampleKeywords: ['autumn harvest festival', 'black friday sale banner', 'cyber monday retail', 'new year celebration', 'corporate annual report']
     },
     {
-      id: 3,
-      title: 'Minimalist Travertine Luxury Stationery',
-      category: 'Packaging . Print & Commercial',
-      image: coffyBrandingPack,
-      metaTitle: 'Luxury Travertine Stationery and Embossed Gold Foil Packaging Mockup',
-      keywords: ['stationery mockup', 'embossed gold foil', 'travertine stone', 'luxury branding', 'minimalist packaging', 'corporate identity', 'business card mockup'],
-      description: 'Minimalist editorial packaging mockup showcasing warm travertine texture, natural window shadows, and embossed golden typography.',
-      cpcRate: '$22.80 CPC',
-      downloads: '980 DLs'
+      id: 'store-prompts',
+      storeNumber: '03 . STORE',
+      title: 'AI Prompt Engineering Lab',
+      category: 'PROMPT MAKER · MIDJOURNEY V6 · FIREFLY 3',
+      department: 'creative',
+      image: storePromptStudio,
+      badge: 'PROMPT LAB',
+      statLabel: 'Commercial Ready',
+      description: 'Generate commercial stock photography, isolated 3D render, and clean flat vector prompts engineered for agency approval.',
+      features: ['Zero-Artifact Formula', 'Copy-Space Framing', 'Midjourney & Firefly'],
+      ctaText: 'Enter Store',
+      actionType: 'view',
+      targetView: 'prompts',
+      sampleKeywords: ['minimalist studio lighting', 'isolated on white', 'commercial copy space', '8k octane render', 'flat vector illustration']
     },
     {
-      id: 4,
-      title: 'Iridescent Fluid Dynamics Wave',
-      category: 'Motion Graphics . 4K Visual Asset',
-      image: coffyMotionGraphics,
-      metaTitle: 'Abstract Dynamic Iridescent Fluid Wave with Holographic Ribbons',
-      keywords: ['holographic wave', 'iridescent ribbon', 'fluid motion', 'abstract 3d', 'octane render', 'dynamic curve', 'futuristic background', 'vibrant gradient'],
-      description: 'Mesmerizing 3D fluid dynamics render with chromatic iridescent ribbons floating over a deep matte black void.',
-      cpcRate: '$34.00 CPC',
-      downloads: '3.1k DLs'
+      id: 'store-monetize',
+      storeNumber: '04 . STORE',
+      title: 'Google Monetize & Earning Hub',
+      category: 'MONETIZATION · ADSENSE HUB · ROYALTY SIMULATOR',
+      department: 'monetize',
+      image: storeMonetizeVault,
+      badge: '$38.50 CPC HUB',
+      statLabel: 'Passive ROI',
+      description: 'Calculate combined microstock download royalties and Google AdSense display revenue with 1-click ads.txt generator.',
+      features: ['AdSense Simulator', 'Official ads.txt', 'High-CPC Keywords'],
+      ctaText: 'Enter Store',
+      actionType: 'view',
+      targetView: 'monetize',
+      sampleKeywords: ['fintech banking security', 'renewable solar grid', 'enterprise cloud ai', 'biotech laboratory', 'wealth management']
+    },
+    {
+      id: 'store-seo-rank',
+      storeNumber: '05 . STORE',
+      title: '100% Rank #1 SEO Booster',
+      category: 'ALGORITHM · TOP 10 SLOTS · SEARCH WEIGHTING',
+      department: 'metadata',
+      image: store05Rank1Seo,
+      badge: 'RANK #1 ENGINE',
+      statLabel: '75% Top-10 Weight',
+      description: 'Lock your exact buyer search query into Keyword Slots #1–#10 and first 4 title words to rank on Page 1.',
+      features: ['First-10 Slot Lock', '<70 Char Calibrator', 'Live Search Audit'],
+      ctaText: 'Enter Store',
+      actionType: 'view',
+      targetView: 'seo-rank',
+      sampleKeywords: ['sustainable alpine forest', 'golden sun rays', 'scenic wilderness', 'carbon neutral nature', 'ecological conservation']
+    },
+    {
+      id: 'store-trends',
+      storeNumber: '06 . STORE',
+      title: 'Live Market Trends Radar',
+      category: 'TRENDS · RISING SEARCHES · BUYER DEMAND',
+      department: 'creative',
+      image: store06MarketTrends,
+      badge: 'LIVE PULSE',
+      statLabel: 'Real-Time Data',
+      description: 'Explore live surging search terms, low-competition visual niches, and trending commercial color palettes across agencies.',
+      features: ['Breakout Queries', 'Style Forecast', '1-Click Tag Copy'],
+      ctaText: 'Enter Store',
+      actionType: 'view',
+      targetView: 'trends',
+      sampleKeywords: ['biophilic office interior', 'neural network node', 'sustainable packaging', 'electric mobility', 'clean energy grid']
+    },
+    {
+      id: 'store-competitor',
+      storeNumber: '07 . STORE',
+      title: 'Competitor Spy & Tag Extractor',
+      category: 'COMPETITOR SPY · REVERSE TAGS · GAP ANALYSIS',
+      department: 'metadata',
+      image: storeCompetitorSpy,
+      badge: 'SPY RADAR',
+      statLabel: 'Top 1% Benchmark',
+      description: 'Reverse-engineer top-selling stock assets in any niche. Extract hidden high-converting tags and uncover keyword gaps.',
+      features: ['Bestseller Tag Spy', 'Strategy Breakdown', 'Instant Copy'],
+      ctaText: 'Enter Store',
+      actionType: 'view',
+      targetView: 'competitor',
+      sampleKeywords: ['corporate leadership', 'global supply chain', 'digital transformation', 'automated warehouse', 'smart logistics']
+    },
+    {
+      id: 'store-csv-export',
+      storeNumber: '08 . STORE',
+      title: 'Multi-Agency CSV & Tools Hub',
+      category: 'EXPORT HUB · ADOBE · SHUTTERSTOCK · FREEPIK',
+      department: 'monetize',
+      image: store08MultiCsvHub,
+      badge: '12 PRO TOOLS',
+      statLabel: '5 Agencies Ready',
+      description: 'One-click formatted CSV exports for Adobe Stock, Shutterstock, Freepik, Getty & Vecteezy plus IP Shield and Release Inspector.',
+      features: ['5-Agency CSV Hub', 'Trademark IP Shield', 'Release Inspector'],
+      ctaText: 'Open Tools',
+      actionType: 'modal_tools',
+      sampleKeywords: ['luxury stationery mockup', 'embossed gold foil', 'travertine stone', 'corporate identity', 'minimalist branding']
     }
   ];
 
-  const handleCopyProject = (p: typeof showcaseProjects[0], e: React.MouseEvent) => {
+  const filteredStores = activeDepartment === 'all'
+    ? marketStores
+    : marketStores.filter(s => s.department === activeDepartment);
+
+  const handleOpenStore = (store: BoutiqueStoreItem) => {
+    if (store.actionType === 'view' && store.targetView) {
+      onNavigateView(store.targetView);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (store.actionType === 'modal_csv' && onOpenMultiCsv) {
+      onOpenMultiCsv();
+    } else if (store.actionType === 'modal_tools' && onOpenToolsHub) {
+      onOpenToolsHub();
+    } else {
+      onStartGenerating();
+    }
+  };
+
+  const handleQuickCopyTags = (store: BoutiqueStoreItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    const text = `${p.metaTitle}\n\nKeywords: ${p.keywords.join(', ')}`;
-    navigator.clipboard.writeText(text);
-    setCopiedId(p.id);
+    if (!store.sampleKeywords) return;
+    navigator.clipboard.writeText(store.sampleKeywords.join(', '));
+    setCopiedId(store.id);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
   return (
     <div className={`relative w-full overflow-hidden ${
       isLight 
-        ? 'bg-[#ffffff] text-[#111215]' 
+        ? 'bg-[#fbfaf8] text-[#111215]' 
         : 'bg-[#08090b] text-[#f2f2f0]'
     } font-sans transition-colors duration-300`}>
       
       {/* ============================================================ */}
-      {/* COFFY DESIGN SITE HEADER (Exact 3-Zone Contract) */}
+      {/* ULTRA-MINIMALIST COFFY.NET HEADER (Feather-light 1px border) */}
       {/* ============================================================ */}
       <header className={`sticky top-0 z-50 w-full ${
-        isLight ? 'bg-white/95 border-b border-neutral-100' : 'bg-[#08090b]/95 border-b border-neutral-900'
-      } backdrop-blur-md transition-colors duration-200`}>
-        <div className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14 h-20 flex items-center justify-between">
+        isLight ? 'bg-[#fbfaf8]/90 border-b border-neutral-200/60' : 'bg-[#08090b]/90 border-b border-neutral-900/80'
+      } backdrop-blur-xl transition-colors duration-200`}>
+        <div className="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14 h-18 flex items-center justify-between">
           
-          {/* Zone 1: Navigation on Left (Exact Coffy Style) */}
-          <nav className="flex items-center gap-7 sm:gap-9 text-[11px] sm:text-[11.5px] font-bold tracking-[0.2em] uppercase">
-            <button
+          {/* Zone 1: Brand Identity */}
+          <div className="flex items-center">
+            <AdobeMetaProLogo
+              size="sm"
+              showText={true}
+              layout="horizontal"
+              theme={isLight ? 'light' : 'dark'}
               onClick={() => {
-                onNavigateView('upload');
+                setActiveDepartment('all');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={`transition cursor-pointer relative py-1 ${
-                currentView === 'upload' 
-                  ? (isLight ? 'text-black font-black' : 'text-white font-black') 
-                  : (isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white')
+            />
+          </div>
+
+          {/* Zone 2: Whisper-Quiet Editorial Navigation Links */}
+          <nav className="hidden md:flex items-center gap-7 text-[11px] font-semibold tracking-[0.18em] uppercase">
+            <button
+              onClick={() => {
+                setActiveDepartment('all');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`transition cursor-pointer relative py-1 whitespace-nowrap ${
+                activeDepartment === 'all'
+                  ? (isLight ? 'text-black font-bold' : 'text-white font-bold') 
+                  : (isLight ? 'text-neutral-400 hover:text-black' : 'text-neutral-500 hover:text-white')
               }`}
             >
-              <span>WORK</span>
-              {currentView === 'upload' && (
-                <span className={`absolute bottom-0 left-0 right-0 h-[2px] ${isLight ? 'bg-black' : 'bg-white'}`} />
+              <span>Market</span>
+              {activeDepartment === 'all' && (
+                <span className={`absolute bottom-0 left-0 right-0 h-[1px] ${isLight ? 'bg-black' : 'bg-white'}`} />
               )}
             </button>
 
             <button
-              onClick={() => {
-                onNavigateView('monetize');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className={`transition cursor-pointer relative py-1 flex items-center gap-1.5 ${
-                currentView === 'monetize' 
-                  ? (isLight ? 'text-black font-black' : 'text-white font-black') 
-                  : (isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white')
+              onClick={() => onNavigateView('upload')}
+              className={`transition cursor-pointer relative py-1 whitespace-nowrap ${
+                isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <span>MONETIZE</span>
-              {currentView === 'monetize' && (
-                <span className={`absolute bottom-0 left-0 right-0 h-[2px] ${isLight ? 'bg-black' : 'bg-white'}`} />
-              )}
+              <span>Studio</span>
             </button>
 
             <button
-              onClick={() => {
-                onNavigateView('seo-rank');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className={`hidden sm:inline-block transition cursor-pointer relative py-1 ${
-                currentView === 'seo-rank' 
-                  ? (isLight ? 'text-black font-black' : 'text-white font-black') 
-                  : (isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white')
+              onClick={() => onNavigateView('seo-rank')}
+              className={`transition cursor-pointer relative py-1 whitespace-nowrap ${
+                isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <span>SEO RANK</span>
-              {currentView === 'seo-rank' && (
-                <span className={`absolute bottom-0 left-0 right-0 h-[2px] ${isLight ? 'bg-black' : 'bg-white'}`} />
-              )}
+              <span>Rank SEO</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateView('calendar')}
+              className={`transition cursor-pointer relative py-1 whitespace-nowrap ${
+                isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <span>Calendar</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateView('prompts')}
+              className={`hidden lg:inline-block transition cursor-pointer relative py-1 whitespace-nowrap ${
+                isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <span>Prompts</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateView('monetize')}
+              className={`hidden xl:inline-block transition cursor-pointer relative py-1 whitespace-nowrap ${
+                isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <span>Monetize</span>
             </button>
 
             <button
               onClick={() => {
                 if (onOpenAbout) onOpenAbout();
               }}
-              className={`hidden md:inline-block transition cursor-pointer ${
+              className={`hidden xl:inline-block transition cursor-pointer whitespace-nowrap ${
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <span>ABOUT</span>
-            </button>
-
-            <button
-              onClick={() => {
-                const el = document.getElementById('coffy-contact');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-                else window.location.href = 'mailto:ratulsorker266@gmail.com';
-              }}
-              className={`hidden lg:inline-block transition cursor-pointer ${
-                isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <span>CONTACT</span>
+              <span>About</span>
             </button>
           </nav>
 
-          {/* Zone 2: Centered Signature Identity (Exact Coffy Layout) */}
-          <div className="flex items-center justify-center">
-            <button
-              onClick={() => {
-                onNavigateView('upload');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="group flex flex-col items-center cursor-pointer text-center"
-            >
-              <span className={`text-[17px] sm:text-[19px] font-black tracking-[0.24em] uppercase transition-opacity group-hover:opacity-80 ${
-                isLight ? 'text-black' : 'text-white'
-              }`}>
-                ADOBEMETA PRO
-              </span>
-              <span className="text-[8px] sm:text-[8.5px] font-semibold tracking-[0.38em] uppercase text-neutral-400 mt-0.5">
-                CREATIVE METADATA STUDIO
-              </span>
-            </button>
-          </div>
+          {/* Zone 3: Minimalist Controls & Text AI Chat Trigger */}
+          <div className="flex items-center gap-2">
+            {onOpenChat && (
+              <button
+                onClick={onOpenChat}
+                className={`px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.1em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
+                  isLight
+                    ? 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-200/90'
+                    : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border-neutral-800'
+                }`}
+                title="Open Minimalist Text AI Assistant"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
+                <span className="hidden sm:inline">AI Chat</span>
+              </button>
+            )}
 
-          {/* Zone 3: Social / Controls & Quick Action on Right */}
-          <div className="flex items-center gap-3 sm:gap-5">
-            {/* Direct Email Affordance (Coffy Mail Icon) */}
             <a
               href="mailto:ratulsorker266@gmail.com"
               aria-label="Contact Studio"
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition cursor-pointer ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer ${
                 isLight 
-                  ? 'text-neutral-600 hover:text-black hover:bg-neutral-100' 
+                  ? 'text-neutral-500 hover:text-black hover:bg-neutral-200/50' 
                   : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
               }`}
               title="Contact Studio (ratulsorker266@gmail.com)"
             >
-              <Mail className="w-4 h-4" />
+              <Mail className="w-3.5 h-3.5" />
             </a>
 
-            {/* Theme Toggle */}
             <button
               onClick={onToggleTheme}
               aria-label="Toggle theme mode"
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition cursor-pointer ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer ${
                 isLight 
-                  ? 'text-neutral-600 hover:text-black hover:bg-neutral-100' 
+                  ? 'text-neutral-500 hover:text-black hover:bg-neutral-200/50' 
                   : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
               }`}
               title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
-              {isLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              {isLight ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
             </button>
 
-            {/* Primary Action Button */}
             <button
-              onClick={onStartGenerating}
-              className={`text-[11.5px] font-bold tracking-[0.16em] uppercase px-4 sm:px-5 py-2.5 rounded-full transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              onClick={() => onNavigateView('upload')}
+              className={`text-[10.5px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded-full transition-all duration-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 isLight
-                  ? 'bg-black hover:bg-neutral-800 text-white shadow-xs'
-                  : 'bg-white hover:bg-neutral-200 text-black font-black shadow-xs'
+                  ? 'bg-black hover:bg-neutral-800 text-white'
+                  : 'bg-white hover:bg-neutral-200 text-black'
               }`}
             >
-              <span className="hidden sm:inline">LAUNCH</span>
-              <span>STUDIO</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>Open Studio</span>
+              <ArrowRight className="w-3 h-3" />
             </button>
           </div>
 
@@ -283,293 +392,245 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       </header>
 
       {/* ============================================================ */}
-      {/* COFFY DESIGN MASTHEAD (Iconic Razor-Sharp Typography) */}
+      {/* BREATHABLE MINIMALIST MASTHEAD & DEPARTMENT FILTER BAR */}
       {/* ============================================================ */}
-      <div className="pt-16 sm:pt-24 pb-12 sm:pb-16 max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14">
+      <div className="pt-12 sm:pt-16 pb-10 sm:pb-12 max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14">
         
-        {/* Coffy Masthead Large Headline */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           className="text-center space-y-4"
         >
-          <div className="text-[11px] sm:text-[12px] font-bold tracking-[0.32em] uppercase text-neutral-400">
-            MICROSTOCK COMMERCIAL INTELLIGENCE &amp; SEO RANK BOOSTER
+          {/* Quiet Editorial Kicker */}
+          <div className="flex flex-wrap items-center justify-center gap-2 text-[10.5px] font-mono tracking-[0.22em] uppercase text-neutral-400">
+            <span>CURATED CREATIVE MARKETPLACE</span>
+            <span aria-hidden="true">·</span>
+            <span className={isLight ? 'text-neutral-800 font-semibold' : 'text-neutral-200 font-semibold'}>49/49 ULTRA-SEO ENGINE</span>
+            <span aria-hidden="true">·</span>
+            <span>75% TOP-10 WEIGHT LOCK</span>
           </div>
 
-          <h1 className={`text-[32px] sm:text-[54px] md:text-[68px] lg:text-[76px] font-black tracking-[0.08em] sm:tracking-[0.12em] uppercase leading-none ${
-            isLight ? 'text-black' : 'text-white'
+          {/* Refined Editorial Headline */}
+          <h1 className={`text-[30px] sm:text-[46px] md:text-[58px] lg:text-[66px] font-bold tracking-[-0.03em] leading-[1.04] max-w-4xl mx-auto ${
+            isLight ? 'text-neutral-950' : 'text-white'
           }`}>
-            METADATA <span className="text-amber-500">.</span> VECTOR <span className="text-emerald-500">.</span> MONETIZE
+            METADATA <span className="font-editorial italic font-normal text-amber-500">&amp;</span> CREATIVE STORES
           </h1>
 
-          <p className={`text-[13px] sm:text-[15px] font-medium tracking-wide max-w-2xl mx-auto leading-relaxed ${
-            isLight ? 'text-neutral-600' : 'text-neutral-400'
+          <p className={`text-[13px] sm:text-[14.5px] font-normal max-w-xl mx-auto leading-relaxed ${
+            isLight ? 'text-neutral-500' : 'text-neutral-400'
           }`}>
-            The definitive creative platform for Adobe Stock, Shutterstock &amp; Freepik contributors. 
-            Real Ghostscript EPS visual rendering, 100% Rank #1 keywords, and Google AdSense earning integration.
+            Minimalist multi-store workspace engineered for 49-tag buyer search conversion, 119ms Ghostscript EPS previews, and Adobe Stock ranking compliance.
           </p>
 
-          {/* Quick Action Ribbon */}
-          <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={onStartGenerating}
-              className={`text-[12px] font-bold tracking-[0.18em] uppercase px-7 py-3 rounded-full transition flex items-center gap-2 cursor-pointer ${
-                isLight
-                  ? 'bg-black text-white hover:bg-neutral-800'
-                  : 'bg-white text-black hover:bg-neutral-200'
-              }`}
-            >
-              <span>Drop &amp; Analyze EPS Vectors</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => onNavigateView('monetize')}
-              className={`text-[12px] font-bold tracking-[0.18em] uppercase px-6 py-3 rounded-full border transition flex items-center gap-2 cursor-pointer ${
-                isLight 
-                  ? 'border-neutral-200 hover:border-black text-black bg-neutral-50 hover:bg-white' 
-                  : 'border-neutral-800 hover:border-white text-white bg-neutral-900/60 hover:bg-neutral-900'
-              }`}
-            >
-              <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Google Monetization Hub</span>
-            </button>
+          {/* Feather-Light Department Filter Bar */}
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-1.5">
+            {[
+              { id: 'all', label: 'All Stores (08)' },
+              { id: 'metadata', label: 'Metadata & SEO' },
+              { id: 'creative', label: 'Calendar & Prompts' },
+              { id: 'monetize', label: 'Earning & CSV' },
+            ].map((tab) => {
+              const isActive = activeDepartment === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveDepartment(tab.id as any)}
+                  className={`text-[10.5px] font-semibold tracking-[0.12em] uppercase px-3.5 py-1.5 rounded-full border transition cursor-pointer whitespace-nowrap ${
+                    isActive
+                      ? isLight
+                        ? 'bg-neutral-950 text-white border-neutral-950'
+                        : 'bg-white text-black border-white'
+                      : isLight
+                      ? 'bg-transparent text-neutral-500 border-neutral-200/80 hover:border-neutral-900 hover:text-black'
+                      : 'bg-transparent text-neutral-400 border-neutral-800 hover:border-neutral-600 hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </motion.div>
 
       </div>
 
       {/* ============================================================ */}
-      {/* COFFY DESIGN WORK SHOWCASE GRID (The Signature Coffy Look) */}
+      {/* COFFY.NET BOUTIQUE STOREFRONT GALLERY GRID (8 DOKANS) */}
       {/* ============================================================ */}
-      <section className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14 pb-20">
+      <section className="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14 pb-20">
         
-        {/* Gallery Grid: 2 Columns on Tablet, 4 Columns on Desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {showcaseProjects.map((project, idx) => (
-            <motion.div
-              key={project.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
-              onClick={() => setSelectedProject(selectedProject === project.id ? null : project.id)}
-              className="group cursor-pointer flex flex-col space-y-3"
-            >
-              {/* Cover Image Container with Smooth Coffy Scale */}
-              <div className={`relative aspect-[16/10] overflow-hidden rounded-xl ${
-                isLight ? 'bg-neutral-100 shadow-sm' : 'bg-neutral-900 shadow-md'
-              }`}>
-                <img
-                  src={project.image}
-                  alt={project.title}
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                  referrerPolicy="no-referrer"
-                />
-
-                {/* Subtle Cinematic Vignette */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
-
-                {/* Live Commercial Stat Badge */}
-                <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-black/60 backdrop-blur-md text-white border border-white/10">
-                  <span className="text-emerald-400">{project.cpcRate}</span>
-                </div>
-
-                {/* Hover Reveal Action Bar */}
-                <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <span className="text-[10px] font-mono text-neutral-300">
-                    {project.downloads}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={(e) => handleCopyProject(project, e)}
-                      className="px-2.5 py-1 bg-white text-black text-[10.5px] font-bold rounded-md flex items-center gap-1 hover:bg-neutral-200 transition shadow-sm cursor-pointer"
-                    >
-                      {copiedId === project.id ? (
-                        <>
-                          <Check className="w-3 h-3 text-emerald-600" />
-                          <span>Copied</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3 h-3" />
-                          <span>Copy SEO</span>
-                        </>
-                      )}
-                    </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+          <AnimatePresence mode="popLayout">
+            {filteredStores.map((store, idx) => (
+              <motion.div
+                key={store.id}
+                layout
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.35, delay: idx * 0.03, ease: [0.16, 1, 0.3, 1] }}
+                onClick={() => handleOpenStore(store)}
+                className="group cursor-pointer flex flex-col justify-between"
+              >
+                <div className="space-y-3">
+                  {/* Top Store Number & Live Status Line (Zero-Pill Unboxed Metadata) */}
+                  <div className="flex items-center justify-between text-[10px] font-mono tabular-nums tracking-[0.16em] uppercase text-neutral-400">
+                    <span>{store.storeNumber}</span>
+                    <span className={isLight ? 'text-neutral-600 font-medium' : 'text-neutral-300 font-medium'}>
+                      {store.statLabel}
+                    </span>
                   </div>
-                </div>
-              </div>
 
-              {/* Coffy Details Block (Exact CSS Class Preservation) */}
-              <div className="space-y-1 pt-1">
-                <div className={`text-[14px] font-bold tracking-tight leading-snug ${
-                  isLight ? 'text-black' : 'text-white'
-                }`}>
-                  {project.title}
-                </div>
-                <div className="text-[11px] font-medium tracking-wide text-neutral-400">
-                  {project.category}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Selected Project Expanded Inspector Drawer (If Clicked) */}
-        <AnimatePresence>
-          {selectedProject !== null && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mt-8 overflow-hidden"
-            >
-              {(() => {
-                const p = showcaseProjects.find(item => item.id === selectedProject);
-                if (!p) return null;
-                return (
-                  <div className={`p-6 sm:p-8 rounded-2xl border ${
+                  {/* Coffy Signature Cover Image Card */}
+                  <div className={`relative aspect-[16/10] overflow-hidden rounded-xl border transition-all duration-300 ${
                     isLight 
-                      ? 'bg-neutral-50 border-neutral-200 text-black' 
-                      : 'bg-neutral-900/90 border-neutral-800 text-white'
-                  } space-y-4`}>
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div>
-                        <div className="text-[11px] font-bold tracking-[0.2em] uppercase text-emerald-500">
-                          ACTIVE ASSET METADATA INSPECTOR
-                        </div>
-                        <h3 className="text-xl sm:text-2xl font-bold tracking-tight mt-1">
-                          {p.metaTitle}
-                        </h3>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={onStartGenerating}
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>Open in Batch Studio</span>
-                        </button>
-                        <button
-                          onClick={() => setSelectedProject(null)}
-                          className={`text-xs px-3 py-2 rounded-xl border ${
-                            isLight ? 'border-neutral-300 text-neutral-600' : 'border-neutral-700 text-neutral-300'
-                          } hover:bg-neutral-200/50 cursor-pointer`}
-                        >
-                          Close
-                        </button>
-                      </div>
+                      ? 'bg-neutral-100 border-neutral-200/70 group-hover:border-neutral-900 group-hover:shadow-md' 
+                      : 'bg-neutral-900 border-neutral-800/80 group-hover:border-neutral-600 group-hover:shadow-xl'
+                  }`}>
+                    <img
+                      src={store.image}
+                      alt={store.title}
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-104"
+                      referrerPolicy="no-referrer"
+                    />
+
+                    {/* Subtle Contrast Scrim */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent opacity-65 group-hover:opacity-80 transition-opacity duration-300" />
+
+                    {/* Subtle Top-Left Store Kicker */}
+                    <div className="absolute top-2.5 left-3 text-[9px] font-mono font-semibold tracking-[0.16em] uppercase text-white/90">
+                      {store.badge}
                     </div>
 
-                    <p className={`text-xs sm:text-sm leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-300'}`}>
-                      {p.description}
-                    </p>
+                    {/* Quick Sample SEO Copy Button on Top-Right */}
+                    {store.sampleKeywords && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleQuickCopyTags(store, e)}
+                        className="absolute top-2 right-2 px-2 py-0.5 rounded-md text-[9.5px] font-semibold bg-white/95 hover:bg-white text-black flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-xs cursor-pointer whitespace-nowrap"
+                        title="Copy store sample SEO keywords"
+                      >
+                        {copiedId === store.id ? (
+                          <>
+                            <Check className="w-2.5 h-2.5 text-emerald-600" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-2.5 h-2.5" />
+                            <span>Copy Tags</span>
+                          </>
+                        )}
+                      </button>
+                    )}
 
-                    <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800">
-                      <div className="text-[11px] font-bold tracking-wider uppercase text-neutral-400 mb-2">
-                        Top Ranking Keywords (Positions 1-8):
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {p.keywords.map((kw, i) => (
-                          <span
-                            key={i}
-                            className={`text-xs px-2.5 py-1 rounded-md font-mono ${
-                              isLight 
-                                ? 'bg-white text-neutral-800 border border-neutral-200' 
-                                : 'bg-neutral-800 text-neutral-200 border border-neutral-700'
-                            }`}
-                          >
-                            #{i + 1} {kw}
-                          </span>
-                        ))}
-                      </div>
+                    {/* Bottom Hover Enter Store Bar */}
+                    <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-white">
+                      <span className="text-[10.5px] font-semibold tracking-[0.14em] uppercase">
+                        {store.ctaText}
+                      </span>
+                      <span className="w-6 h-6 rounded-full bg-white/95 text-black flex items-center justify-center transform group-hover:translate-x-0.5 transition-transform">
+                        <ArrowRight className="w-3 h-3" />
+                      </span>
                     </div>
                   </div>
-                );
-              })()}
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+                  {/* Coffy Details Typography Block */}
+                  <div className="space-y-1 pt-0.5">
+                    <div className="text-[9.5px] font-mono tracking-[0.14em] uppercase text-neutral-400">
+                      {store.category}
+                    </div>
+                    <h2 className={`text-[15.5px] font-semibold tracking-tight leading-snug group-hover:underline decoration-1 underline-offset-4 ${
+                      isLight ? 'text-neutral-950' : 'text-white'
+                    }`}>
+                      {store.title}
+                    </h2>
+                    <p className={`text-[12px] leading-relaxed line-clamp-2 ${
+                      isLight ? 'text-neutral-500' : 'text-neutral-400'
+                    }`}>
+                      {store.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Store Sub-Features Micro-List */}
+                <div className={`mt-3.5 pt-2.5 border-t flex flex-wrap items-center gap-x-2 gap-y-1 text-[10.5px] ${
+                  isLight ? 'border-neutral-200/60 text-neutral-400' : 'border-neutral-900 text-neutral-500'
+                }`}>
+                  {store.features.map((feat, fIdx) => (
+                    <React.Fragment key={fIdx}>
+                      <span>{feat}</span>
+                      {fIdx < store.features.length - 1 && (
+                        <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
 
       </section>
 
       {/* ============================================================ */}
-      {/* COFFY DESIGN ARCHITECTURAL CAPABILITIES STRIP */}
+      {/* MINIMALIST CAPABILITIES STRIP */}
       {/* ============================================================ */}
       <section id="why-choose-section" className={`border-t ${
-        isLight ? 'border-neutral-100 bg-[#fafafa]' : 'border-neutral-900 bg-[#060708]'
-      } py-16 sm:py-20 transition-colors duration-200`}>
-        <div className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14">
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 sm:gap-10">
-            
-            {/* Capability 1 */}
-            <div className="space-y-2.5">
-              <div className="text-[11px] font-bold tracking-[0.24em] uppercase text-neutral-400">
-                01 . ENGINE
+        isLight ? 'border-neutral-200/60 bg-white' : 'border-neutral-900 bg-[#060708]'
+      } py-14 transition-colors duration-200`}>
+        <div className="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div onClick={() => onNavigateView('upload')} className="space-y-1.5 cursor-pointer group">
+              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-neutral-400 group-hover:text-amber-500 transition-colors">
+                01 . 75% FIRST-10 LOCK
               </div>
-              <h3 className={`text-base font-bold tracking-tight ${isLight ? 'text-black' : 'text-white'}`}>
-                Ghostscript PostScript Parser
+              <h3 className={`text-sm font-semibold tracking-tight ${isLight ? 'text-black' : 'text-white'}`}>
+                Title-to-Slot #1 Correlation
               </h3>
-              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
-                119ms high-fidelity visual rendering for vector EPS and AI files. Zero dummy cards, true artwork inspection.
+              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
+                Locks primary subjects and exact buyer search phrases into Slots #1–#10 for maximum Adobe Stock search weight.
               </p>
             </div>
 
-            {/* Capability 2 */}
-            <div className="space-y-2.5">
-              <div className="text-[11px] font-bold tracking-[0.24em] uppercase text-neutral-400">
-                02 . RANKING
+            <div onClick={() => onNavigateView('upload')} className="space-y-1.5 cursor-pointer group">
+              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-neutral-400 group-hover:text-emerald-500 transition-colors">
+                02 . GHOSTSCRIPT EPS ENGINE
               </div>
-              <h3 className={`text-base font-bold tracking-tight ${isLight ? 'text-black' : 'text-white'}`}>
-                Top 10 Keyword Locking
+              <h3 className={`text-sm font-semibold tracking-tight ${isLight ? 'text-black' : 'text-white'}`}>
+                119ms True Vector Rendering
               </h3>
-              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
-                Enforces the 75% search weighting required by Adobe Stock and Shutterstock algorithms for page 1 visibility.
+              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
+                Renders PostScript `.eps` and `.ai` vectors into crisp previews in 119ms and prioritizes subject keywords first.
               </p>
             </div>
 
-            {/* Capability 3 */}
-            <div className="space-y-2.5">
-              <div className="text-[11px] font-bold tracking-[0.24em] uppercase text-neutral-400">
-                03 . EARNING
+            <div onClick={() => onNavigateView('seo-rank')} className="space-y-1.5 cursor-pointer group">
+              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-neutral-400 group-hover:text-amber-500 transition-colors">
+                03 . BUYER PSYCHOLOGY
               </div>
-              <h3 className={`text-base font-bold tracking-tight ${isLight ? 'text-black' : 'text-white'}`}>
-                Google Monetization Suite
+              <h3 className={`text-sm font-semibold tracking-tight ${isLight ? 'text-black' : 'text-white'}`}>
+                49/49 Full-Capacity Taxonomy
               </h3>
-              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
-                Interactive revenue simulators, high-viewability AdSense units, and official ads.txt compliance.
+              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
+                Combines high-RPD B2B concepts, long-tail 3-word buyer phrases, and separated descriptive attributes.
               </p>
             </div>
 
-            {/* Capability 4 */}
-            <div className="space-y-2.5">
-              <div className="text-[11px] font-bold tracking-[0.24em] uppercase text-neutral-400">
-                04 . EXPORT
+            <div onClick={() => onNavigateView('monetize')} className="space-y-1.5 cursor-pointer group">
+              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-neutral-400 group-hover:text-emerald-500 transition-colors">
+                04 . DIRECT IPTC &amp; CSV
               </div>
-              <h3 className={`text-base font-bold tracking-tight ${isLight ? 'text-black' : 'text-white'}`}>
-                Multi-Agency 1-Click CSV
+              <h3 className={`text-sm font-semibold tracking-tight ${isLight ? 'text-black' : 'text-white'}`}>
+                1-Click Embedded Export
               </h3>
-              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
-                Instant formatting for Adobe Stock, Shutterstock, Freepik &amp; Getty Images, with direct IPTC embedding.
+              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
+                Embeds EXIF/IPTC/XMP directly into JPGs &amp; EPS files and exports 100% compliant CSVs for all 5 agencies.
               </p>
-            </div>
-
-          </div>
-
-          {/* Minimalist Coffy Baseline Ticker */}
-          <div className="mt-14 pt-8 border-t border-neutral-200 dark:border-neutral-900 flex flex-wrap items-center justify-between text-[11px] font-bold tracking-[0.24em] uppercase text-neutral-400">
-            <span>ADOBEMETA PRO STUDIO</span>
-            <div className="flex items-center gap-3">
-              <span>AUGUST 2026 EDITION</span>
-              <span>·</span>
-              <span>100% PASSIVE EARNING ENGINE</span>
             </div>
           </div>
-
         </div>
       </section>
 

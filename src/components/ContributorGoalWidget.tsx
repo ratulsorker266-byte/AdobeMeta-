@@ -36,10 +36,9 @@ export const ContributorGoalWidget: React.FC<ContributorGoalWidgetProps> = ({
 
   const rank = getRank(completedCount);
 
-  // Real-time commercial valuation calculation
-  const effectiveCount = Math.max(1, completedCount);
-  const estStockMonthly = (effectiveCount * 1.8 * 0.98).toFixed(0);
-  const estAdSenseMonthly = ((effectiveCount * 450) / 1000 * 4.25).toFixed(0);
+  // Real-time commercial valuation calculation (accurate to actual completedCount)
+  const estStockMonthly = (completedCount * 1.8 * 0.98).toFixed(0);
+  const estAdSenseMonthly = ((completedCount * 450) / 1000 * 4.25).toFixed(0);
   const estCombinedMonthly = (Number(estStockMonthly) + Number(estAdSenseMonthly)).toFixed(0);
   const estAnnualValue = (Number(estCombinedMonthly) * 12).toLocaleString();
 

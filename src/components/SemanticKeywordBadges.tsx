@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { Copy, Check, Sparkles, Compass, Target, Layers } from 'lucide-react';
+import { Copy, Check, Sparkles, Target, ArrowUp, Zap } from 'lucide-react';
 import { KeywordTaxonomy } from '../types';
 
 interface SemanticKeywordBadgesProps {
   keywords: string[];
   keywordTaxonomy?: KeywordTaxonomy;
   longTailKeywords?: string[];
+  buyerSearchPhrases?: string[];
   showToast: (msg: string) => void;
   themeMode?: 'light' | 'dark';
+  onPromoteToSlot1?: (keyword: string) => void;
+  onReorderKeywords?: (newKeywords: string[]) => void;
 }
 
 type TaxonomyFilter = 'all' | 'top10' | 'longtail' | 'subject' | 'concept' | 'action' | 'environment';
@@ -16,12 +19,30 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
   keywords, 
   keywordTaxonomy,
   longTailKeywords = [],
+  buyerSearchPhrases = [],
   showToast,
-  themeMode = 'light'
+  themeMode = 'light',
+  onPromoteToSlot1,
+  onReorderKeywords
 }) => {
   const [activeFilter, setActiveFilter] = useState<TaxonomyFilter>('all');
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const isLight = themeMode === 'light';
+
+  const effectiveLongTail = buyerSearchPhrases && buyerSearchPhrases.length > 0 ? buyerSearchPhrases : longTailKeywords;
+
+  const handlePromoteKeyword = (kwToPromote: string) => {
+    if (onPromoteToSlot1) {
+      onPromoteToSlot1(kwToPromote);
+      return;
+    }
+    if (onReorderKeywords) {
+      const norm = kwToPromote.toLowerCase().trim();
+      const rest = (keywords || []).filter((k) => k.toLowerCase().trim() !== norm);
+      onReorderKeywords([kwToPromote, ...rest]);
+      showToast(`⚡ Promoted "${kwToPromote}" to Slot #1 (75% Weight Lock)!`);
+    }
+  };
 
   // Build classified keywords combining backend taxonomy & heuristic mapping
   const classifiedKeywords = useMemo(() => {
@@ -30,7 +51,7 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
     const actionSet = new Set((keywordTaxonomy?.action || []).map(s => s.toLowerCase()));
     const envSet = new Set((keywordTaxonomy?.environment || []).map(s => s.toLowerCase()));
     const conceptSet = new Set((keywordTaxonomy?.commercialConcept || []).map(s => s.toLowerCase()));
-    const longTailSet = new Set((longTailKeywords || []).map(s => s.toLowerCase()));
+    const longTailSet = new Set((effectiveLongTail || []).map(s => s.toLowerCase()));
 
     return (keywords || []).map((tag, idx) => {
       const lower = tag.toLowerCase().trim();
@@ -88,57 +109,59 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
   const top10 = (keywords || []).slice(0, 10);
 
   return (
-    <div className="space-y-3 pt-1">
+    <div className="space-y-2.5 pt-1">
       {/* Category Filter Bar & Quick Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
-        <div className={`flex flex-wrap items-center gap-1 ${isLight ? 'bg-slate-100/90 border-slate-200' : 'bg-slate-900 border-slate-800'} p-1 rounded-xl border text-xs`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className={`flex flex-wrap items-center gap-1 ${
+          isLight ? 'bg-neutral-100 border-neutral-200' : 'bg-neutral-900 border-neutral-800'
+        } p-1 rounded-xl border text-xs`}>
           <button
             type="button"
             onClick={() => setActiveFilter('all')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
               activeFilter === 'all'
-                ? isLight ? 'bg-white text-slate-900 shadow-xs border border-slate-200' : 'bg-slate-800 text-white shadow-xs'
-                : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
+                ? isLight ? 'bg-black text-white shadow-xs' : 'bg-white text-black shadow-xs'
+                : isLight ? 'text-neutral-600 hover:text-black' : 'text-neutral-400 hover:text-white'
             }`}
           >
-            All ({keywords.length})
+            All ({keywords.length}/49)
           </button>
 
           <button
             type="button"
             onClick={() => setActiveFilter('top10')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
               activeFilter === 'top10'
-                ? isLight ? 'bg-indigo-600 text-white shadow-xs' : 'bg-indigo-600 text-white shadow-xs'
-                : isLight ? 'text-indigo-700 hover:text-indigo-900' : 'text-indigo-400 hover:text-indigo-300'
+                ? 'bg-amber-500 text-black shadow-xs font-bold'
+                : isLight ? 'text-amber-700 hover:text-amber-900' : 'text-amber-400 hover:text-amber-300'
             }`}
           >
-            <Sparkles className="w-3 h-3" />
-            <span>Top 10 Heavyweight</span>
+            <Zap className="w-3 h-3" />
+            <span>Top 10 (75% Weight)</span>
           </button>
 
           {longTailKeywords.length > 0 && (
             <button
               type="button"
               onClick={() => setActiveFilter('longtail')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
                 activeFilter === 'longtail'
-                  ? isLight ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-600 text-white shadow-xs'
+                  ? 'bg-emerald-600 text-white shadow-xs'
                   : isLight ? 'text-emerald-700 hover:text-emerald-900' : 'text-emerald-400 hover:text-emerald-300'
               }`}
             >
               <Target className="w-3 h-3" />
-              <span>Long-Tail Intent</span>
+              <span>Buyer Phrases ({longTailKeywords.length})</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={() => setActiveFilter('subject')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
               activeFilter === 'subject'
-                ? isLight ? 'bg-slate-800 text-white' : 'bg-slate-700 text-white'
-                : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
+                ? isLight ? 'bg-black text-white' : 'bg-white text-black'
+                : isLight ? 'text-neutral-600 hover:text-black' : 'text-neutral-400 hover:text-white'
             }`}
           >
             Subject
@@ -147,13 +170,13 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
           <button
             type="button"
             onClick={() => setActiveFilter('concept')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
               activeFilter === 'concept'
-                ? isLight ? 'bg-slate-800 text-white' : 'bg-slate-700 text-white'
-                : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200'
+                ? isLight ? 'bg-black text-white' : 'bg-white text-black'
+                : isLight ? 'text-neutral-600 hover:text-black' : 'text-neutral-400 hover:text-white'
             }`}
           >
-            Concept
+            Commercial Concept
           </button>
         </div>
 
@@ -161,39 +184,75 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
-            onClick={() => copyTags(top10, 'Top 10 Keywords')}
-            className={`text-[11px] font-medium px-2.5 py-1 rounded-lg border transition flex items-center gap-1 cursor-pointer ${
+            onClick={() => copyTags(top10, 'Top 10 Heavyweight Keywords')}
+            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
               isLight
-                ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
-                : 'bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border-indigo-500/40'
+                ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+                : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/40'
             }`}
-            title="Adobe Stock weights first 10 keywords heaviest in search algorithm"
+            title="Adobe Stock weights first 10 keywords with 75% search ranking power"
           >
-            {copiedType === 'Top 10 Keywords' ? <Check className="w-3 h-3 text-emerald-500" /> : <Sparkles className="w-3 h-3 text-indigo-500" />}
-            <span>{copiedType === 'Top 10 Keywords' ? 'Copied' : 'Copy Top 10'}</span>
+            {copiedType === 'Top 10 Heavyweight Keywords' ? <Check className="w-3 h-3 text-emerald-500" /> : <Sparkles className="w-3 h-3 text-amber-500" />}
+            <span>{copiedType === 'Top 10 Heavyweight Keywords' ? 'Copied Top 10' : 'Copy Top 10'}</span>
           </button>
 
           <button
             type="button"
-            onClick={() => copyTags(keywords, 'All Keywords')}
-            className={`text-[11px] font-medium px-2.5 py-1 rounded-lg border transition flex items-center gap-1 cursor-pointer ${
+            onClick={() => copyTags(keywords, `All ${keywords.length} SEO Keywords`)}
+            className={`text-[11px] font-bold px-3 py-1 rounded-lg border transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
               isLight
-                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                ? 'bg-black hover:bg-neutral-800 text-white border-black'
+                : 'bg-white hover:bg-neutral-200 text-black border-white'
             }`}
           >
-            {copiedType === 'All Keywords' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-slate-500" />}
-            <span>{copiedType === 'All Keywords' ? 'Copied' : 'Copy All'}</span>
+            {copiedType?.startsWith('All') ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+            <span>{copiedType?.startsWith('All') ? 'Copied All!' : `Copy All (${keywords.length})`}</span>
           </button>
         </div>
       </div>
 
+      {/* High-Intent Long-Tail Buyer Search Phrases Strip */}
+      {effectiveLongTail.length > 0 && activeFilter === 'all' && (
+        <div className={`px-3 py-2 rounded-xl border flex flex-wrap items-center gap-1.5 text-[11px] ${
+          isLight
+            ? 'bg-emerald-50/60 border-emerald-200/80 text-emerald-950'
+            : 'bg-emerald-950/25 border-emerald-500/25 text-emerald-200'
+        }`}>
+          <span className="font-bold uppercase tracking-wider text-[9.5px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mr-1">
+            <Target className="w-3 h-3" />
+            Buyer Search Queries:
+          </span>
+          {effectiveLongTail.slice(0, 4).map((phrase, pIdx) => (
+            <button
+              key={pIdx}
+              type="button"
+              onClick={() => {
+                if (onPromoteToSlot1 || onReorderKeywords) {
+                  handlePromoteKeyword(phrase);
+                } else {
+                  copyTags([phrase], `"${phrase}"`);
+                }
+              }}
+              className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 border ${
+                isLight
+                  ? 'bg-white hover:bg-emerald-100 text-emerald-900 border-emerald-200'
+                  : 'bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-200 border-emerald-500/30'
+              }`}
+              title={(onPromoteToSlot1 || onReorderKeywords) ? 'Click to lock this buyer search phrase at Keyword Slot #1' : 'Click to copy phrase'}
+            >
+              <span>"{phrase}"</span>
+              {(onPromoteToSlot1 || onReorderKeywords) && <ArrowUp className="w-2.5 h-2.5 text-emerald-500" />}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Semantic Keyword Badges Grid */}
-      <div className={`flex flex-wrap gap-1.5 max-h-52 overflow-y-auto p-3 rounded-xl border ${
-        isLight ? 'bg-slate-50/70 border-slate-200/90' : 'bg-slate-950/70 border-slate-800'
+      <div className={`flex flex-wrap gap-1.5 max-h-56 overflow-y-auto p-3 rounded-xl border ${
+        isLight ? 'bg-[#faf9f6] border-neutral-200/90' : 'bg-[#0b0c0f] border-neutral-800/90'
       }`}>
         {filtered.length === 0 ? (
-          <div className="text-xs text-slate-400 py-3 text-center w-full">
+          <div className="text-xs text-neutral-400 py-3 text-center w-full">
             No keywords found under this taxonomy category.
           </div>
         ) : (
@@ -201,32 +260,50 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
             let badgeClasses = '';
             if (item.isTop10) {
               badgeClasses = isLight
-                ? 'bg-indigo-50/80 text-indigo-900 border-indigo-200/90 font-medium'
-                : 'bg-indigo-950/60 text-indigo-200 border-indigo-500/40 font-medium';
+                ? 'bg-amber-50/90 text-neutral-900 border-amber-300/90 font-semibold hover:bg-amber-100'
+                : 'bg-amber-500/10 text-amber-200 border-amber-500/40 font-semibold hover:bg-amber-500/20';
             } else if (item.isLongTail) {
               badgeClasses = isLight
-                ? 'bg-emerald-50/80 text-emerald-900 border-emerald-200/90'
-                : 'bg-emerald-950/40 text-emerald-300 border-emerald-500/40';
+                ? 'bg-emerald-50/80 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100'
+                : 'bg-emerald-950/40 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900/50';
             } else {
               badgeClasses = isLight
-                ? 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:text-slate-900'
-                : 'bg-slate-900/80 text-slate-300 border-slate-800 hover:border-slate-700 hover:text-white';
+                ? 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-400 hover:text-black'
+                : 'bg-neutral-900/90 text-neutral-300 border-neutral-800 hover:border-neutral-600 hover:text-white';
             }
 
             return (
-              <span
+              <button
                 key={`${item.tag}-${idx}`}
-                className={`text-xs px-2.5 py-1 rounded-lg border transition cursor-default select-all flex items-center gap-1.5 ${badgeClasses}`}
+                type="button"
+                onClick={() => {
+                  if ((onPromoteToSlot1 || onReorderKeywords) && item.index > 1) {
+                    handlePromoteKeyword(item.tag);
+                  } else {
+                    copyTags([item.tag], `"${item.tag}"`);
+                  }
+                }}
+                title={
+                  item.index === 1
+                    ? 'Locked at Slot #1 (Highest Search Ranking Weight)'
+                    : (onPromoteToSlot1 || onReorderKeywords)
+                    ? `Slot #${item.index} — Click to promote "${item.tag}" to Slot #1 for maximum ranking weight`
+                    : `Click to copy "${item.tag}"`
+                }
+                className={`group/kw text-xs px-2.5 py-1 rounded-lg border transition cursor-pointer flex items-center gap-1.5 ${badgeClasses}`}
               >
-                {item.isTop10 && (
-                  <span className={`text-[9px] font-mono font-bold px-1 rounded ${
-                    isLight ? 'bg-indigo-100 text-indigo-700' : 'bg-indigo-900/80 text-indigo-300'
-                  }`}>
-                    #{item.index}
-                  </span>
-                )}
+                <span className={`text-[9.5px] font-mono tabular-nums font-bold px-1 rounded ${
+                  item.isTop10
+                    ? isLight ? 'bg-amber-200/80 text-amber-950' : 'bg-amber-500/30 text-amber-200'
+                    : isLight ? 'bg-neutral-100 text-neutral-500' : 'bg-neutral-800 text-neutral-400'
+                }`}>
+                  #{item.index}
+                </span>
                 <span>{item.tag}</span>
-              </span>
+                {(onPromoteToSlot1 || onReorderKeywords) && item.index > 1 && (
+                  <ArrowUp className="w-2.5 h-2.5 opacity-0 group-hover/kw:opacity-100 text-amber-500 transition-opacity" />
+                )}
+              </button>
             );
           })
         )}
