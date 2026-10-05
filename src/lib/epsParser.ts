@@ -1,13 +1,12 @@
 /**
- * High-Performance EPS (Encapsulated PostScript) Parser and Preview Generator
+ * High-Performance EPS (Encapsulated PostScript) & Illustrator (.AI) Visual Renderer & Parser
  *
- * Microstock platforms (Adobe Stock, Shutterstock, Freepik, Vecteezy) require vector EPS files.
- * This parser:
- * 1. Reads DOS EPS binary headers (0xC5D0D3C6) and extracts embedded TIFF/JPEG thumbnail previews in <3ms.
- * 2. Scans for embedded binary JPEG streams (0xFFD8FFE0/E1/DB) in <1ms without server latency.
- * 3. Scans Illustrator PostScript streams (%AI9_Data_Thumbnail, %AI12_Data_Thumbnail, %BeginPhotoshop, <xmpGImg:image>).
- * 4. Streams raw binary EPS to server Ghostscript engine in ~119ms with ZERO browser Base64 freezing.
- * 5. Extracts existing PostScript DSC metadata (%%Title, %%Keywords, %%Subject, %%BoundingBox) and Adobe XMP.
+ * Guarantees 100% viewable vector previews & ground-truth metadata extraction for Adobe Stock:
+ * 1. Primary Server-Side Ghostscript (-dEPSFitPage) 1280px High-Definition sRGB Vector Rendering.
+ * 2. Client-Side Adobe XMP <xmpGImg:image> Base64 JPEG extractor (properly decodes &#xA; XML newline entities).
+ * 3. Client-Side Adobe Illustrator %AI7_Thumbnail 8-bit 256-Color Palette + RLE Canvas Renderer.
+ * 4. Browser Image Decode Verification (new Image() naturalWidth check) so broken <img> icons can NEVER occur.
+ * 5. In-flight Promise deduplication via WeakMap<File, Promise<ParsedEpsData>>.
  */
 
 export interface ParsedEpsData {
@@ -24,8 +23,10 @@ export interface ParsedEpsData {
   };
 }
 
+const epsParseCache = new WeakMap<File, Promise<ParsedEpsData>>();
+
 /**
- * Fast Base64 conversion for small thumbnail Uint8Arrays
+ * Fast Base64 conversion for Uint8Arrays
  */
 function uint8ToBase64(bytes: Uint8Array): string {
   let binary = '';
@@ -39,145 +40,189 @@ function uint8ToBase64(bytes: Uint8Array): string {
 }
 
 /**
- * Checks if a file is an EPS vector file by extension or content header.
+ * Checks if a file is an EPS or AI vector file by extension or MIME type.
  */
 export function isEpsFile(file: File): boolean {
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
-  return ext === 'eps' || ext === 'ai' || file.type === 'application/postscript';
+  return (
+    ext === 'eps' ||
+    ext === 'ai' ||
+    file.type === 'application/postscript' ||
+    file.type === 'image/x-eps' ||
+    file.type === 'application/eps' ||
+    file.type === 'application/x-eps'
+  );
 }
 
 /**
- * Scans a Uint8Array for a sequence of byte numbers
+ * Verifies that a data:image/* URL genuinely decodes in the browser with valid dimensions (>= 16x16).
+ * Prevents CMYK or truncated binary streams from ever showing a broken <img> icon.
  */
-function findSubarrayIndex(haystack: Uint8Array, needle: number[], startOffset = 0, maxOffset?: number): number {
-  const needleLen = needle.length;
-  if (needleLen === 0) return -1;
-  const limit = Math.min(haystack.length - needleLen, maxOffset ?? haystack.length - needleLen);
-  const first = needle[0];
-
-  for (let i = startOffset; i <= limit; i++) {
-    if (haystack[i] === first) {
-      let match = true;
-      for (let j = 1; j < needleLen; j++) {
-        if (haystack[i + j] !== needle[j]) {
-          match = false;
-          break;
-        }
-      }
-      if (match) return i;
+export function verifyBrowserImageDecodes(dataUrl: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+      return resolve(false);
     }
-  }
-  return -1;
+    const img = new Image();
+    const timer = setTimeout(() => {
+      resolve(false);
+    }, 3500);
+
+    img.onload = () => {
+      clearTimeout(timer);
+      resolve(img.naturalWidth >= 16 && img.naturalHeight >= 16);
+    };
+    img.onerror = () => {
+      clearTimeout(timer);
+      resolve(false);
+    };
+    img.src = dataUrl;
+  });
 }
 
 /**
- * Fast client-side binary JPEG scanner (0xFF 0xD8 0xFF)
+ * Extracts Adobe XMP <xmpGImg:image> Base64 JPEG (properly stripping &#xA; XML newline entities)
  */
-function extractEmbeddedBinaryJpeg(uint8: Uint8Array): { previewUrl: string; base64: string } | null {
+function extractXmpThumbnailFromText(combinedText: string): { previewUrl: string; base64: string } | null {
   try {
-    let offset = 0;
-    const len = uint8.length;
-    let found = 0;
-
-    while (offset < len - 100 && found < 5) {
-      const soi = findSubarrayIndex(uint8, [0xff, 0xd8, 0xff], offset);
-      if (soi === -1) break;
-
-      const marker = uint8[soi + 3];
-      // Check valid JPEG app marker: 0xE0 (JFIF), 0xE1 (Exif), 0xDB (DQT), 0xEE (Adobe)
-      if (marker === 0xe0 || marker === 0xe1 || marker === 0xdb || marker === 0xee) {
-        const eoi = findSubarrayIndex(uint8, [0xff, 0xd9], soi + 32, soi + 8000000);
-        if (eoi !== -1 && eoi - soi > 500) {
-          const jpegSlice = uint8.subarray(soi, eoi + 2);
-          const b64 = uint8ToBase64(jpegSlice);
-          return {
-            previewUrl: `data:image/jpeg;base64,${b64}`,
-            base64: b64,
-          };
-        }
+    const xmpImgMatch = combinedText.match(/<xmpGImg:image[^>]*>([\s\S]*?)<\/xmpGImg:image>/i);
+    if (xmpImgMatch && xmpImgMatch[1]) {
+      const cleanB64 = xmpImgMatch[1]
+        .replace(/&#x[0-9a-fA-F]+;/g, '')
+        .replace(/&#\d+;/g, '')
+        .replace(/[\s\r\n]+/g, '');
+      if (cleanB64.length > 200) {
+        return {
+          previewUrl: `data:image/jpeg;base64,${cleanB64}`,
+          base64: cleanB64,
+        };
       }
-      offset = soi + 3;
-      found++;
     }
   } catch (_) {}
   return null;
 }
 
 /**
- * Fast client-side Illustrator Thumbnail extractor
+ * Client-side Adobe Illustrator %AI7_Thumbnail 8-bit 256-color palette + RLE decoder -> Canvas JPEG
  */
-function extractIllustratorThumbnailBytes(uint8: Uint8Array): { previewUrl: string; base64: string } | null {
+function extractAi7ThumbnailToCanvas(headText: string): { previewUrl: string; base64: string } | null {
   try {
-    const markers = [
-      '%AI9_Data_Thumbnail',
-      '%AI12_Data_Thumbnail',
-      '%AI7_Thumbnail',
-      '%BeginPhotoshop',
-      '<xmpGImg:image>'
-    ];
+    const ai7Match = headText.match(/%AI7_Thumbnail:\s*(\d+)\s+(\d+)\s+8[\r\n]+([\s\S]*?)(?:%%EndData|%%EndComments|[\r\n][^%])/i);
+    if (!ai7Match) return null;
 
-    // Decode first 1.5MB and last 1.5MB of PostScript where thumbnails reside
-    const decoder = new TextDecoder('latin1');
-    const headText = decoder.decode(uint8.subarray(0, Math.min(uint8.length, 1500000)));
-    let tailText = '';
-    if (uint8.length > 2000000) {
-      tailText = decoder.decode(uint8.subarray(uint8.length - 1500000));
+    const w = parseInt(ai7Match[1], 10);
+    const h = parseInt(ai7Match[2], 10);
+    if (w <= 0 || h <= 0 || w > 2048 || h > 2048) return null;
+
+    const dataSection = ai7Match[3].replace(/%%BeginData:[^\r\n]*[\r\n]+/i, '');
+    const hex = dataSection.replace(/[\s\r\n%]+/g, '');
+    if (hex.length < 1536) return null;
+
+    const byteLen = Math.floor(hex.length / 2);
+    const rawBytes = new Uint8Array(byteLen);
+    for (let i = 0; i < byteLen; i++) {
+      rawBytes[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);
     }
 
-    const searchPools = [headText, tailText];
+    if (rawBytes.length <= 768) return null;
+    const palette = rawBytes.subarray(0, 768);
+    let dataOffset = 768;
+    const isRle =
+      rawBytes.length > 771 &&
+      rawBytes[768] === 0x52 && // 'R'
+      rawBytes[769] === 0x4c && // 'L'
+      rawBytes[770] === 0x45;   // 'E'
+    if (isRle) dataOffset = 771;
 
-    for (const text of searchPools) {
-      if (!text) continue;
+    const numPixels = w * h;
+    const indices = new Uint8Array(numPixels);
+    let pIdx = 0;
+    let i = dataOffset;
 
-      // 1. Check for XMP base64 thumbnail
-      const xmpImgMatch = text.match(/<xmpGImg:image>([A-Za-z0-9+/=\r\n\s]+)<\/xmpGImg:image>/i);
-      if (xmpImgMatch && xmpImgMatch[1]) {
-        const b64 = xmpImgMatch[1].replace(/[\s\r\n]+/g, '');
-        if (b64.length > 100) {
-          return {
-            previewUrl: `data:image/jpeg;base64,${b64}`,
-            base64: b64,
-          };
-        }
-      }
-
-      // 2. Check for Illustrator PostScript comments thumbnail
-      for (const m of markers) {
-        const idx = text.indexOf(m);
-        if (idx !== -1) {
-          const startAfterMarker = text.indexOf('\n', idx);
-          if (startAfterMarker !== -1) {
-            const slice = text.substring(startAfterMarker, startAfterMarker + 2000000);
-            const endIdx = slice.search(/%%EndPreview|%%EndComments|%AI9_Data_Thumbnail_End|%EndPhotoshop|[\r\n][^%]/i);
-            const hexBlock = (endIdx !== -1 ? slice.substring(0, endIdx) : slice.substring(0, 500000))
-              .replace(/[\s\r\n%]+/g, '');
-
-            if (hexBlock.length > 200) {
-              const bytes = new Uint8Array(hexBlock.length / 2);
-              for (let i = 0; i < hexBlock.length; i += 2) {
-                bytes[i / 2] = parseInt(hexBlock.substring(i, i + 2), 16);
-              }
-              if (bytes[0] === 0xff && bytes[1] === 0xd8) {
-                const b64 = uint8ToBase64(bytes);
-                return {
-                  previewUrl: `data:image/jpeg;base64,${b64}`,
-                  base64: b64,
-                };
-              }
+    if (isRle) {
+      while (i < rawBytes.length && pIdx < numPixels) {
+        const b = rawBytes[i++];
+        if (b === 0xfd) {
+          if (i >= rawBytes.length) break;
+          const lenOrFlag = rawBytes[i++];
+          if (lenOrFlag === 0xfd) {
+            indices[pIdx++] = 0xfd;
+          } else {
+            const val = i < rawBytes.length ? rawBytes[i++] : 0;
+            for (let r = 0; r < lenOrFlag && pIdx < numPixels; r++) {
+              indices[pIdx++] = val;
             }
           }
+        } else {
+          indices[pIdx++] = b;
         }
       }
+    } else {
+      while (i < rawBytes.length && pIdx < numPixels) {
+        indices[pIdx++] = rawBytes[i++];
+      }
     }
-  } catch (_) {}
-  return null;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const imgData = ctx.createImageData(w, h);
+    const rgba = imgData.data;
+    for (let px = 0; px < numPixels; px++) {
+      const cIdx = indices[px] * 3;
+      const outIdx = px * 4;
+      rgba[outIdx] = palette[cIdx] ?? 255;
+      rgba[outIdx + 1] = palette[cIdx + 1] ?? 255;
+      rgba[outIdx + 2] = palette[cIdx + 2] ?? 255;
+      rgba[outIdx + 3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    // Scale up cleanly to 512px for crisp UI preview
+    const outCanvas = document.createElement('canvas');
+    const scale = Math.max(1, Math.min(4, 512 / Math.max(w, h)));
+    outCanvas.width = Math.round(w * scale);
+    outCanvas.height = Math.round(h * scale);
+    const outCtx = outCanvas.getContext('2d');
+    if (outCtx) {
+      outCtx.fillStyle = '#FFFFFF';
+      outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+      outCtx.drawImage(canvas, 0, 0, outCanvas.width, outCanvas.height);
+      const dataUrl = outCanvas.toDataURL('image/jpeg', 0.92);
+      return {
+        previewUrl: dataUrl,
+        base64: dataUrl.split(',')[1] || '',
+      };
+    }
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    return {
+      previewUrl: dataUrl,
+      base64: dataUrl.split(',')[1] || '',
+    };
+  } catch (_) {
+    return null;
+  }
 }
 
 /**
- * Parses an EPS file and returns a visual preview URL and embedded metadata.
- * Executes in under 10ms for files with embedded thumbnails, with fast ~119ms server fallback.
+ * Parses an EPS or AI file and returns a guaranteed viewable preview URL and embedded metadata.
+ * Caches in-flight and completed results per File object.
  */
-export async function parseEpsFile(file: File): Promise<ParsedEpsData> {
+export function parseEpsFile(file: File, forceRefresh = false): Promise<ParsedEpsData> {
+  if (!forceRefresh && epsParseCache.has(file)) {
+    return epsParseCache.get(file)!;
+  }
+
+  const task = parseEpsFileInternal(file);
+  epsParseCache.set(file, task);
+  return task;
+}
+
+async function parseEpsFileInternal(file: File): Promise<ParsedEpsData> {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
@@ -192,65 +237,105 @@ export async function parseEpsFile(file: File): Promise<ParsedEpsData> {
 
     let psStart = 0;
     let psLength = uint8.length;
-    let tiffStart = 0;
-    let tiffLength = 0;
 
     if (isDosBinary) {
       const view = new DataView(arrayBuffer);
       psStart = view.getUint32(4, true);
-      psLength = view.getUint32(8, true);
-      tiffStart = view.getUint32(20, true);
-      tiffLength = view.getUint32(24, true);
+      const rawPsLen = view.getUint32(8, true);
+      if (psStart > 0 && psStart < uint8.length) {
+        psLength = rawPsLen > 0 ? Math.min(uint8.length - psStart, rawPsLen) : uint8.length - psStart;
+      } else {
+        psStart = 0;
+      }
     }
 
-    // 2. Decode PostScript text chunk for metadata
-    const sampleText = decodePostScriptText(uint8, psStart, Math.min(psLength, 600000));
-    const metadata = extractMetadataFromText(sampleText);
+    // 2. Decode Head (up to 2MB) and Tail (up to 1MB) of PostScript for DSC metadata & XMP thumbnails
+    const headText = decodePostScriptText(uint8, psStart, Math.min(psLength, 2000000));
+    const tailText =
+      psLength > 2000000
+        ? decodePostScriptText(uint8, psStart + psLength - 1000000, 1000000)
+        : '';
+    const combinedText = tailText ? `${headText}\n${tailText}` : headText;
+
+    const metadata = extractMetadataFromText(combinedText);
     if (!metadata.title) {
       metadata.title = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim();
     }
 
-    // ATTEMPT 1: Binary JPEG direct stream scan (Runs in ~1 millisecond!)
-    const directJpeg = extractEmbeddedBinaryJpeg(uint8);
-    if (directJpeg) {
-      return {
-        previewUrl: directJpeg.previewUrl,
-        base64ForAi: directJpeg.base64,
-        hasEmbeddedThumbnail: true,
-        metadata,
-      };
-    }
+    // ATTEMPT 1 (PRIMARY HIGH-RES VECTOR RENDER): Server-Side Ghostscript Engine (/api/render-eps)
+    // Renders the true PostScript vector paths at up to 1280px resolution with 4x anti-aliasing!
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-    // ATTEMPT 2: Illustrator PostScript Comment Thumbnail (%AI9_Data_Thumbnail / XMP)
-    // Runs in ~2 milliseconds!
-    const embeddedRaster = extractIllustratorThumbnailBytes(uint8);
-    if (embeddedRaster) {
-      return {
-        previewUrl: embeddedRaster.previewUrl,
-        base64ForAi: embeddedRaster.base64,
-        hasEmbeddedThumbnail: true,
-        metadata,
-      };
-    }
+      const res = await fetch('/api/render-eps', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/postscript',
+          'x-file-name': encodeURIComponent(file.name),
+        },
+        body: file,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
-    // ATTEMPT 3: DOS Binary EPS TIFF header
-    if (isDosBinary && tiffStart > 0 && tiffLength > 0 && tiffStart + tiffLength <= uint8.length) {
-      const tiffBytes = uint8.subarray(tiffStart, tiffStart + tiffLength);
-      // Check if TIFF contains JPEG
-      const tiffJpeg = extractEmbeddedBinaryJpeg(tiffBytes);
-      if (tiffJpeg) {
-        return {
-          previewUrl: tiffJpeg.previewUrl,
-          base64ForAi: tiffJpeg.base64,
-          hasEmbeddedThumbnail: true,
-          metadata,
-        };
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.previewUrl) {
+          const isValid = await verifyBrowserImageDecodes(data.previewUrl);
+          if (isValid) {
+            return {
+              previewUrl: data.previewUrl,
+              base64ForAi: data.base64ForAi || data.previewUrl.split(',')[1] || '',
+              hasEmbeddedThumbnail: true,
+              metadata: {
+                ...metadata,
+                ...(data.metadata || {}),
+              },
+            };
+          }
+        }
       }
+    } catch (serverErr) {
+      console.warn('Server EPS render fallback triggered:', serverErr);
     }
 
-    // ATTEMPT 4: EPSI ASCII-hex preview (%%BeginPreview:)
-    const epsiRaster = extractEpsiPreview(sampleText);
-    if (epsiRaster) {
+    // ATTEMPT 2: Client-Side Adobe XMP <xmpGImg:image> Base64 JPEG (decodes &#xA; entities)
+    const xmpRaster = extractXmpThumbnailFromText(combinedText);
+    if (xmpRaster && (await verifyBrowserImageDecodes(xmpRaster.previewUrl))) {
+      return {
+        previewUrl: xmpRaster.previewUrl,
+        base64ForAi: xmpRaster.base64,
+        hasEmbeddedThumbnail: true,
+        metadata,
+      };
+    }
+
+    // ATTEMPT 3: Client-Side Illustrator %AI7_Thumbnail 8-bit 256-color RLE Canvas Decoder
+    const ai7Raster = extractAi7ThumbnailToCanvas(headText);
+    if (ai7Raster && (await verifyBrowserImageDecodes(ai7Raster.previewUrl))) {
+      return {
+        previewUrl: ai7Raster.previewUrl,
+        base64ForAi: ai7Raster.base64,
+        hasEmbeddedThumbnail: true,
+        metadata,
+      };
+    }
+
+    // ATTEMPT 4: Client-Side %AI9_Data_Thumbnail / %BeginPhotoshop Hex JPEG
+    const hexThumb = extractIllustratorThumbnail(combinedText);
+    if (hexThumb && (await verifyBrowserImageDecodes(hexThumb))) {
+      return {
+        previewUrl: hexThumb,
+        base64ForAi: hexThumb.split(',')[1] || '',
+        hasEmbeddedThumbnail: true,
+        metadata,
+      };
+    }
+
+    // ATTEMPT 5: EPSI ASCII-hex preview (%%BeginPreview:)
+    const epsiRaster = extractEpsiPreview(headText);
+    if (epsiRaster && (await verifyBrowserImageDecodes(epsiRaster))) {
       return {
         previewUrl: epsiRaster,
         base64ForAi: epsiRaster.split(',')[1] || '',
@@ -259,47 +344,11 @@ export async function parseEpsFile(file: File): Promise<ParsedEpsData> {
       };
     }
 
-    // ATTEMPT 5: Lightning-Fast Server-Side Ghostscript Vector Rendering Engine (~119ms)
-    // Native binary stream upload - ZERO browser Base64 overhead!
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const res = await fetch('/api/render-eps', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/postscript',
-          'x-file-name': encodeURIComponent(file.name),
-        },
-        body: file, // Native streaming binary upload!
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.previewUrl) {
-          return {
-            previewUrl: data.previewUrl,
-            base64ForAi: data.base64ForAi || data.previewUrl.split(',')[1] || '',
-            hasEmbeddedThumbnail: true,
-            metadata: {
-              ...metadata,
-              ...(data.metadata || {}),
-            },
-          };
-        }
-      }
-    } catch (serverErr) {
-      console.warn('Server EPS render skipped or timed out, continuing:', serverErr);
-    }
-
-    // ATTEMPT 6: Clean vector card preview canvas (only if completely non-renderable)
-    // Note: hasEmbeddedThumbnail is FALSE so AI knows this is a fallback placeholder
+    // ATTEMPT 6: Clean vector artboard preview canvas (when file has no renderable paths/thumbnails)
     const generatedPreview = generateVectorCardPreview(file.name, file.size, metadata);
     return {
       previewUrl: generatedPreview,
-      base64ForAi: '',
+      base64ForAi: generatedPreview.split(',')[1] || '',
       hasEmbeddedThumbnail: false,
       metadata,
     };
@@ -309,7 +358,7 @@ export async function parseEpsFile(file: File): Promise<ParsedEpsData> {
     const fallback = generateVectorCardPreview(file.name, file.size, { title: cleanTitle });
     return {
       previewUrl: fallback,
-      base64ForAi: '',
+      base64ForAi: fallback.split(',')[1] || '',
       hasEmbeddedThumbnail: false,
       metadata: { title: cleanTitle },
     };
@@ -320,9 +369,10 @@ export async function parseEpsFile(file: File): Promise<ParsedEpsData> {
  * Safely decodes a slice of PostScript text using Latin1.
  */
 function decodePostScriptText(uint8: Uint8Array, start: number, length: number): string {
-  const safeLength = Math.min(length, uint8.length - start);
+  const safeStart = Math.max(0, Math.min(start, uint8.length));
+  const safeLength = Math.min(length, uint8.length - safeStart);
   if (safeLength <= 0) return '';
-  const sub = uint8.subarray(start, start + safeLength);
+  const sub = uint8.subarray(safeStart, safeStart + safeLength);
   const decoder = new TextDecoder('latin1');
   return decoder.decode(sub);
 }
@@ -337,7 +387,7 @@ function extractMetadataFromText(text: string): ParsedEpsData['metadata'] {
   const titleMatch = text.match(/%%Title:\s*([^\r\n]+)/i);
   if (titleMatch && titleMatch[1]) {
     const raw = titleMatch[1].trim().replace(/^\(+|\)+$/g, '');
-    if (raw && !raw.startsWith('Untitled') && raw.length > 2) {
+    if (raw && !raw.startsWith('Untitled') && !raw.endsWith('.eps') && !raw.endsWith('.ai') && raw.length > 2) {
       metadata.title = cleanPsString(raw);
     }
   }
@@ -348,9 +398,20 @@ function extractMetadataFromText(text: string): ParsedEpsData['metadata'] {
     metadata.creator = creatorMatch[1].trim();
   }
 
-  // Extract %%BoundingBox: llx lly urx ury
+  // Extract %%HiResBoundingBox or %%BoundingBox: llx lly urx ury
+  const hiResMatch = text.match(/%%HiResBoundingBox:\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/i);
   const bboxMatch = text.match(/%%BoundingBox:\s*(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)/i);
-  if (bboxMatch) {
+  if (hiResMatch) {
+    const x1 = Math.floor(parseFloat(hiResMatch[1]));
+    const y1 = Math.floor(parseFloat(hiResMatch[2]));
+    const x2 = Math.ceil(parseFloat(hiResMatch[3]));
+    const y2 = Math.ceil(parseFloat(hiResMatch[4]));
+    const width = Math.abs(x2 - x1);
+    const height = Math.abs(y2 - y1);
+    if (width > 0 && height > 0) {
+      metadata.boundingBox = { x1, y1, x2, y2, width, height };
+    }
+  } else if (bboxMatch) {
     const x1 = parseInt(bboxMatch[1], 10);
     const y1 = parseInt(bboxMatch[2], 10);
     const x2 = parseInt(bboxMatch[3], 10);
@@ -381,19 +442,16 @@ function extractMetadataFromText(text: string): ParsedEpsData['metadata'] {
   const xmpMatch = text.match(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/i);
   if (xmpMatch) {
     const xmpText = xmpMatch[0];
-    // <dc:title><rdf:Alt><rdf:li ...>Title</rdf:li></rdf:Alt></dc:title>
     const dcTitle = xmpText.match(/<dc:title>[\s\S]*?<rdf:li[^>]*>([^<]+)<\/rdf:li>/i);
-    if (dcTitle && dcTitle[1] && !metadata.title) {
+    if (dcTitle && dcTitle[1] && !dcTitle[1].trim().startsWith('Untitled')) {
       metadata.title = decodeXmlEntities(dcTitle[1].trim());
     }
 
-    // <dc:description><rdf:Alt><rdf:li ...>Desc</rdf:li></rdf:Alt></dc:description>
     const dcDesc = xmpText.match(/<dc:description>[\s\S]*?<rdf:li[^>]*>([^<]+)<\/rdf:li>/i);
     if (dcDesc && dcDesc[1] && !metadata.description) {
       metadata.description = decodeXmlEntities(dcDesc[1].trim());
     }
 
-    // <dc:subject><rdf:Bag><rdf:li>tag1</rdf:li>...</rdf:Bag></dc:subject>
     const dcTags: string[] = [];
     const subjectBlock = xmpText.match(/<dc:subject>[\s\S]*?<\/dc:subject>/i);
     if (subjectBlock) {
@@ -417,7 +475,6 @@ function extractMetadataFromText(text: string): ParsedEpsData['metadata'] {
     const r = Math.round(parseFloat(rgbMatch[1]) * 255);
     const g = Math.round(parseFloat(rgbMatch[2]) * 255);
     const b = Math.round(parseFloat(rgbMatch[3]) * 255);
-    // Avoid pure black and white as unique swatches
     if ((r > 15 || g > 15 || b > 15) && (r < 240 || g < 240 || b < 240)) {
       const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
       if (!colors.includes(hex)) {
@@ -437,9 +494,9 @@ function extractMetadataFromText(text: string): ParsedEpsData['metadata'] {
  * Attempts to extract an Illustrator JPEG/PNG thumbnail embedded in PostScript comments.
  */
 function extractIllustratorThumbnail(text: string): string | null {
-  // Look for %AI9_Data_Thumbnail or %AI12_Data_Thumbnail or %AI7_Thumbnail or %BeginPhotoshop block
-  const thumbMatch = text.match(/%(?:AI9|AI12|AI7)_Data_Thumbnail:?[^\r\n]*[\r\n]+([\s\S]*?)(?:%%EndPreview|%%EndComments|%AI9_Data_Thumbnail_End|[\r\n][^%])/i) ||
-                     text.match(/%BeginPhotoshop:[^\r\n]*[\r\n]+([\s\S]*?)%EndPhotoshop/i);
+  const thumbMatch =
+    text.match(/%(?:AI9|AI12)_Data_Thumbnail:?[^\r\n]*[\r\n]+([\s\S]*?)(?:%%EndPreview|%%EndComments|%AI9_Data_Thumbnail_End|[\r\n][^%])/i) ||
+    text.match(/%BeginPhotoshop:[^\r\n]*[\r\n]+([\s\S]*?)%EndPhotoshop/i);
   if (thumbMatch && thumbMatch[1]) {
     try {
       const hex = thumbMatch[1].replace(/[\s\r\n%]+/g, '');
@@ -448,11 +505,9 @@ function extractIllustratorThumbnail(text: string): string | null {
         for (let i = 0; i < hex.length; i += 2) {
           bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
         }
-        // Check for JPEG magic number (0xFFD8)
         if (bytes[0] === 0xff && bytes[1] === 0xd8) {
           return `data:image/jpeg;base64,${uint8ToBase64(bytes)}`;
         }
-        // Check for PNG (0x89504E47)
         if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
           return `data:image/png;base64,${uint8ToBase64(bytes)}`;
         }
@@ -514,7 +569,6 @@ function extractEpsiPreview(text: string): string | null {
               data[px + 2] = val;
               data[px + 3] = 255;
             }
-            // Align to next byte at end of line if needed
             if (bitIdx % 8 !== 0) {
               bitIdx += 8 - (bitIdx % 8);
             }
@@ -530,8 +584,7 @@ function extractEpsiPreview(text: string): string | null {
 }
 
 /**
- * Generates a clean, modern vector card preview canvas when no raster preview exists.
- * Displays artwork title, vector badge, color swatches, bounding box dimensions, and stylized vector geometry.
+ * Generates a clean, gallery-grade vector artboard preview canvas when no raster preview exists.
  */
 function generateVectorCardPreview(
   fileName: string,
@@ -544,18 +597,14 @@ function generateVectorCardPreview(
   const ctx = canvas.getContext('2d');
   if (!ctx) return '';
 
-  // Background - Sleek microstock studio gradient
-  const bgGrad = ctx.createLinearGradient(0, 0, 600, 450);
-  bgGrad.addColorStop(0, '#0f172a');
-  bgGrad.addColorStop(0.5, '#1e1b4b');
-  bgGrad.addColorStop(1, '#020617');
-  ctx.fillStyle = bgGrad;
+  // Warm Architectural Artboard Background
+  ctx.fillStyle = '#faf8f5';
   ctx.fillRect(0, 0, 600, 450);
 
-  // Subtle isometric vector grid pattern
-  ctx.strokeStyle = 'rgba(99, 102, 241, 0.08)';
+  // Subtle CAD Grid
+  ctx.strokeStyle = 'rgba(20, 20, 19, 0.05)';
   ctx.lineWidth = 1;
-  const gridSize = 25;
+  const gridSize = 24;
   for (let x = 0; x < 600; x += gridSize) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
@@ -569,131 +618,90 @@ function generateVectorCardPreview(
     ctx.stroke();
   }
 
-  // Vector Canvas Frame
-  ctx.fillStyle = 'rgba(30, 41, 59, 0.7)';
-  ctx.strokeStyle = '#6366f1';
+  // Artboard Frame
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#d6d3cd';
   ctx.lineWidth = 2;
   if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(30, 30, 540, 390, 16);
+    ctx.roundRect(32, 32, 536, 386, 16);
   } else {
-    ctx.rect(30, 30, 540, 390);
+    ctx.rect(32, 32, 536, 386);
   }
   ctx.fill();
   ctx.stroke();
 
   // Top Vector Badge
-  ctx.fillStyle = '#6366f1';
+  ctx.fillStyle = '#141413';
   if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(50, 45, 120, 28, 6);
+    ctx.roundRect(54, 52, 136, 30, 8);
   } else {
-    ctx.rect(50, 45, 120, 28);
+    ctx.rect(54, 52, 136, 30);
   }
   ctx.fill();
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 12px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('EPS VECTOR', 110, 64);
+  ctx.fillText('EPS VECTOR ART', 122, 71);
 
-  // Creator / Spec Tag
-  const creatorText = metadata.creator
-    ? metadata.creator.substring(0, 24)
-    : 'Scalable Vector Graphic';
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '12px monospace';
-  ctx.textAlign = 'right';
-  ctx.fillText(creatorText, 550, 64);
+  // Center Bezier Anchor Illustration
+  ctx.strokeStyle = '#d97706';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(190, 220);
+  ctx.bezierCurveTo(240, 130, 360, 130, 410, 220);
+  ctx.stroke();
 
-  // Stylized Vector Geometry Visualization in Center
-  const centerX = 300;
-  const centerY = 190;
-
-  // Outer glowing ring
-  ctx.strokeStyle = 'rgba(129, 140, 248, 0.35)';
+  // Control handles
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#141413';
   ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, 75, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // Geometric Bezier Paths representing vector points
-  ctx.strokeStyle = '#a855f7';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(centerX - 50, centerY + 30);
-  ctx.bezierCurveTo(centerX - 40, centerY - 60, centerX + 40, centerY - 60, centerX + 50, centerY + 30);
-  ctx.bezierCurveTo(centerX + 20, centerY + 50, centerX - 20, centerY + 50, centerX - 50, centerY + 30);
-  ctx.closePath();
-  ctx.fillStyle = 'rgba(168, 85, 247, 0.15)';
-  ctx.fill();
-  ctx.stroke();
-
-  // Vector Anchor Points with handles
-  const anchorPoints = [
-    { x: centerX - 50, y: centerY + 30 },
-    { x: centerX, y: centerY - 60 },
-    { x: centerX + 50, y: centerY + 30 },
-  ];
-
-  anchorPoints.forEach((pt) => {
-    ctx.fillStyle = '#38bdf8';
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.5;
-    ctx.fillRect(pt.x - 4, pt.y - 4, 8, 8);
-    ctx.strokeRect(pt.x - 4, pt.y - 4, 8, 8);
+  [
+    [190, 220],
+    [300, 152],
+    [410, 220],
+  ].forEach(([cx, cy]) => {
+    ctx.fillRect(cx - 5, cy - 5, 10, 10);
+    ctx.strokeRect(cx - 5, cy - 5, 10, 10);
   });
 
-  // Display Title
-  const displayTitle = metadata.title || fileName.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 20px sans-serif';
+  // Artwork Title
+  const cleanTitle = (metadata.title || fileName.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ')).trim();
+  const displayTitle = cleanTitle.length > 34 ? cleanTitle.substring(0, 31) + '...' : cleanTitle;
+  ctx.fillStyle = '#141413';
+  ctx.font = 'bold 22px sans-serif';
   ctx.textAlign = 'center';
-  const cleanTitle = displayTitle.length > 38 ? `${displayTitle.substring(0, 35)}...` : displayTitle;
-  ctx.fillText(cleanTitle, centerX, 305);
+  ctx.fillText(displayTitle.toUpperCase(), 300, 285);
 
-  // Dimension and File Size info
-  const bbox = metadata.boundingBox;
-  const dimText = bbox ? `${bbox.width} × ${bbox.height} pt (Vector Box)` : 'Resolution Independent Vector';
-  const sizeText = `${(fileSizeBytes / (1024 * 1024)).toFixed(2)} MB`;
+  // Dimensions & File Size
+  const sizeMb = (fileSizeBytes / (1024 * 1024)).toFixed(2);
+  const dimText = metadata.boundingBox
+    ? `${metadata.boundingBox.width} × ${metadata.boundingBox.height} pt · ${sizeMb} MB`
+    : `Scalable PostScript Vector · ${sizeMb} MB`;
+  ctx.fillStyle = '#57534e';
+  ctx.font = '600 14px monospace';
+  ctx.fillText(dimText, 300, 318);
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '13px sans-serif';
-  ctx.fillText(`${dimText} • ${sizeText}`, centerX, 335);
-
-  // Color Palette Swatches at bottom
+  // Color palette swatches if available
   const swatches = metadata.colorPalette && metadata.colorPalette.length > 0
     ? metadata.colorPalette
-    : ['#6366f1', '#a855f7', '#ec4899', '#3b82f6', '#10b981'];
-
-  const swatchWidth = 24;
-  const startSwatchX = centerX - ((swatches.length * (swatchWidth + 8)) / 2);
-  swatches.forEach((color, idx) => {
-    ctx.fillStyle = color;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 1;
-    const sx = startSwatchX + idx * (swatchWidth + 8);
-    if (typeof ctx.roundRect === 'function') {
-      ctx.roundRect(sx, 360, swatchWidth, 14, 4);
-    } else {
-      ctx.rect(sx, 360, swatchWidth, 14);
-    }
+    : ['#141413', '#d97706', '#059669', '#2563eb', '#7c3aed'];
+  const startX = 300 - ((swatches.length * 28) / 2);
+  swatches.forEach((hex, idx) => {
+    ctx.fillStyle = hex;
+    ctx.beginPath();
+    ctx.arc(startX + idx * 28 + 14, 362, 10, 0, Math.PI * 2);
     ctx.fill();
-    ctx.stroke();
   });
-
-  // Bottom Label
-  ctx.fillStyle = '#64748b';
-  ctx.font = '11px sans-serif';
-  ctx.fillText('Commercial Microstock Compatible (Adobe Stock • Shutterstock • Freepik)', centerX, 400);
 
   return canvas.toDataURL('image/jpeg', 0.9);
 }
 
 function cleanPsString(str: string): string {
   return str
-    .replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
-    .replace(/\\[rntbf]/g, ' ')
-    .replace(/\\([()])/g, '$1')
-    .replace(/[\r\n]+/g, ' ')
+    .replace(/^[\(\s]+|[\)\s]+$/g, '')
+    .replace(/\\(\d{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
+    .replace(/\\([()\\])/g, '$1')
     .trim();
 }
 
@@ -703,5 +711,6 @@ function decodeXmlEntities(str: string): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'");
+    .replace(/&apos;/g, "'")
+    .trim();
 }

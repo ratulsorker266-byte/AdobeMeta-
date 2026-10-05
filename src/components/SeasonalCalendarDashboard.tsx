@@ -1,12 +1,13 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, CalendarDays, Clock, Flame, Sparkles, TrendingUp, Compass, CheckCircle2, ArrowRight } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Clock, Flame, Sparkles, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { SeasonalDeadline } from '../types';
 
 interface SeasonalCalendarDashboardProps {
   onBack: () => void;
   onExploreTrends: (searchQuery: string) => void;
   onOpenPromptStudioWithIdea: (idea: string) => void;
+  themeMode?: 'light' | 'dark';
 }
 
 const SEASONAL_EVENTS: SeasonalDeadline[] = [
@@ -117,8 +118,11 @@ const SEASONAL_EVENTS: SeasonalDeadline[] = [
 export const SeasonalCalendarDashboard: React.FC<SeasonalCalendarDashboardProps> = ({
   onBack,
   onExploreTrends,
-  onOpenPromptStudioWithIdea
+  onOpenPromptStudioWithIdea,
+  themeMode = 'light'
 }) => {
+  const isLight = themeMode === 'light';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -127,45 +131,62 @@ export const SeasonalCalendarDashboard: React.FC<SeasonalCalendarDashboardProps>
       className="space-y-6"
     >
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-950/80 backdrop-blur-xl border border-slate-800 p-5 rounded-2xl shadow-xl">
-        <div className="flex items-center gap-3">
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 border p-5 sm:p-6 rounded-2xl transition-colors ${
+        isLight
+          ? 'bg-white border-neutral-200/90 text-neutral-900 shadow-2xs'
+          : 'bg-[#111318] border-neutral-800 text-white shadow-xl'
+      }`}>
+        <div className="flex items-center gap-3.5">
           <button
             onClick={onBack}
-            className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-xl transition"
-            title="Back to Studio"
+            className={`p-2.5 rounded-xl border transition cursor-pointer ${
+              isLight
+                ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-700'
+                : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+            }`}
+            title="Back to All Stores"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
-              <CalendarDays className="w-5 h-5 text-amber-400" />
-              Seasonal Stock Submission Calendar & Deadline Tracker
+            <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-400">
+              02 . STORE · SEASONAL DEMAND RADAR
+            </div>
+            <h1 className="text-lg sm:text-2xl font-bold tracking-tight flex items-center gap-2 mt-0.5">
+              <CalendarDays className="w-5 h-5 text-amber-500" />
+              <span>Seasonal Stock Submission Calendar</span>
             </h1>
-            <p className="text-xs text-slate-400">
-              Commercial stock buyers purchase 60-90 days before holidays. Submit on time to rank #1 in search results.
+            <p className={`text-xs mt-0.5 ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
+              Commercial stock buyers purchase 60–90 days before holidays. Submit on time to rank #1 in search results.
             </p>
           </div>
         </div>
       </div>
 
       {/* Pro Strategy Banner */}
-      <div className="bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-purple-500/10 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5 text-amber-300" />
+      <div className={`border rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
+        isLight
+          ? 'bg-[#fbfaf8] border-neutral-200/90 text-neutral-900'
+          : 'bg-[#0e1015] border-neutral-800 text-white'
+      }`}>
+        <div className="flex items-start gap-3.5">
+          <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+            isLight ? 'bg-white border-neutral-200 text-amber-600' : 'bg-neutral-900 border-neutral-800 text-amber-400'
+          }`}>
+            <Clock className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-white">The 60-Day Microstock Rule</h4>
-            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-              Adobe Stock & Shutterstock algorithms require 2 to 3 weeks to index new submissions and build search authority.
-              Always submit seasonal photos and vectors <strong>60 to 90 days before</strong> the holiday begins!
+            <h4 className="text-sm font-bold">The 60-Day Microstock Lead-Time Rule</h4>
+            <p className={`text-xs mt-0.5 max-w-3xl leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
+              Adobe Stock &amp; Shutterstock algorithms require 2 to 3 weeks to index new submissions and build search authority.
+              Always submit seasonal photos and vectors <strong>60 to 90 days before</strong> the holiday begins.
             </p>
           </div>
         </div>
       </div>
 
       {/* Event Cards Timeline Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {SEASONAL_EVENTS.map((event) => {
           const isCritical = event.urgency === 'critical';
           const isModerate = event.urgency === 'moderate';
@@ -173,44 +194,50 @@ export const SeasonalCalendarDashboard: React.FC<SeasonalCalendarDashboardProps>
           return (
             <div
               key={event.id}
-              className={`bg-slate-950/80 backdrop-blur-xl border rounded-2xl p-5 space-y-4 flex flex-col justify-between transition-all hover:border-slate-600 shadow-xl ${
-                isCritical
-                  ? 'border-rose-500/30 shadow-rose-950/20'
-                  : isModerate
-                  ? 'border-amber-500/30 shadow-amber-950/20'
-                  : 'border-slate-800 shadow-slate-950/20'
+              className={`border rounded-2xl p-5 sm:p-6 space-y-4 flex flex-col justify-between transition-all ${
+                isLight
+                  ? 'bg-white border-neutral-200/90 hover:border-neutral-900 shadow-2xs'
+                  : 'bg-[#111318] border-neutral-800 hover:border-neutral-600 shadow-xl'
               }`}
             >
-              <div className="space-y-3">
-                {/* Event header & badge */}
+              <div className="space-y-3.5">
+                {/* Event header & unboxed status */}
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
-                      {event.season} Event • {event.eventDate}
-                    </span>
-                    <h3 className="text-base font-bold text-white mt-0.5">{event.title}</h3>
+                    <div className="text-[10px] font-mono uppercase tracking-[0.15em] text-neutral-400">
+                      {event.season} · {event.eventDate}
+                    </div>
+                    <h3 className={`text-base font-bold tracking-tight mt-0.5 ${isLight ? 'text-neutral-950' : 'text-white'}`}>
+                      {event.title}
+                    </h3>
                   </div>
 
                   <span
-                    className={`text-[11px] font-black px-2.5 py-1 rounded-full border shrink-0 flex items-center gap-1 ${
+                    className={`text-[11px] font-mono font-bold px-2.5 py-1 rounded-full border shrink-0 flex items-center gap-1 ${
                       isCritical
-                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse'
+                        ? (isLight ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-rose-500/15 text-rose-300 border-rose-500/30')
                         : isModerate
-                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                        : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        ? (isLight ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-amber-500/15 text-amber-300 border-amber-500/30')
+                        : (isLight ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30')
                     }`}
                   >
-                    {isCritical && <Flame className="w-3 h-3 text-rose-400" />}
-                    {event.daysRemaining} Days Window
+                    {isCritical && <Flame className="w-3 h-3" />}
+                    <span>{event.daysRemaining}d Window</span>
                   </span>
                 </div>
 
                 {/* Window notice */}
-                <div className="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-medium">Submission Status:</span>
+                <div className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
+                  isLight ? 'bg-[#fbfaf8] border-neutral-200/70' : 'bg-neutral-900/90 border-neutral-800'
+                }`}>
+                  <span className="text-neutral-500 font-medium">Submission Window:</span>
                   <span
                     className={`font-bold ${
-                      isCritical ? 'text-rose-400' : isModerate ? 'text-amber-400' : 'text-emerald-400'
+                      isCritical
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : isModerate
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
                     }`}
                   >
                     {event.submissionWindow}
@@ -218,19 +245,20 @@ export const SeasonalCalendarDashboard: React.FC<SeasonalCalendarDashboardProps>
                 </div>
 
                 {/* Buyer Demand Notes */}
-                <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/50 p-3 rounded-xl border border-slate-800/80">
+                <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-300'}`}>
                   {event.buyerDemandNotes}
                 </p>
 
                 {/* Top Niches */}
                 <div className="space-y-1.5 pt-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" /> High-Demand Buyer Niches:
+                  <span className="text-[10.5px] font-mono uppercase tracking-[0.12em] text-neutral-400 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>High-Demand Buyer Niches</span>
                   </span>
-                  <ul className="space-y-1">
+                  <ul className="space-y-1.5 pt-1">
                     {event.topNiches.map((niche, i) => (
-                      <li key={i} className="text-xs text-slate-300 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                      <li key={i} className={`text-xs flex items-center gap-2 ${isLight ? 'text-neutral-700' : 'text-neutral-300'}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                         <span>{niche}</span>
                       </li>
                     ))}
@@ -239,21 +267,31 @@ export const SeasonalCalendarDashboard: React.FC<SeasonalCalendarDashboardProps>
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-800/80">
+              <div className={`grid grid-cols-2 gap-2.5 pt-4 border-t ${
+                isLight ? 'border-neutral-100' : 'border-neutral-800/80'
+              }`}>
                 <button
                   onClick={() => onOpenPromptStudioWithIdea(event.topNiches[0])}
-                  className="bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5"
+                  className={`text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    isLight
+                      ? 'bg-neutral-950 hover:bg-black text-white'
+                      : 'bg-white hover:bg-neutral-200 text-neutral-950'
+                  }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                   <span>Generate Prompts</span>
                 </button>
 
                 <button
                   onClick={() => onExploreTrends(event.searchKeyword)}
-                  className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5"
+                  className={`text-xs font-semibold py-2.5 px-3 rounded-xl border transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    isLight
+                      ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-800'
+                      : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-200'
+                  }`}
                 >
-                  <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Explore Trends</span>
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Explore {event.searchKeyword}</span>
                 </button>
               </div>
             </div>

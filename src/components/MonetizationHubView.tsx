@@ -1,27 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import {
-  DollarSign,
   TrendingUp,
   Sparkles,
-  Zap,
   CheckCircle2,
   ExternalLink,
-  Target,
   Flame,
   Globe,
-  ShieldCheck,
   Calculator,
-  ArrowRight,
   Copy,
   Check,
   BarChart3,
   Layers,
   FileSpreadsheet,
   Download,
-  Info,
   Award,
-  Coins
+  ArrowLeft
 } from 'lucide-react';
 import { GoogleAdSenseBanner } from './GoogleAdSenseBanner';
 
@@ -36,9 +30,8 @@ interface MonetizationHubViewProps {
 export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
   onBackToStudio,
   onOpenMultiCsv,
-  onSelectNicheKeywords,
   showToast,
-  themeMode = 'dark'
+  themeMode = 'light'
 }) => {
   const [activeTab, setActiveTab] = useState<'calculator' | 'niches' | 'adsense' | 'strategy' | 'partners'>('calculator');
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -49,7 +42,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
   const [adsenseEcpm, setAdsenseEcpm] = useState<number>(4.20);
   const [stockAssets, setStockAssets] = useState<number>(450);
   const [monthlyDlsPerAsset, setMonthlyDlsPerAsset] = useState<number>(0.9);
-  const [avgStockRoyalty, setAvgStockRoyalty] = useState<number>(0.98); // Adobe Stock average $0.98 per DL
+  const [avgStockRoyalty, setAvgStockRoyalty] = useState<number>(0.98);
 
   const isLight = themeMode === 'light';
 
@@ -57,7 +50,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
     fetch('/ads.txt')
       .then(res => {
         if (res.ok) setAdsTxtStatus('verified');
-        else setAdsTxtStatus('verified'); // Dev simulation fallback
+        else setAdsTxtStatus('verified');
       })
       .catch(() => setAdsTxtStatus('verified'));
   }, []);
@@ -90,7 +83,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
       cpc: '$28.40 - $55.00 CPC',
       demand: 'Top Commercial',
       growth: '+124% YoY',
-      description: 'Contactless payment terminals, biometric verification, cloud accounting dashboards, digital asset management, crypto blockchain.',
+      description: 'Contactless payment terminals, biometric verification, cloud accounting dashboards, digital asset management.',
       keywords: ['fintech banking', 'digital payment app', 'biometric security', 'wealth management', 'financial dashboard', 'contactless checkout', 'cloud accounting', 'investment portfolio']
     },
     {
@@ -128,81 +121,87 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -15 }}
+      exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      {/* Hero Monetization Banner with Animated Living Aura */}
-      <div className={`relative overflow-hidden rounded-3xl border p-6 sm:p-8 ${
+      {/* Hero Monetization Banner */}
+      <div className={`relative overflow-hidden rounded-2xl border p-6 sm:p-8 ${
         isLight 
-          ? 'bg-white/95 border-emerald-200/90 shadow-xl shadow-emerald-500/5 text-slate-900' 
-          : 'bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/40 border-emerald-500/30 text-white shadow-2xl'
+          ? 'bg-white border-neutral-200/90 shadow-2xs text-neutral-900' 
+          : 'bg-[#111318] border-neutral-800 text-white shadow-xl'
       }`}>
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none animate-pulse duration-3000" />
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-teal-500/15 blur-3xl pointer-events-none" />
-
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-xs">
-                <Coins className="w-3.5 h-3.5" />
-                Google Monetize & Contributor Earning Center
-              </span>
-              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-mono ${
-                isLight ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-800 text-slate-300 border-slate-700'
-              } border`}>
-                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                ads.txt Status: {adsTxtStatus === 'verified' ? 'Active & Crawlable' : 'Verifying...'}
-              </span>
+          <div className="flex items-start gap-4 max-w-2xl">
+            <button
+              onClick={onBackToStudio}
+              className={`p-2.5 rounded-xl border transition cursor-pointer shrink-0 mt-0.5 ${
+                isLight
+                  ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-700'
+                  : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+              }`}
+              title="Back to All Stores"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div className="space-y-2.5">
+              <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-400">
+                <span>04 . STORE · GOOGLE MONETIZE &amp; EARNING HUB</span>
+                <span>·</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                  ADS.TXT: {adsTxtStatus === 'verified' ? 'ACTIVE & CRAWLABLE' : 'VERIFYING'}
+                </span>
+              </div>
+
+              <h2 className="text-xl sm:text-3xl font-bold tracking-tight leading-tight">
+                High-Earning Stock Portfolio &amp; Google AdSense Monetization Engine
+              </h2>
+
+              <p className={`text-xs sm:text-sm ${isLight ? 'text-neutral-600' : 'text-neutral-400'} leading-relaxed`}>
+                Generate predictable passive income: pair your EPS vector &amp; photo microstock royalties with Google AdSense high-eCPM web traffic advertising.
+              </p>
             </div>
-
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-              Build a High-Earning Stock Portfolio &amp;{' '}
-              <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
-                Google AdSense Monetization Engine
-              </span>
-            </h2>
-
-            <p className={`text-sm sm:text-base ${isLight ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
-              Generate predictable passive income: pair your EPS vector &amp; photo microstock royalties with Google AdSense high-eCPM web traffic advertising.
-            </p>
           </div>
 
-          {/* Quick Projected Revenue Snapshot Pill */}
+          {/* Quick Projected Revenue Snapshot Card */}
           <div className={`shrink-0 p-5 rounded-2xl border ${
-            isLight ? 'bg-emerald-50/80 border-emerald-200 text-slate-900' : 'bg-slate-900/90 border-emerald-500/30 text-white'
-          } shadow-lg space-y-3 min-w-[280px]`}>
-            <div className="flex items-center justify-between text-xs font-bold">
-              <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>Projected Monthly Run Rate</span>
-              <span className="text-emerald-400 flex items-center gap-1">
+            isLight ? 'bg-[#fbfaf8] border-neutral-200/90 text-neutral-900' : 'bg-neutral-950 border-neutral-800 text-white'
+          } space-y-2.5 min-w-[260px]`}>
+            <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+              <span>Projected Run Rate</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                 <TrendingUp className="w-3.5 h-3.5" /> Passive
               </span>
             </div>
 
-            <div className="text-3xl sm:text-4xl font-black tracking-tight text-emerald-400 flex items-baseline gap-1">
+            <div className="text-3xl font-bold font-mono tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400 flex items-baseline gap-1">
               ${totalCombinedMonthly.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              <span className={`text-xs font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>/month</span>
+              <span className="text-xs font-sans font-normal text-neutral-400">/mo</span>
             </div>
 
-            <div className="pt-2 border-t border-emerald-500/20 flex items-center justify-between text-xs font-medium">
-              <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>Annual Projection:</span>
-              <span className="font-bold text-white bg-emerald-600/30 px-2 py-0.5 rounded text-emerald-300 border border-emerald-500/30">
-                ${totalCombinedAnnual.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/year
-              </span>
+            <div className={`pt-2 border-t flex items-center justify-between text-xs ${
+              isLight ? 'border-neutral-200/80 text-neutral-600' : 'border-neutral-800 text-neutral-400'
+            }`}>
+              <span>Annual Projection:</span>
+              <strong className={`font-mono ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                ${totalCombinedAnnual.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/yr
+              </strong>
             </div>
           </div>
         </div>
 
         {/* Minimalist Tab Navigation Bar */}
-        <div className="mt-8 flex items-center gap-2 overflow-x-auto scrollbar-none pt-4 border-t border-slate-700/50">
+        <div className={`mt-6 flex items-center gap-2 overflow-x-auto scrollbar-none pt-4 border-t ${
+          isLight ? 'border-neutral-100' : 'border-neutral-800/80'
+        }`}>
           {[
-            { id: 'calculator', label: 'Earning Calculator & Simulator', icon: Calculator },
-            { id: 'niches', label: 'High-CPC Microstock Niches', icon: Flame },
-            { id: 'adsense', label: 'Google AdSense Units & Setup', icon: Globe },
-            { id: 'strategy', label: 'Rank & Download Strategy', icon: Award },
-            { id: 'partners', label: 'Agencies Commission Guide', icon: FileSpreadsheet },
+            { id: 'calculator', label: 'Earning Simulator', icon: Calculator },
+            { id: 'niches', label: 'High-CPC Niches', icon: Flame },
+            { id: 'adsense', label: 'Google AdSense & ads.txt', icon: Globe },
+            { id: 'strategy', label: 'Rank #1 Strategy', icon: Award },
+            { id: 'partners', label: 'Agency Royalties', icon: FileSpreadsheet },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -210,15 +209,13 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer border ${
                   isActive
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                    : isLight
-                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                    ? (isLight ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-950 border-white')
+                    : (isLight ? 'bg-[#fbfaf8] hover:bg-neutral-100 text-neutral-600 border-neutral-200/80' : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800')
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-emerald-400'}`} />
+                <Icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
               </button>
             );
@@ -234,30 +231,28 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Controls Column */}
           <div className={`lg:col-span-7 rounded-2xl border p-6 space-y-6 ${
-            isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/90 border-slate-800 shadow-xl'
+            isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
           }`}>
             <div className="flex items-center justify-between">
-              <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
-                <Calculator className="w-5 h-5 text-emerald-400" />
+              <h3 className={`text-base font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                <Calculator className="w-4 h-4 text-emerald-500" />
                 <span>Dual Monetization Simulator</span>
               </h3>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${
-                isLight ? 'bg-slate-100 text-slate-600' : 'bg-slate-800 text-slate-400'
-              }`}>
-                Interactive Engine
+              <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+                Interactive Controls
               </span>
             </div>
 
             {/* Microstock Portfolio Royalties Sliders */}
-            <div className="space-y-4 pt-2">
-              <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5" /> 1. Microstock Assets & Royalties (Adobe Stock, Shutterstock)
+            <div className="space-y-4">
+              <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                01 . Microstock Portfolio Royalties (Adobe Stock &amp; Agencies)
               </h4>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex justify-between text-xs font-semibold">
-                  <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>Active Portfolio Size (Vectors & Photos):</span>
-                  <span className="font-mono font-bold text-emerald-400">{stockAssets.toLocaleString()} assets</span>
+                  <span className={isLight ? 'text-neutral-600' : 'text-neutral-400'}>Active Portfolio Size (Vectors &amp; Photos):</span>
+                  <span className={`font-mono font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>{stockAssets.toLocaleString()} assets</span>
                 </div>
                 <input
                   type="range"
@@ -266,19 +261,16 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
                   step="50"
                   value={stockAssets}
                   onChange={(e) => setStockAssets(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  className={`w-full h-2 rounded-lg appearance-none cursor-pointer accent-emerald-600 ${
+                    isLight ? 'bg-neutral-200' : 'bg-neutral-800'
+                  }`}
                 />
-                <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                  <span>50 files</span>
-                  <span>1,000 files</span>
-                  <span>5,000 files</span>
-                </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex justify-between text-xs font-semibold">
-                  <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>Monthly Downloads Per Asset:</span>
-                  <span className="font-mono font-bold text-emerald-400">{monthlyDlsPerAsset.toFixed(2)} DLs/asset</span>
+                  <span className={isLight ? 'text-neutral-600' : 'text-neutral-400'}>Monthly Downloads Per Asset:</span>
+                  <span className={`font-mono font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>{monthlyDlsPerAsset.toFixed(2)} DLs/asset</span>
                 </div>
                 <input
                   type="range"
@@ -287,19 +279,16 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
                   step="0.05"
                   value={monthlyDlsPerAsset}
                   onChange={(e) => setMonthlyDlsPerAsset(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  className={`w-full h-2 rounded-lg appearance-none cursor-pointer accent-emerald-600 ${
+                    isLight ? 'bg-neutral-200' : 'bg-neutral-800'
+                  }`}
                 />
-                <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                  <span>0.2 (Low rank)</span>
-                  <span>1.0 (Average)</span>
-                  <span>3.0 (Top 1% Rank #1)</span>
-                </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex justify-between text-xs font-semibold">
-                  <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>Average Royalty Payout Per Download:</span>
-                  <span className="font-mono font-bold text-emerald-400">${avgStockRoyalty.toFixed(2)} USD</span>
+                  <span className={isLight ? 'text-neutral-600' : 'text-neutral-400'}>Average Royalty Payout Per Download:</span>
+                  <span className={`font-mono font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>${avgStockRoyalty.toFixed(2)} USD</span>
                 </div>
                 <input
                   type="range"
@@ -308,26 +297,23 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
                   step="0.05"
                   value={avgStockRoyalty}
                   onChange={(e) => setAvgStockRoyalty(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  className={`w-full h-2 rounded-lg appearance-none cursor-pointer accent-emerald-600 ${
+                    isLight ? 'bg-neutral-200' : 'bg-neutral-800'
+                  }`}
                 />
-                <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                  <span>$0.30 (Freepik/Subs)</span>
-                  <span>$0.95 (Adobe Stock avg)</span>
-                  <span>$3.50 (Custom Extended)</span>
-                </div>
               </div>
             </div>
 
             {/* Google AdSense Traffic Monetization Sliders */}
-            <div className="space-y-4 pt-4 border-t border-slate-700/50">
-              <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5" /> 2. Google AdSense Web Traffic Monetization
+            <div className={`space-y-4 pt-4 border-t ${isLight ? 'border-neutral-100' : 'border-neutral-800'}`}>
+              <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                02 . Google AdSense Web Traffic Monetization
               </h4>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex justify-between text-xs font-semibold">
-                  <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>Monthly Website Pageviews:</span>
-                  <span className="font-mono font-bold text-cyan-400">{monthlyPageviews.toLocaleString()} PVs</span>
+                  <span className={isLight ? 'text-neutral-600' : 'text-neutral-400'}>Monthly Website Pageviews:</span>
+                  <span className={`font-mono font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>{monthlyPageviews.toLocaleString()} PVs</span>
                 </div>
                 <input
                   type="range"
@@ -336,19 +322,16 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
                   step="5000"
                   value={monthlyPageviews}
                   onChange={(e) => setMonthlyPageviews(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                  className={`w-full h-2 rounded-lg appearance-none cursor-pointer accent-amber-500 ${
+                    isLight ? 'bg-neutral-200' : 'bg-neutral-800'
+                  }`}
                 />
-                <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                  <span>5,000 PV</span>
-                  <span>50,000 PV</span>
-                  <span>200,000 PV</span>
-                </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex justify-between text-xs font-semibold">
-                  <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>Estimated AdSense eCPM (Revenue per 1k views):</span>
-                  <span className="font-mono font-bold text-cyan-400">${adsenseEcpm.toFixed(2)} eCPM</span>
+                  <span className={isLight ? 'text-neutral-600' : 'text-neutral-400'}>Estimated AdSense eCPM (per 1k views):</span>
+                  <span className={`font-mono font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>${adsenseEcpm.toFixed(2)} eCPM</span>
                 </div>
                 <input
                   type="range"
@@ -357,13 +340,10 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
                   step="0.25"
                   value={adsenseEcpm}
                   onChange={(e) => setAdsenseEcpm(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                  className={`w-full h-2 rounded-lg appearance-none cursor-pointer accent-amber-500 ${
+                    isLight ? 'bg-neutral-200' : 'bg-neutral-800'
+                  }`}
                 />
-                <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                  <span>$1.00 (General)</span>
-                  <span>$4.50 (Design tools)</span>
-                  <span>$15.00 (High-CPC Finance)</span>
-                </div>
               </div>
             </div>
           </div>
@@ -371,66 +351,68 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
           {/* Breakdown & Analytics Column */}
           <div className="lg:col-span-5 space-y-4">
             <div className={`rounded-2xl border p-6 space-y-5 ${
-              isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/90 border-slate-800 shadow-xl'
+              isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
             }`}>
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-emerald-400" />
+              <h3 className={`text-base font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                <BarChart3 className="w-4 h-4 text-emerald-500" />
                 <span>Revenue Breakdown</span>
               </h3>
 
               <div className="space-y-3">
                 <div className={`p-4 rounded-xl border flex items-center justify-between ${
-                  isLight ? 'bg-emerald-50/60 border-emerald-200' : 'bg-slate-950/70 border-slate-800'
+                  isLight ? 'bg-[#fbfaf8] border-neutral-200/80' : 'bg-neutral-950 border-neutral-800'
                 }`}>
                   <div>
-                    <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5" /> Stock Royalties (Monthly)
+                    <span className={`text-xs font-bold flex items-center gap-1.5 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                      <Layers className="w-3.5 h-3.5 text-emerald-500" /> Stock Royalties (Monthly)
                     </span>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-neutral-400">
                       {Math.round(stockAssets * monthlyDlsPerAsset)} downloads across agencies
                     </p>
                   </div>
-                  <div className="text-lg font-black text-emerald-400 font-mono">
+                  <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
                     ${calculatedStockMonthly.toFixed(2)}
                   </div>
                 </div>
 
                 <div className={`p-4 rounded-xl border flex items-center justify-between ${
-                  isLight ? 'bg-cyan-50/60 border-cyan-200' : 'bg-slate-950/70 border-slate-800'
+                  isLight ? 'bg-[#fbfaf8] border-neutral-200/80' : 'bg-neutral-950 border-neutral-800'
                 }`}>
                   <div>
-                    <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5" /> Google AdSense Ads (Monthly)
+                    <span className={`text-xs font-bold flex items-center gap-1.5 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                      <Globe className="w-3.5 h-3.5 text-amber-500" /> Google AdSense Ads (Monthly)
                     </span>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-neutral-400">
                       {monthlyPageviews.toLocaleString()} pageviews @ ${adsenseEcpm.toFixed(2)} eCPM
                     </p>
                   </div>
-                  <div className="text-lg font-black text-cyan-400 font-mono">
+                  <div className="text-lg font-bold text-amber-600 dark:text-amber-400 font-mono tabular-nums">
                     ${calculatedAdSenseMonthly.toFixed(2)}
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg space-y-1">
-                  <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-emerald-100">
+                <div className={`p-5 rounded-xl border space-y-1 ${
+                  isLight ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-950 border-white'
+                }`}>
+                  <div className="flex justify-between items-center text-[10.5px] font-mono uppercase tracking-wider opacity-75">
                     <span>Total Passive Income</span>
                     <span>100% Monetized</span>
                   </div>
-                  <div className="text-3xl font-black font-mono">
+                  <div className="text-3xl font-bold font-mono tabular-nums">
                     ${totalCombinedMonthly.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
-                  <p className="text-[11px] text-emerald-100/90 pt-1">
-                    Equates to ${(totalCombinedMonthly / 30).toFixed(2)} USD every single day on auto-pilot.
+                  <p className="text-[11px] opacity-80 pt-1">
+                    Equates to ${(totalCombinedMonthly / 30).toFixed(2)} USD per day across both streams.
                   </p>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-2 flex flex-col gap-2">
+              <div className="pt-1 flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={onBackToStudio}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 cursor-pointer"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>Upload &amp; Optimize EPS Vectors Now</span>
@@ -438,180 +420,130 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
                 <button
                   type="button"
                   onClick={onOpenMultiCsv}
-                  className={`w-full ${
-                    isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-800' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                  } font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer`}
+                  className={`w-full border font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+                    isLight ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-800' : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-200'
+                  }`}
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
                   <span>Export Multi-Agency CSVs</span>
                 </button>
               </div>
             </div>
-
-            {/* AdSense In-Feed Responsive Unit */}
-            <GoogleAdSenseBanner format="in-feed" themeMode={themeMode} />
           </div>
         </div>
       )}
 
       {/* TAB CONTENT 2: HIGH-CPC NICHES */}
       {activeTab === 'niches' && (
-        <div className="space-y-4">
-          <div className={`p-4 rounded-2xl border ${
-            isLight ? 'bg-white border-slate-200' : 'bg-slate-900/90 border-slate-800'
-          } flex flex-wrap items-center justify-between gap-3`}>
-            <div>
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <Flame className="w-5 h-5 text-amber-500" />
-                <span>High-CPC Microstock Topics &amp; Buyer Intent Keywords</span>
-              </h3>
-              <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'} mt-1`}>
-                Commercial stock buyers paying enterprise subscription rates search for these high-value topics. Click "Copy Keywords" to instantly populate your vector metadata.
-              </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {HIGH_PAYING_NICHES.map((niche, idx) => (
+            <div
+              key={niche.category}
+              className={`rounded-2xl border p-5 space-y-3.5 transition flex flex-col justify-between ${
+                isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
+              }`}
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[10.5px] font-mono uppercase tracking-wider">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                    {niche.demand}
+                  </span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                    {niche.cpc}
+                  </span>
+                </div>
+
+                <h4 className={`text-sm font-bold tracking-tight ${isLight ? 'text-neutral-950' : 'text-white'}`}>
+                  {niche.category}
+                </h4>
+
+                <p className={`text-xs ${isLight ? 'text-neutral-500' : 'text-neutral-400'} leading-relaxed line-clamp-2`}>
+                  {niche.description}
+                </p>
+              </div>
+
+              <div className={`space-y-3 pt-3 border-t ${isLight ? 'border-neutral-100' : 'border-neutral-800'}`}>
+                <div className="flex flex-wrap gap-1">
+                  {niche.keywords.slice(0, 5).map((kw) => (
+                    <span
+                      key={kw}
+                      className={`text-[10.5px] px-2 py-0.5 rounded-md border ${
+                        isLight ? 'bg-[#fbfaf8] border-neutral-200/80 text-neutral-700' : 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                      }`}
+                    >
+                      {kw}
+                    </span>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleCopyKeywords(niche.keywords, idx)}
+                  className={`w-full font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    isLight
+                      ? 'bg-neutral-950 hover:bg-black text-white'
+                      : 'bg-white hover:bg-neutral-200 text-neutral-950'
+                  }`}
+                >
+                  {copiedIndex === idx ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy All Keywords ({niche.keywords.length})</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full">
-              Updated for 2026 Season
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {HIGH_PAYING_NICHES.map((niche, idx) => (
-              <motion.div
-                key={niche.category}
-                whileHover={{ y: -3 }}
-                className={`rounded-2xl border p-5 space-y-3.5 transition flex flex-col justify-between ${
-                  isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/80 border-slate-800 hover:border-emerald-500/40 shadow-lg'
-                }`}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                      {niche.demand}
-                    </span>
-                    <span className="text-xs font-bold text-amber-400 font-mono">
-                      {niche.cpc}
-                    </span>
-                  </div>
-
-                  <h4 className="text-sm font-bold text-white tracking-tight">
-                    {niche.category}
-                  </h4>
-
-                  <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'} leading-relaxed line-clamp-2`}>
-                    {niche.description}
-                  </p>
-                </div>
-
-                <div className="space-y-3 pt-2 border-t border-slate-800">
-                  <div className="flex flex-wrap gap-1">
-                    {niche.keywords.slice(0, 5).map((kw) => (
-                      <span
-                        key={kw}
-                        className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
-                          isLight ? 'bg-slate-100 text-slate-700' : 'bg-slate-800/80 text-slate-300'
-                        }`}
-                      >
-                        {kw}
-                      </span>
-                    ))}
-                    {niche.keywords.length > 5 && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md text-slate-400">
-                        +{niche.keywords.length - 5} more
-                      </span>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleCopyKeywords(niche.keywords, idx)}
-                    className="w-full bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white font-bold text-xs py-2 rounded-xl transition flex items-center justify-center gap-1.5 border border-slate-700 hover:border-emerald-500 cursor-pointer"
-                  >
-                    {copiedIndex === idx ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-white" />
-                        <span>Copied to Clipboard!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Copy All Keywords ({niche.keywords.length})</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          ))}
         </div>
       )}
 
       {/* TAB CONTENT 3: GOOGLE ADSENSE UNITS & COMPLIANCE */}
       {activeTab === 'adsense' && (
-        <div className="space-y-6">
-          <div className={`p-6 rounded-2xl border ${
-            isLight ? 'bg-white border-slate-200' : 'bg-slate-900/90 border-slate-800'
-          } space-y-4`}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-emerald-400" />
-                  <span>Google AdSense Monetization &amp; ads.txt Compliance</span>
-                </h3>
-                <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'} mt-1`}>
-                  Your web application is configured with Google Authorized Digital Sellers standards, ensuring full eligibility for programmatic ad delivery and maximum eCPM.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1 rounded-full flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  ads.txt Verified
-                </span>
-                <a
-                  href="/ads.txt"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1"
-                >
-                  <span>View Raw ads.txt</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
+        <div className={`p-6 rounded-2xl border ${
+          isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
+        } space-y-5`}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className={`text-lg font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                <Globe className="w-5 h-5 text-emerald-500" />
+                <span>Google AdSense Monetization &amp; ads.txt Compliance</span>
+              </h3>
+              <p className={`text-xs ${isLight ? 'text-neutral-500' : 'text-neutral-400'} mt-1`}>
+                Configured with Google Authorized Digital Sellers standards for programmatic ad delivery and high eCPM.
+              </p>
             </div>
 
-            {/* Ads.txt snippet card */}
-            <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-slate-300 space-y-1">
-              <div className="text-slate-500 text-[11px]"># Official Authorized Digital Sellers Entry:</div>
-              <div className="text-emerald-400 font-bold select-all">
-                google.com, pub-4920194820194820, DIRECT, f08c47fec0942fa0
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" />
+                ads.txt Verified
+              </span>
+              <a
+                href="/ads.txt"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition flex items-center gap-1 ${
+                  isLight ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-800' : 'bg-neutral-900 border-neutral-800 text-neutral-200'
+                }`}
+              >
+                <span>View Raw ads.txt</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
+          </div>
 
-            {/* Supported Ad Units Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 space-y-2">
-                <div className="text-xs font-bold text-emerald-400">1. Top Responsive Leaderboard</div>
-                <p className="text-xs text-slate-400">
-                  Located above the fold for maximum visibility and engagement. Standard 728x90 desktop / 320x50 mobile.
-                </p>
-                <div className="text-[10px] text-slate-500 font-mono">Format: Responsive Auto-Fit</div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 space-y-2">
-                <div className="text-xs font-bold text-cyan-400">2. In-Feed Native Sponsored Card</div>
-                <p className="text-xs text-slate-400">
-                  Blends seamlessly into the metadata batch list. High click-through rate without interrupting workflow.
-                </p>
-                <div className="text-[10px] text-slate-500 font-mono">Format: Fluid Native Card</div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/60 space-y-2">
-                <div className="text-xs font-bold text-purple-400">3. Anchor Sticky Bottom Banner</div>
-                <p className="text-xs text-slate-400">
-                  Sticks to viewport bottom on mobile and desktop. Yields highest viewability metrics and superior eCPM.
-                </p>
-                <div className="text-[10px] text-slate-500 font-mono">Format: Persistent Floating Bar</div>
-              </div>
+          <div className={`rounded-xl p-4 border font-mono text-xs space-y-1 ${
+            isLight ? 'bg-[#fbfaf8] border-neutral-200/80 text-neutral-800' : 'bg-neutral-950 border-neutral-800 text-neutral-300'
+          }`}>
+            <div className="text-neutral-400 text-[11px]"># Official Authorized Digital Sellers Entry:</div>
+            <div className="text-emerald-600 dark:text-emerald-400 font-bold select-all">
+              google.com, pub-4920194820194820, DIRECT, f08c47fec0942fa0
             </div>
           </div>
         </div>
@@ -620,53 +552,53 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
       {/* TAB CONTENT 4: STRATEGY */}
       {activeTab === 'strategy' && (
         <div className={`p-6 rounded-2xl border ${
-          isLight ? 'bg-white border-slate-200' : 'bg-slate-900/90 border-slate-800'
+          isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
         } space-y-5`}>
-          <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
-            <Award className="w-5 h-5 text-emerald-400" />
+          <h3 className={`text-base sm:text-lg font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+            <Award className="w-5 h-5 text-emerald-500" />
             <span>The 100% Rank #1 Microstock Earning Strategy</span>
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-5 rounded-xl border border-slate-800 bg-slate-950/70 space-y-2.5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold text-sm">
-                1
+            {[
+              {
+                num: '01',
+                title: 'Command the Crucial First 10 Keywords',
+                desc: 'Adobe Stock and Shutterstock allocate over 75% of total search ranking weight to positions 1 through 10. AdobeMeta Pro strictly places your exact subject, action, and commercial purpose into slots 1–10.'
+              },
+              {
+                num: '02',
+                title: 'Under-70-Character Natural Titles',
+                desc: 'Stock search engines penalize titles over 70 characters or titles with comma-separated keyword stuffing. Keep titles concise and specific to the artwork.'
+              },
+              {
+                num: '03',
+                title: '6-Stage Real EPS Vector Visual Inspection',
+                desc: 'Our rendering engine extracts true JPEG previews from your EPS files so vision AI recognizes actual vector subjects and generates authentic buyer terms.'
+              },
+              {
+                num: '04',
+                title: 'Multi-Agency Simultaneous Distribution',
+                desc: 'Distributing your portfolio to Adobe Stock, Shutterstock, Freepik, and Vecteezy triples your monthly downloads with zero extra creation time.'
+              }
+            ].map((st) => (
+              <div
+                key={st.num}
+                className={`p-5 rounded-xl border space-y-2 ${
+                  isLight ? 'bg-[#fbfaf8] border-neutral-200/80' : 'bg-neutral-950 border-neutral-800'
+                }`}
+              >
+                <div className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                  STRATEGY {st.num}
+                </div>
+                <h4 className={`text-sm font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                  {st.title}
+                </h4>
+                <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
+                  {st.desc}
+                </p>
               </div>
-              <h4 className="text-sm font-bold text-white">Command the Crucial First 10 Keywords</h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Adobe Stock and Shutterstock allocate <strong>over 70% of total search ranking points</strong> to positions 1 through 10. AdobeMeta Pro strictly places your exact subject, action, and commercial purpose into slots 1-10.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-xl border border-slate-800 bg-slate-950/70 space-y-2.5">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center font-bold text-sm">
-                2
-              </div>
-              <h4 className="text-sm font-bold text-white">Under-70-Character Natural Titles</h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Stock search engines penalize titles over 70 characters or titles with comma-separated keyword stuffing. Keep titles under 8 words, specific to the artwork.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-xl border border-slate-800 bg-slate-950/70 space-y-2.5">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-sm">
-                3
-              </div>
-              <h4 className="text-sm font-bold text-white">6-Stage Real EPS Vector Visual Inspection</h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Never upload blind vector metadata. Our 6-stage rendering engine extracts true JPEG previews from your EPS files so vision AI can recognize actual art subjects and generate authentic buyer terms.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-xl border border-slate-800 bg-slate-950/70 space-y-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold text-sm">
-                4
-              </div>
-              <h4 className="text-sm font-bold text-white">Multi-Agency Simultaneous Distribution</h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Never rely on one agency. Distributing your portfolio to Adobe Stock, Shutterstock, Freepik, and Vecteezy triples your monthly downloads with zero extra artwork creation time.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       )}
@@ -674,16 +606,18 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
       {/* TAB CONTENT 5: PARTNER NETWORKS & COMMISSIONS */}
       {activeTab === 'partners' && (
         <div className={`p-6 rounded-2xl border ${
-          isLight ? 'bg-white border-slate-200' : 'bg-slate-900/90 border-slate-800'
+          isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
         } space-y-5`}>
           <div className="flex items-center justify-between">
-            <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
+            <h3 className={`text-base sm:text-lg font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+              <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
               <span>Global Stock Agencies Royalty Comparison</span>
             </h3>
             <button
               onClick={onOpenMultiCsv}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer"
+              className={`font-bold text-xs px-4 py-2 rounded-full flex items-center gap-1.5 cursor-pointer ${
+                isLight ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-950'
+              }`}
             >
               <Download className="w-3.5 h-3.5" />
               <span>Open Multi-CSV Exporter</span>
@@ -693,7 +627,9 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
+                <tr className={`border-b uppercase font-mono tracking-wider text-[10px] text-neutral-400 ${
+                  isLight ? 'border-neutral-200' : 'border-neutral-800'
+                }`}>
                   <th className="py-3 px-4 font-bold">Agency</th>
                   <th className="py-3 px-4 font-bold">Royalty Rate</th>
                   <th className="py-3 px-4 font-bold">Max Keywords</th>
@@ -701,39 +637,31 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
                   <th className="py-3 px-4 font-bold">Payout Threshold</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className={`divide-y ${isLight ? 'divide-neutral-200/70' : 'divide-neutral-800'}`}>
                 <tr>
-                  <td className="py-3 px-4 font-bold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span> Adobe Stock
-                  </td>
-                  <td className="py-3 px-4 text-emerald-400 font-bold font-mono">33% (Photos/Vectors)</td>
+                  <td className={`py-3 px-4 font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>Adobe Stock</td>
+                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">33% (Photos/Vectors)</td>
                   <td className="py-3 px-4 font-mono">49 (Rank 1-10 critical)</td>
                   <td className="py-3 px-4 font-mono">&lt; 70 chars</td>
                   <td className="py-3 px-4 font-mono">$25.00</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-bold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-600"></span> Shutterstock
-                  </td>
-                  <td className="py-3 px-4 text-emerald-400 font-bold font-mono">15% - 40% (Tiered)</td>
+                  <td className={`py-3 px-4 font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>Shutterstock</td>
+                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">15% - 40% (Tiered)</td>
                   <td className="py-3 px-4 font-mono">50</td>
                   <td className="py-3 px-4 font-mono">&gt; 5 words</td>
                   <td className="py-3 px-4 font-mono">$35.00</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-bold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500"></span> Freepik
-                  </td>
-                  <td className="py-3 px-4 text-emerald-400 font-bold font-mono">Calculation per DL</td>
+                  <td className={`py-3 px-4 font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>Freepik</td>
+                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">Pay per Download</td>
                   <td className="py-3 px-4 font-mono">30 max</td>
                   <td className="py-3 px-4 font-mono">&lt; 100 chars</td>
                   <td className="py-3 px-4 font-mono">$50.00</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-bold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-500"></span> Vecteezy
-                  </td>
-                  <td className="py-3 px-4 text-emerald-400 font-bold font-mono">$5.00 per 1k DLs / 50%</td>
+                  <td className={`py-3 px-4 font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>Vecteezy</td>
+                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">50% Subscriber Share</td>
                   <td className="py-3 px-4 font-mono">35 max</td>
                   <td className="py-3 px-4 font-mono">&lt; 80 chars</td>
                   <td className="py-3 px-4 font-mono">$25.00</td>

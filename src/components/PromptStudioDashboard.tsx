@@ -8,6 +8,7 @@ interface PromptStudioDashboardProps {
   customApiKey?: string;
   showToast: (msg: string) => void;
   initialConcept?: string;
+  themeMode?: 'light' | 'dark';
 }
 
 const TRENDING_INSPIRATIONS = [
@@ -24,7 +25,9 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
   customApiKey,
   showToast,
   initialConcept,
+  themeMode = 'light',
 }) => {
+  const isLight = themeMode === 'light';
   const [concept, setConcept] = useState(initialConcept || '');
   const [style, setStyle] = useState('Commercial Stock Photography');
   const [aspectRatio, setAspectRatio] = useState('16:9');
@@ -102,46 +105,69 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
       className="space-y-6"
     >
       {/* Top Header */}
-      <div className="flex items-center justify-between bg-slate-950/80 backdrop-blur-xl border border-slate-800 p-4 sm:p-5 rounded-2xl shadow-xl">
-        <div className="flex items-center gap-3">
+      <div className={`flex items-center justify-between border p-5 sm:p-6 rounded-2xl transition-colors ${
+        isLight
+          ? 'bg-white border-neutral-200/90 text-neutral-900 shadow-2xs'
+          : 'bg-[#111318] border-neutral-800 text-white shadow-xl'
+      }`}>
+        <div className="flex items-center gap-3.5">
           <button
             onClick={onBack}
-            className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-xl transition"
-            title="Back to Studio"
+            className={`p-2.5 rounded-xl border transition cursor-pointer ${
+              isLight
+                ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-700'
+                : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+            }`}
+            title="Back to All Stores"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
-              <Wand2 className="w-5 h-5 text-indigo-400" />
-              AI Stock Prompt Creator
+            <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-400">
+              03 . STORE · AI PROMPT ENGINEERING LAB
+            </div>
+            <h1 className="text-lg sm:text-2xl font-bold tracking-tight flex items-center gap-2 mt-0.5">
+              <Wand2 className="w-5 h-5 text-amber-500" />
+              <span>AI Stock Prompt Creator</span>
             </h1>
-            <p className="text-xs text-slate-400">
-              Generate commercial-grade prompts optimized to pass Adobe Stock, Shutterstock & Midjourney review
+            <p className={`text-xs mt-0.5 ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
+              Generate commercial-grade prompts optimized to pass Adobe Stock, Shutterstock &amp; Midjourney review.
             </p>
           </div>
         </div>
       </div>
 
       {/* Input Form Card */}
-      <div className="bg-slate-950/80 backdrop-blur-xl border border-slate-800 p-5 sm:p-6 rounded-2xl shadow-2xl space-y-4">
+      <div className={`border p-5 sm:p-6 rounded-2xl space-y-5 ${
+        isLight
+          ? 'bg-white border-neutral-200/90 text-neutral-900 shadow-2xs'
+          : 'bg-[#111318] border-neutral-800 text-white shadow-xl'
+      }`}>
         <div>
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
+          <label className="text-[11px] font-mono font-bold uppercase tracking-[0.14em] text-neutral-400 block mb-2">
             Image Concept or Shoot Idea
           </label>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-2.5">
             <input
               type="text"
               value={concept}
               onChange={(e) => setConcept(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
               placeholder="e.g. Sustainable solar energy engineers in futuristic clean farm with copy space..."
-              className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className={`flex-1 border rounded-xl px-4 py-3 text-sm focus:outline-none transition ${
+                isLight
+                  ? 'bg-[#fbfaf8] border-neutral-200/90 text-neutral-900 placeholder-neutral-400 focus:bg-white focus:border-neutral-900'
+                  : 'bg-neutral-950 border-neutral-800 text-white placeholder-neutral-500 focus:border-neutral-600'
+              }`}
             />
             <button
               onClick={() => handleGenerate()}
               disabled={isLoading || !concept.trim()}
-              className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold text-sm px-6 py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20"
+              className={`font-bold text-xs sm:text-sm px-6 py-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 ${
+                isLight
+                  ? 'bg-neutral-950 hover:bg-black text-white'
+                  : 'bg-white hover:bg-neutral-200 text-neutral-950'
+              }`}
             >
               {isLoading ? (
                 <>
@@ -149,7 +175,7 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" /> Generate Prompts
+                  <Sparkles className="w-4 h-4 text-amber-500" /> Generate Prompts
                 </>
               )}
             </button>
@@ -157,9 +183,9 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
         </div>
 
         {/* Quick Inspiration Pills */}
-        <div className="space-y-1.5">
-          <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
-            <Lightbulb className="w-3.5 h-3.5 text-amber-400" /> Quick Stock Inspirations:
+        <div className="space-y-2">
+          <span className="text-[11px] font-semibold text-neutral-400 flex items-center gap-1.5">
+            <Lightbulb className="w-3.5 h-3.5 text-amber-500" /> Quick Stock Inspirations:
           </span>
           <div className="flex flex-wrap gap-2">
             {TRENDING_INSPIRATIONS.map((insp, idx) => (
@@ -169,7 +195,11 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
                   setConcept(insp);
                   handleGenerate(insp);
                 }}
-                className="text-xs bg-slate-900 hover:bg-indigo-950/60 hover:text-indigo-300 hover:border-indigo-500/50 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-lg transition text-left"
+                className={`text-xs border px-3 py-1.5 rounded-xl transition text-left cursor-pointer ${
+                  isLight
+                    ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200/90 text-neutral-700 hover:border-neutral-900'
+                    : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+                }`}
               >
                 {insp}
               </button>
@@ -178,15 +208,21 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
         </div>
 
         {/* Options Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-800/80">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t ${
+          isLight ? 'border-neutral-100' : 'border-neutral-800/80'
+        }`}>
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+            <label className="text-[10px] font-mono uppercase tracking-[0.14em] text-neutral-400 block mb-1.5">
               Style Format
             </label>
             <select
               value={style}
               onChange={(e) => setStyle(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-lg p-2.5 focus:outline-none focus:border-indigo-500"
+              className={`w-full border text-xs rounded-xl p-2.5 font-medium focus:outline-none ${
+                isLight
+                  ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-900'
+                  : 'bg-neutral-900 border-neutral-800 text-neutral-200'
+              }`}
             >
               <option value="Commercial Stock Photography">Commercial Stock Photography</option>
               <option value="Authentic Candid Lifestyle">Authentic Candid Lifestyle</option>
@@ -197,29 +233,37 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
           </div>
 
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+            <label className="text-[10px] font-mono uppercase tracking-[0.14em] text-neutral-400 block mb-1.5">
               Aspect Ratio
             </label>
             <select
               value={aspectRatio}
               onChange={(e) => setAspectRatio(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-lg p-2.5 focus:outline-none focus:border-indigo-500"
+              className={`w-full border text-xs rounded-xl p-2.5 font-medium focus:outline-none ${
+                isLight
+                  ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-900'
+                  : 'bg-neutral-900 border-neutral-800 text-neutral-200'
+              }`}
             >
               <option value="16:9">16:9 (Landscape / Banner)</option>
               <option value="3:2">3:2 (Classic DSLR Frame)</option>
-              <option value="4:5">4:5 (Social & Mobile Vertical)</option>
+              <option value="4:5">4:5 (Social &amp; Mobile Vertical)</option>
               <option value="1:1">1:1 (Square Editorial)</option>
             </select>
           </div>
 
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+            <label className="text-[10px] font-mono uppercase tracking-[0.14em] text-neutral-400 block mb-1.5">
               Commercial Lighting
             </label>
             <select
               value={lighting}
               onChange={(e) => setLighting(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-lg p-2.5 focus:outline-none focus:border-indigo-500"
+              className={`w-full border text-xs rounded-xl p-2.5 font-medium focus:outline-none ${
+                isLight
+                  ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-900'
+                  : 'bg-neutral-900 border-neutral-800 text-neutral-200'
+              }`}
             >
               <option value="Clean High-Key Commercial Daylight">High-Key Daylight</option>
               <option value="Warm Golden Hour Sunlight">Golden Hour Glow</option>
@@ -229,13 +273,17 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
           </div>
 
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+            <label className="text-[10px] font-mono uppercase tracking-[0.14em] text-neutral-400 block mb-1.5">
               Composition / Framing
             </label>
             <select
               value={shotType}
               onChange={(e) => setShotType(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-lg p-2.5 focus:outline-none focus:border-indigo-500"
+              className={`w-full border text-xs rounded-xl p-2.5 font-medium focus:outline-none ${
+                isLight
+                  ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-900'
+                  : 'bg-neutral-900 border-neutral-800 text-neutral-200'
+              }`}
             >
               <option value="Medium shot with intentional copy space">Medium Shot + Copy Space</option>
               <option value="Wide panoramic establishing angle">Wide Panoramic View</option>
@@ -252,76 +300,94 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
           {/* Engine Prompts Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Midjourney v6 Card */}
-            <div className="bg-slate-950/80 border border-indigo-500/30 rounded-2xl p-5 space-y-3 flex flex-col justify-between shadow-xl">
+            <div className={`border rounded-2xl p-5 space-y-3 flex flex-col justify-between ${
+              isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
+            }`}>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-black text-indigo-400 flex items-center gap-1.5">
-                    <Camera className="w-4 h-4" /> Midjourney v6.1
+                  <span className={`text-xs font-bold flex items-center gap-1.5 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                    <Camera className="w-4 h-4 text-amber-500" /> Midjourney v6.1
                   </span>
-                  <span className="text-[10px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-[10px] font-mono text-neutral-400">
                     --v 6.1 --style raw
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed font-mono bg-slate-900/90 p-3 rounded-xl border border-slate-800 select-all">
+                <p className={`text-xs leading-relaxed font-mono p-3 rounded-xl border select-all ${
+                  isLight ? 'bg-[#fbfaf8] border-neutral-200/80 text-neutral-800' : 'bg-neutral-950 border-neutral-800 text-neutral-300'
+                }`}>
                   {result.midjourneyPrompt}
                 </p>
               </div>
 
               <button
                 onClick={() => copyText(result.midjourneyPrompt, 'Midjourney Prompt')}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-2 shadow"
+                className={`w-full text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+                  isLight ? 'bg-neutral-950 hover:bg-black text-white' : 'bg-white hover:bg-neutral-200 text-neutral-950'
+                }`}
               >
-                {copiedKey === 'Midjourney Prompt' ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                {copiedKey === 'Midjourney Prompt' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedKey === 'Midjourney Prompt' ? 'Copied!' : 'Copy Midjourney Prompt'}</span>
               </button>
             </div>
 
             {/* Adobe Firefly Card */}
-            <div className="bg-slate-950/80 border border-blue-500/30 rounded-2xl p-5 space-y-3 flex flex-col justify-between shadow-xl">
+            <div className={`border rounded-2xl p-5 space-y-3 flex flex-col justify-between ${
+              isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
+            }`}>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-black text-blue-400 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4" /> Adobe Firefly Image 3
+                  <span className={`text-xs font-bold flex items-center gap-1.5 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                    <Sparkles className="w-4 h-4 text-emerald-500" /> Adobe Firefly Image 3
                   </span>
-                  <span className="text-[10px] bg-blue-500/10 text-blue-300 border border-blue-500/20 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-[10px] font-mono text-neutral-400">
                     Adobe Stock Friendly
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed font-mono bg-slate-900/90 p-3 rounded-xl border border-slate-800 select-all">
+                <p className={`text-xs leading-relaxed font-mono p-3 rounded-xl border select-all ${
+                  isLight ? 'bg-[#fbfaf8] border-neutral-200/80 text-neutral-800' : 'bg-neutral-950 border-neutral-800 text-neutral-300'
+                }`}>
                   {result.fireflyPrompt}
                 </p>
               </div>
 
               <button
                 onClick={() => copyText(result.fireflyPrompt, 'Firefly Prompt')}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-2 shadow"
+                className={`w-full text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+                  isLight ? 'bg-neutral-950 hover:bg-black text-white' : 'bg-white hover:bg-neutral-200 text-neutral-950'
+                }`}
               >
-                {copiedKey === 'Firefly Prompt' ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                {copiedKey === 'Firefly Prompt' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedKey === 'Firefly Prompt' ? 'Copied!' : 'Copy Firefly Prompt'}</span>
               </button>
             </div>
 
             {/* Flux / SDXL Card */}
-            <div className="bg-slate-950/80 border border-purple-500/30 rounded-2xl p-5 space-y-3 flex flex-col justify-between shadow-xl">
+            <div className={`border rounded-2xl p-5 space-y-3 flex flex-col justify-between ${
+              isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
+            }`}>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-black text-purple-400 flex items-center gap-1.5">
-                    <Layers className="w-4 h-4" /> Flux.1 / SDXL
+                  <span className={`text-xs font-bold flex items-center gap-1.5 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                    <Layers className="w-4 h-4 text-amber-500" /> Flux.1 / SDXL
                   </span>
-                  <span className="text-[10px] bg-purple-500/10 text-purple-300 border border-purple-500/20 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-[10px] font-mono text-neutral-400">
                     Hyper-Realistic
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed font-mono bg-slate-900/90 p-3 rounded-xl border border-slate-800 select-all">
+                <p className={`text-xs leading-relaxed font-mono p-3 rounded-xl border select-all ${
+                  isLight ? 'bg-[#fbfaf8] border-neutral-200/80 text-neutral-800' : 'bg-neutral-950 border-neutral-800 text-neutral-300'
+                }`}>
                   {result.fluxPrompt}
                 </p>
               </div>
 
               <button
                 onClick={() => copyText(result.fluxPrompt, 'Flux Prompt')}
-                className="w-full bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-2 shadow"
+                className={`w-full text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+                  isLight ? 'bg-neutral-950 hover:bg-black text-white' : 'bg-white hover:bg-neutral-200 text-neutral-950'
+                }`}
               >
-                {copiedKey === 'Flux Prompt' ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                {copiedKey === 'Flux Prompt' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedKey === 'Flux Prompt' ? 'Copied!' : 'Copy Flux Prompt'}</span>
               </button>
             </div>
@@ -330,40 +396,52 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
           {/* Negative Prompt & Commercial Rejection Shield Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Negative Prompt */}
-            <div className="bg-slate-950/80 border border-rose-500/30 rounded-2xl p-4 sm:p-5 space-y-2.5">
+            <div className={`border rounded-2xl p-4 sm:p-5 space-y-2.5 ${
+              isLight ? 'bg-white border-neutral-200/90' : 'bg-[#111318] border-neutral-800'
+            }`}>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
                   <ShieldAlert className="w-4 h-4" /> Negative Prompt (Prevents Rejections)
                 </span>
                 <button
                   onClick={() => copyText(result.negativePrompt, 'Negative Prompt')}
-                  className="text-xs text-rose-300 hover:text-white bg-rose-950/60 border border-rose-800 px-2.5 py-1 rounded-lg transition flex items-center gap-1"
+                  className={`text-xs px-2.5 py-1 rounded-lg border transition flex items-center gap-1 cursor-pointer ${
+                    isLight ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-700' : 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                  }`}
                 >
-                  {copiedKey === 'Negative Prompt' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey === 'Negative Prompt' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                   <span>Copy</span>
                 </button>
               </div>
-              <p className="text-xs text-slate-400 font-mono bg-slate-900/70 p-3 rounded-xl border border-slate-800">
+              <p className={`text-xs font-mono p-3 rounded-xl border ${
+                isLight ? 'bg-[#fbfaf8] border-neutral-200/80 text-neutral-700' : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+              }`}>
                 {result.negativePrompt}
               </p>
             </div>
 
             {/* Commercial Tips */}
-            <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-4 sm:p-5 space-y-2.5">
-              <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+            <div className={`border rounded-2xl p-4 sm:p-5 space-y-2.5 ${
+              isLight ? 'bg-white border-neutral-200/90' : 'bg-[#111318] border-neutral-800'
+            }`}>
+              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                 <Lightbulb className="w-4 h-4" /> Commercial Buyer Advice
               </span>
-              <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/70 p-3 rounded-xl border border-slate-800">
+              <p className={`text-xs leading-relaxed p-3 rounded-xl border ${
+                isLight ? 'bg-[#fbfaf8] border-neutral-200/80 text-neutral-700' : 'bg-neutral-950 border-neutral-800 text-neutral-300'
+              }`}>
                 {result.commercialTips}
               </p>
             </div>
           </div>
 
           {/* Suggested Title and Keywords for this Prompt */}
-          <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div className={`border rounded-2xl p-5 space-y-3 ${
+            isLight ? 'bg-white border-neutral-200/90' : 'bg-[#111318] border-neutral-800'
+          }`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                <Tag className="w-4 h-4 text-indigo-400" /> Suggested Stock Title & Keywords
+              <span className={`text-xs font-bold flex items-center gap-1.5 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                <Tag className="w-4 h-4 text-amber-500" /> Suggested Stock Title &amp; Keywords
               </span>
               <button
                 onClick={() =>
@@ -372,20 +450,26 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
                     'Metadata'
                   )
                 }
-                className="text-xs text-slate-300 hover:text-white bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition flex items-center gap-1.5 cursor-pointer ${
+                  isLight ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-800 hover:bg-neutral-100' : 'bg-neutral-900 border-neutral-800 text-neutral-200 hover:bg-neutral-800'
+                }`}
               >
-                {copiedKey === 'Metadata' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>Copy Title & Keywords</span>
+                {copiedKey === 'Metadata' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>Copy Title &amp; Keywords</span>
               </button>
             </div>
 
-            <p className="text-sm font-bold text-indigo-300">{result.suggestedTitle || 'Untitled Stock Visual'}</p>
+            <p className={`text-sm font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+              {result.suggestedTitle || 'Untitled Stock Visual'}
+            </p>
 
             <div className="flex flex-wrap gap-1.5 pt-1">
               {(result.suggestedKeywords || []).map((kw, i) => (
                 <span
                   key={i}
-                  className="text-[11px] bg-slate-900 border border-slate-800 text-slate-300 px-2 py-0.5 rounded-md"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border ${
+                    isLight ? 'bg-[#fbfaf8] border-neutral-200/80 text-neutral-700' : 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                  }`}
                 >
                   {kw}
                 </span>

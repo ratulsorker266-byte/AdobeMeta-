@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Target, Trophy, Flame, ChevronRight, Award, DollarSign, TrendingUp, Sparkles, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Target, DollarSign, ArrowRight } from 'lucide-react';
 
 interface ContributorGoalWidgetProps {
   completedCount: number;
@@ -10,7 +10,7 @@ interface ContributorGoalWidgetProps {
 export const ContributorGoalWidget: React.FC<ContributorGoalWidgetProps> = ({ 
   completedCount, 
   onOpenMonetize,
-  themeMode = 'dark'
+  themeMode = 'light'
 }) => {
   const isLight = themeMode === 'light';
   const [goal, setGoal] = useState<number>(() => {
@@ -27,14 +27,14 @@ export const ContributorGoalWidget: React.FC<ContributorGoalWidgetProps> = ({
 
   const progress = Math.min(100, Math.round((completedCount / goal) * 100));
 
-  const getRank = (count: number) => {
-    if (count >= 200) return { title: 'Elite Master Contributor', badge: 'bg-purple-950 text-purple-300 border-purple-800' };
-    if (count >= 100) return { title: 'Gold Level Contributor', badge: 'bg-amber-950 text-amber-300 border-amber-800' };
-    if (count >= 50) return { title: 'Silver Contributor', badge: 'bg-slate-800 text-slate-200 border-slate-700' };
-    return { title: 'Rising Contributor', badge: 'bg-indigo-950 text-indigo-300 border-indigo-800' };
+  const getRankTitle = (count: number) => {
+    if (count >= 200) return 'Elite Master Contributor';
+    if (count >= 100) return 'Gold Level Contributor';
+    if (count >= 50) return 'Silver Contributor';
+    return 'Rising Contributor';
   };
 
-  const rank = getRank(completedCount);
+  const rankTitle = getRankTitle(completedCount);
 
   // Real-time commercial valuation calculation (accurate to actual completedCount)
   const estStockMonthly = (completedCount * 1.8 * 0.98).toFixed(0);
@@ -43,50 +43,61 @@ export const ContributorGoalWidget: React.FC<ContributorGoalWidgetProps> = ({
   const estAnnualValue = (Number(estCombinedMonthly) * 12).toLocaleString();
 
   return (
-    <div className={`${isLight ? 'bg-white border-slate-200 shadow-md text-slate-800' : 'bg-slate-950/80 border-slate-800/90 shadow-xl text-slate-100'} border rounded-2xl p-4 sm:p-5 space-y-4 relative overflow-hidden group`}>
-      {/* Background Accent Gradient */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
-
+    <div className={`${
+      isLight 
+        ? 'bg-white border-neutral-200/90 text-neutral-900 shadow-2xs' 
+        : 'bg-[#111318] border-neutral-800 text-neutral-100 shadow-xl'
+    } border rounded-2xl p-4 sm:p-5 space-y-4 transition-colors duration-200`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+            isLight ? 'bg-[#f6f5f2] border-neutral-200/80 text-neutral-900' : 'bg-neutral-900 border-neutral-800 text-amber-400'
+          }`}>
             <Target className="w-4 h-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                Contributor Portfolio &amp; Milestone Engine
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <span className="font-bold tracking-tight">
+                Contributor Portfolio Milestone
               </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${rank.badge}`}>
-                {rank.title}
+              <span className="text-neutral-400">·</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400 font-semibold">
+                {rankTitle}
               </span>
             </div>
+            <p className="text-[11px] text-neutral-400">
+              <strong className={`font-mono tabular-nums ${isLight ? 'text-neutral-900' : 'text-white'}`}>{completedCount}</strong> of {goal} assets processed ({progress}%)
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className={`text-[11px] font-medium ${isLight ? 'text-slate-500 hover:text-indigo-600' : 'text-slate-400 hover:text-indigo-300'} transition cursor-pointer`}
-          >
-            Target: <span className={`${isLight ? 'text-slate-900' : 'text-white'} font-bold`}>{goal} assets</span> (Edit)
-          </button>
-        </div>
+        <button
+          onClick={() => setIsEditing(!isEditing)}
+          className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition cursor-pointer ${
+            isLight
+              ? 'bg-[#fbfaf8] border-neutral-200/90 text-neutral-700 hover:border-neutral-900 hover:text-black'
+              : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-600 hover:text-white'
+          }`}
+        >
+          Goal: <span className="font-mono font-bold">{goal}</span> (Change)
+        </button>
       </div>
 
       {/* Goal target selector dropdown if editing */}
       {isEditing && (
-        <div className={`p-3 rounded-xl ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-900 border-slate-800'} border flex items-center justify-between text-xs gap-2 flex-wrap`}>
-          <span className="text-[11px] font-medium">Select Monthly Goal:</span>
+        <div className={`p-3 rounded-xl ${
+          isLight ? 'bg-[#fbfaf8] border-neutral-200/80' : 'bg-neutral-900 border-neutral-800'
+        } border flex items-center justify-between text-xs gap-2 flex-wrap`}>
+          <span className="text-[11px] font-medium text-neutral-500">Select Monthly Asset Target:</span>
           <div className="flex items-center gap-1.5">
             {[25, 50, 100, 250, 500].map((t) => (
               <button
                 key={t}
                 onClick={() => setTarget(t)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                className={`px-3 py-1 rounded-full text-xs font-bold font-mono transition cursor-pointer ${
                   goal === t
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : isLight ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-slate-800 text-slate-400 hover:text-white'
+                    ? (isLight ? 'bg-neutral-950 text-white' : 'bg-white text-black')
+                    : (isLight ? 'bg-white border border-neutral-200 text-neutral-600 hover:text-black' : 'bg-neutral-800 text-neutral-400 hover:text-white')
                 }`}
               >
                 {t}
@@ -96,51 +107,48 @@ export const ContributorGoalWidget: React.FC<ContributorGoalWidgetProps> = ({
         </div>
       )}
 
-      {/* Progress Bar & Counter */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-xs">
-          <span className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-            <strong className={`${isLight ? 'text-slate-900' : 'text-white'} font-black`}>{completedCount}</strong> of {goal} assets ready for submission
-          </span>
-          <span className="text-[11px] font-bold text-indigo-400">{progress}% Completed</span>
-        </div>
-
-        <div className={`w-full h-2.5 ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-900 border-slate-800/80'} rounded-full overflow-hidden border p-0.5`}>
-          <div
-            className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 rounded-full transition-all duration-700 shadow-[0_0_12px_rgba(99,102,241,0.5)]"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+      {/* Progress Bar */}
+      <div className={`w-full h-2 ${
+        isLight ? 'bg-neutral-100' : 'bg-neutral-900'
+      } rounded-full overflow-hidden`}>
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${
+            isLight ? 'bg-neutral-950' : 'bg-amber-400'
+          }`}
+          style={{ width: `${progress}%` }}
+        />
       </div>
 
       {/* Earning & Monetization Live Valuation Ticker */}
-      <div className={`pt-3 border-t ${isLight ? 'border-slate-100 bg-slate-50/60' : 'border-slate-800/80 bg-slate-900/40'} -mx-4 -mb-4 px-4 py-3 rounded-b-2xl flex flex-wrap items-center justify-between gap-3`}>
-        <div className="flex items-center gap-3">
-          <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-            <DollarSign className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 text-xs">
-              <span className={`font-semibold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Est. Portfolio Royalty:</span>
-              <strong className="text-emerald-400 font-bold">${estStockMonthly}/mo</strong>
-              <span className="text-slate-500 text-[10px]">·</span>
-              <span className={`font-semibold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>AdSense Traffic:</span>
-              <strong className="text-indigo-400 font-bold">${estAdSenseMonthly}/mo</strong>
-            </div>
-            <p className="text-[10px] text-slate-400">
-              Projected Annual Dual-Stream Value: <strong className="text-emerald-400">${estAnnualValue}/year</strong>
-            </p>
-          </div>
+      <div className={`pt-3 border-t ${
+        isLight ? 'border-neutral-100' : 'border-neutral-800/80'
+      } flex flex-wrap items-center justify-between gap-3 text-xs`}>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="inline-flex items-center gap-1 text-neutral-500">
+            <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Est. Royalty:</span>
+            <strong className={`font-mono ${isLight ? 'text-neutral-900' : 'text-white'}`}>${estStockMonthly}/mo</strong>
+          </span>
+          <span className="text-neutral-300 dark:text-neutral-700">·</span>
+          <span className="text-neutral-500">
+            AdSense Traffic: <strong className={`font-mono ${isLight ? 'text-neutral-900' : 'text-white'}`}>${estAdSenseMonthly}/mo</strong>
+          </span>
+          <span className="text-neutral-300 dark:text-neutral-700">·</span>
+          <span className="text-neutral-500">
+            Annual Value: <strong className="font-mono text-emerald-600 dark:text-emerald-400">${estAnnualValue}/yr</strong>
+          </span>
         </div>
 
         {onOpenMonetize && (
           <button
             type="button"
             onClick={onOpenMonetize}
-            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 transition cursor-pointer hover:underline"
+            className={`inline-flex items-center gap-1 text-[11px] font-bold transition cursor-pointer hover:underline ${
+              isLight ? 'text-neutral-900' : 'text-amber-400'
+            }`}
           >
-            <span>Open Monetization Simulator</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span>Open Earning Simulator</span>
+            <ArrowRight className="w-3 h-3" />
           </button>
         )}
       </div>
