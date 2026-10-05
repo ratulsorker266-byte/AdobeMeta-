@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, 
@@ -11,7 +11,9 @@ import {
   MessageSquare,
   Sparkles,
   CheckCircle2,
-  Lock
+  Lock,
+  Droplets,
+  Terminal
 } from 'lucide-react';
 import { AdobeMetaProLogo } from './AdobeMetaProLogo';
 import store01MetadataEps from '../assets/images/store01_metadata_eps_1791118931620.jpg';
@@ -40,6 +42,9 @@ interface EditorialHeroProps {
   onOpenChat?: () => void;
   currentView?: string;
   itemsCount?: number;
+  isWaterWorldActive?: boolean;
+  onToggleWaterWorld?: () => void;
+  onOpenBlackOps?: () => void;
 }
 
 export interface BoutiqueStoreItem {
@@ -69,11 +74,15 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   onOpenMultiCsv,
   onOpenToolsHub,
   onOpenChat,
-  itemsCount = 0
+  itemsCount = 0,
+  isWaterWorldActive = true,
+  onToggleWaterWorld,
+  onOpenBlackOps
 }) => {
   const [activeDepartment, setActiveDepartment] = useState<'all' | 'metadata' | 'creative' | 'monetize'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewStoreIdx, setPreviewStoreIdx] = useState<number>(0);
+  const [isHoveringSpecimen, setIsHoveringSpecimen] = useState<boolean>(false);
 
   const isLight = themeMode === 'light';
 
@@ -222,6 +231,16 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
   const activePreviewStore = marketStores[previewStoreIdx] || marketStores[0];
 
+  // Autonomous Zero-Command Specimen Deck Rotation (Cycles smoothly every 4.5s unless hovered)
+  useEffect(() => {
+    if (isHoveringSpecimen) return;
+    const timer = setInterval(() => {
+      if (document.hidden) return;
+      setPreviewStoreIdx((prev) => (prev + 1) % marketStores.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [isHoveringSpecimen, marketStores.length]);
+
   const handleOpenStore = (store: BoutiqueStoreItem) => {
     if (store.actionType === 'view' && store.targetView) {
       onNavigateView(store.targetView);
@@ -359,6 +378,42 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
           {/* Zone 3: Minimalist Controls & Text AI Chat Trigger */}
           <div className="flex items-center gap-2">
+            {onOpenBlackOps && (
+              <button
+                type="button"
+                onClick={onOpenBlackOps}
+                className={`px-3 py-1.5 rounded-full text-[10.5px] font-mono font-bold tracking-[0.12em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
+                  isLight
+                    ? 'bg-emerald-950 hover:bg-black text-emerald-300 border-emerald-700/80 shadow-2xs'
+                    : 'bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border-emerald-500/45 shadow-[0_0_18px_rgba(16,185,129,0.25)]'
+                }`}
+                title="Open Classified Black-Ops Intelligence & Forensic Scrubber (Ctrl+K)"
+              >
+                <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden sm:inline">Black-Ops</span>
+              </button>
+            )}
+
+            {onToggleWaterWorld && (
+              <button
+                type="button"
+                onClick={onToggleWaterWorld}
+                className={`px-3 py-1.5 rounded-full text-[10.5px] font-semibold tracking-[0.1em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
+                  isWaterWorldActive
+                    ? isLight
+                      ? 'bg-sky-50/90 hover:bg-sky-100 text-sky-900 border-sky-300/90 shadow-2xs'
+                      : 'bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border-sky-500/40'
+                    : isLight
+                    ? 'bg-white hover:bg-neutral-100 text-neutral-500 border-neutral-200/90'
+                    : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-800'
+                }`}
+                title="Toggle Interactive Crystal Water World & Buoyancy Physics"
+              >
+                <Droplets className={`w-3.5 h-3.5 ${isWaterWorldActive ? 'text-sky-500' : 'text-neutral-400'}`} />
+                <span className="hidden md:inline">{isWaterWorldActive ? 'Water FX' : 'Water OFF'}</span>
+              </button>
+            )}
+
             {onOpenChat && (
               <button
                 onClick={onOpenChat}
@@ -444,7 +499,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               isLight ? 'text-neutral-950' : 'text-white'
             }`}>
               Autonomous Stock{' '}
-              <span className="font-editorial italic font-normal text-amber-500">Metadata</span>{' '}
+              <span className="font-editorial italic font-normal text-amber-500 aquatic-caustic-text">Metadata</span>{' '}
               &amp; Creative Stores.
             </h1>
 
@@ -510,7 +565,11 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-5"
           >
-            <div className={`rounded-2xl border p-5 transition-all duration-300 ${
+            <div
+              data-bounce-card="true"
+              onMouseEnter={() => setIsHoveringSpecimen(true)}
+              onMouseLeave={() => setIsHoveringSpecimen(false)}
+              className={`rounded-2xl border p-5 transition-all duration-300 ${
               isLight
                 ? 'bg-white border-neutral-200/90 shadow-[0_12px_40px_-15px_rgba(0,0,0,0.07)]'
                 : 'bg-[#0f1116] border-neutral-800/90 shadow-2xl'
@@ -579,31 +638,61 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {activePreviewStore.sampleKeywords.slice(0, 6).map((kw, kIdx) => (
-                    <span
-                      key={kw}
-                      className={`text-[11px] px-2.5 py-1 rounded-lg font-medium flex items-center gap-1 border ${
-                        kIdx === 0
-                          ? isLight
-                            ? 'bg-neutral-950 text-white border-neutral-950 font-semibold'
-                            : 'bg-white text-neutral-950 border-white font-semibold'
-                          : isLight
-                          ? 'bg-[#f7f6f2] text-neutral-700 border-neutral-200/80'
-                          : 'bg-neutral-900 text-neutral-300 border-neutral-800'
-                      }`}
-                    >
-                      <span className="text-[9.5px] font-mono opacity-60">#{kIdx + 1}</span>
-                      <span>{kw}</span>
-                    </span>
-                  ))}
+                  {activePreviewStore.sampleKeywords.slice(0, 6).map((kw, kIdx) => {
+                    const slotWeights = [99, 96, 94, 92, 90, 88];
+                    const weightPct = slotWeights[kIdx] || 85;
+                    return (
+                      <span
+                        key={kw}
+                        className={`text-[11px] px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5 border ${
+                          kIdx === 0
+                            ? isLight
+                              ? 'bg-neutral-950 text-white border-neutral-950 font-semibold'
+                              : 'bg-white text-neutral-950 border-white font-semibold'
+                            : isLight
+                            ? 'bg-[#f7f6f2] text-neutral-700 border-neutral-200/80'
+                            : 'bg-neutral-900 text-neutral-300 border-neutral-800'
+                        }`}
+                      >
+                        <span className="text-[9.5px] font-mono opacity-60">#{kIdx + 1}</span>
+                        <span>{kw}</span>
+                        <span
+                          className={`text-[9px] font-mono px-1 rounded ${
+                            kIdx === 0
+                              ? 'bg-emerald-500/25 text-emerald-300 dark:bg-emerald-600 dark:text-white font-bold'
+                              : isLight
+                              ? 'bg-emerald-100 text-emerald-800 font-semibold'
+                              : 'bg-emerald-950 text-emerald-400 font-semibold'
+                          }`}
+                        >
+                          {weightPct}%
+                        </span>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Store Switcher Dots inside Specimen */}
-              <div className="mt-4 pt-3 border-t border-neutral-200/60 dark:border-neutral-800/80 flex items-center justify-between">
-                <span className="text-[10.5px] text-neutral-400">
-                  Hover or click any store below to preview
-                </span>
+              {/* Store Switcher Dots & Instant Black-Ops X-Ray Trigger inside Specimen */}
+              <div className="mt-4 pt-3 border-t border-neutral-200/60 dark:border-neutral-800/80 flex items-center justify-between gap-2">
+                {onOpenBlackOps ? (
+                  <button
+                    type="button"
+                    onClick={onOpenBlackOps}
+                    className={`text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition ${
+                      isLight
+                        ? 'text-emerald-700 hover:text-black'
+                        : 'text-emerald-400 hover:text-emerald-300'
+                    }`}
+                  >
+                    <Terminal className="w-3 h-3" />
+                    <span>ALGO-HACK X-RAY READY · 49/49 LOCK</span>
+                  </button>
+                ) : (
+                  <span className="text-[10.5px] text-neutral-400">
+                    Hover or click any store below to preview
+                  </span>
+                )}
                 <div className="flex items-center gap-1">
                   {marketStores.map((st, idx) => (
                     <button
@@ -623,6 +712,121 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             </div>
           </motion.div>
 
+        </div>
+
+        {/* ============================================================ */}
+        {/* WORLD'S #1 METADATA × ALGORITHMIC HACK CONNECTION DECK       */}
+        {/* ============================================================ */}
+        <div
+          data-bounce-card="true"
+          className={`mt-10 rounded-2xl border p-5 sm:p-6 transition-all ${
+            isLight
+              ? 'bg-white/90 border-neutral-200/90 shadow-[0_12px_36px_-16px_rgba(14,165,233,0.12)]'
+              : 'bg-[#0b0e13]/95 border-neutral-800/90 shadow-2xl'
+          }`}
+        >
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 mb-4 border-b border-neutral-200/70 dark:border-neutral-800/80">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-[10px] font-mono font-bold tracking-[0.18em] uppercase text-emerald-600 dark:text-emerald-400">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <span>WORLD&apos;S #1 METADATA × ALGORITHMIC HACK ARCHITECTURE</span>
+              </div>
+              <h3
+                className={`text-base sm:text-lg font-bold tracking-tight ${
+                  isLight ? 'text-neutral-950' : 'text-white'
+                }`}
+              >
+                Why Ordinary Metadata Fails — And How Our 4-Stage Algorithmic Hack Ranks #1
+              </h3>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {onOpenBlackOps && (
+                <button
+                  type="button"
+                  onClick={onOpenBlackOps}
+                  className={`px-3.5 py-2 rounded-xl text-[10.5px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 border transition cursor-pointer ${
+                    isLight
+                      ? 'bg-neutral-950 hover:bg-black text-emerald-300 border-neutral-950'
+                      : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
+                  }`}
+                >
+                  <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Launch Black-Ops X-Ray (Ctrl+K)</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => onNavigateView('upload')}
+                className={`px-3.5 py-2 rounded-xl text-[10.5px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 border transition cursor-pointer ${
+                  isLight
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+                    : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/40'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Run Autopilot Studio</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                stage: 'STAGE 01 // PACKET INTERCEPT',
+                title: '75% First-10 Slot Lock',
+                metric: '99% SLOT #1 WEIGHT',
+                desc: 'Adobe Stock gives 75% of all search ranking power to Keyword Slots #1–#10. Our engine locks your exact Title subject into Slot #1 automatically.',
+              },
+              {
+                stage: 'STAGE 02 // BUYER INTENT HIJACK',
+                title: '49/49 B2B Compound Taxonomy',
+                metric: '$3.80–$19.50 RPD',
+                desc: 'Replaces weak generic tags with high-paying Enterprise B2B compound search phrases that corporate agencies license at Extended rates.',
+              },
+              {
+                stage: 'STAGE 03 // PIXEL LSB + EYE-TRACKING',
+                title: 'RGB Bit-0 & 140ms Heatmap',
+                metric: 'PHI=1.618 + STEGO',
+                desc: 'Locks 49 tags inside Pixel RGB Bit-0 and runs a 140ms Neural Buyer Eye-Tracking Saliency Heatmap with Golden Ratio alignment.',
+              },
+              {
+                stage: 'STAGE 04 // 10-MODULE BLACK-OPS',
+                title: '6-Country & 50-Query Sim',
+                metric: '100% PAGE-1 LOCK',
+                desc: 'Interleaves English + Tokyo/Berlin/Paris/Seoul native buyer tags and runs a 50-Query Monte Carlo Rank #1 Simulator with 7-Series Empire export.',
+              },
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                onClick={() => (idx === 2 && onOpenBlackOps ? onOpenBlackOps() : onNavigateView('upload'))}
+                className={`p-3.5 rounded-xl border transition cursor-pointer ${
+                  isLight
+                    ? 'bg-[#faf9f6] hover:bg-white border-neutral-200/80 hover:border-neutral-900'
+                    : 'bg-[#11141c] hover:bg-[#151923] border-neutral-800/90 hover:border-emerald-500/40'
+                }`}
+              >
+                <div className="flex items-center justify-between text-[9.5px] font-mono font-bold tracking-wider uppercase mb-1.5">
+                  <span className="text-neutral-400">{item.stage}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">{item.metric}</span>
+                </div>
+                <div
+                  className={`text-xs font-bold mb-1 ${
+                    isLight ? 'text-neutral-950' : 'text-white'
+                  }`}
+                >
+                  {item.title}
+                </div>
+                <p
+                  className={`text-[11px] leading-relaxed ${
+                    isLight ? 'text-neutral-500' : 'text-neutral-400'
+                  }`}
+                >
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ============================================================ */}
@@ -683,6 +887,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               <motion.div
                 key={store.id}
                 layout
+                data-bounce-card="true"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98 }}

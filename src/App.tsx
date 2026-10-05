@@ -51,6 +51,9 @@ import { EditorialHeroSection } from './components/EditorialHeroSection';
 import { AboutModal, PricingModal, ResourcesModal } from './components/EditorialModals';
 import { AdobeMetaProLogo } from './components/AdobeMetaProLogo';
 import { EpsArtworkViewerModal } from './components/EpsArtworkViewerModal';
+import { FuturisticPhysicsEngine } from './components/FuturisticPhysicsEngine';
+import { HackerBlackOpsTerminal } from './components/HackerBlackOpsTerminal';
+import { AutonomousHackerHudBar } from './components/AutonomousHackerHudBar';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   useEffect(() => {
@@ -867,6 +870,36 @@ export default function App() {
 
   const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
   const [isAudioActive, setIsAudioActive] = useState<boolean>(() => isSoundEnabled());
+  const [isFuturisticBounce, setIsFuturisticBounce] = useState<boolean>(() => {
+    try { return localStorage.getItem('adobemeta_futuristic_bounce') !== 'false'; } catch { return true; }
+  });
+  const [showBlackOpsTerminal, setShowBlackOpsTerminal] = useState<boolean>(false);
+  const [interceptedBlackOpsQuery, setInterceptedBlackOpsQuery] = useState<string | null>(null);
+  const [isCyberMatrixMode, setIsCyberMatrixMode] = useState<boolean>(() => {
+    try { return localStorage.getItem('adobemeta_cyber_matrix') === 'true'; } catch { return false; }
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isCyberMatrixMode) {
+      root.classList.add('cyber-hacker-matrix');
+    } else {
+      root.classList.remove('cyber-hacker-matrix');
+    }
+  }, [isCyberMatrixMode]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowBlackOpsTerminal((prev) => !prev);
+      } else if (e.key === 'Escape' && showBlackOpsTerminal) {
+        setShowBlackOpsTerminal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showBlackOpsTerminal]);
 
   const handleLoadSampleAsset = (sample: BulkItem) => {
     const newItem: BulkItem = {
@@ -2876,6 +2909,16 @@ export default function App() {
 
   return (
     <div 
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (!isDragging) setIsDragging(true);
+      }}
+      onDrop={(e) => {
+        if (currentView === 'home' && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+          setCurrentView('upload');
+          handleDrop(e);
+        }
+      }}
       className={`min-h-screen ${
         themeMode === 'light' 
           ? 'bg-white text-[#111215]' 
@@ -2892,6 +2935,9 @@ export default function App() {
       {customBgUrl && (
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px] z-0 pointer-events-none" />
       )}
+
+      {/* Zero-Lag 60FPS GPU Futuristic Pointer Bounce & Magnetic Physics Engine */}
+      <FuturisticPhysicsEngine enabled={isFuturisticBounce} themeMode={themeMode} />
       {/* Top Main Coffy.net Storefront Marketplace Hub - Active on Main 'home' View */}
       {currentView === 'home' && (
         <EditorialHeroSection
@@ -2917,6 +2963,14 @@ export default function App() {
           onOpenChat={() => setIsChatOpen(true)}
           currentView={currentView}
           itemsCount={items.length}
+          isWaterWorldActive={isFuturisticBounce}
+          onToggleWaterWorld={() => {
+            const next = !isFuturisticBounce;
+            setIsFuturisticBounce(next);
+            try { localStorage.setItem('adobemeta_futuristic_bounce', String(next)); } catch {}
+            showToast(next ? '💧 Crystal Water World & Hydro-Bounce: ON' : 'Water World & Bounce: OFF');
+          }}
+          onOpenBlackOps={() => setShowBlackOpsTerminal(true)}
         />
       )}
 
@@ -2969,6 +3023,35 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowBlackOpsTerminal(true)}
+              className="px-3 py-1.5 rounded-full text-[10.5px] font-mono font-bold tracking-[0.12em] uppercase flex items-center gap-1.5 border bg-emerald-950/90 hover:bg-black text-emerald-300 border-emerald-500/45 shadow-[0_0_16px_rgba(16,185,129,0.22)] transition cursor-pointer"
+              title="Open Classified Black-Ops Intelligence & Forensic Scrubber (Ctrl+K)"
+            >
+              <FileCode className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Black-Ops</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const next = !isFuturisticBounce;
+                setIsFuturisticBounce(next);
+                try { localStorage.setItem('adobemeta_futuristic_bounce', String(next)); } catch {}
+                showToast(next ? '💧 Crystal Water World & Hydro-Bounce: ON' : 'Water World & Bounce: OFF');
+              }}
+              className={`px-3 py-1.5 rounded-full text-[10.5px] font-semibold tracking-[0.1em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
+                isFuturisticBounce
+                  ? (themeMode === 'light' ? 'bg-sky-50 border-sky-300 text-sky-900' : 'bg-sky-500/15 border-sky-500/40 text-sky-300')
+                  : (themeMode === 'light' ? 'bg-white border-neutral-200 text-neutral-500' : 'bg-neutral-900 border-neutral-800 text-neutral-400')
+              }`}
+              title="Toggle Interactive Crystal Water World & Buoyancy Bounce"
+            >
+              <Zap className="w-3.5 h-3.5 text-sky-500" />
+              <span className="hidden md:inline">{isFuturisticBounce ? 'Water FX' : 'Water OFF'}</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setIsChatOpen(true)}
@@ -3385,6 +3468,7 @@ export default function App() {
 
               <div className="space-y-4">
                 <div 
+                  data-bounce-card="true"
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                   onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
                   onDrop={handleDrop}
@@ -3656,6 +3740,7 @@ export default function App() {
                     <React.Fragment key={item.id}>
                       <motion.div 
                         layout
+                        data-bounce-card="true"
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -3846,6 +3931,24 @@ export default function App() {
                               <div className="flex items-center gap-1.5">
                                 <button
                                   type="button"
+                                  onClick={() => {
+                                    setInterceptedBlackOpsQuery(
+                                      item.result!.recommendedTitle || item.file.name
+                                    );
+                                    setShowBlackOpsTerminal(true);
+                                  }}
+                                  className={`text-[10.5px] font-mono font-bold flex items-center gap-1 px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                                    themeMode === 'light'
+                                      ? 'bg-neutral-950 hover:bg-black text-emerald-300 border-neutral-950'
+                                      : 'bg-emerald-950/60 hover:bg-emerald-900/70 text-emerald-300 border-emerald-500/40'
+                                  }`}
+                                  title="Deep X-Ray this file's metadata in Black-Ops Terminal"
+                                >
+                                  <FileCode className="w-3 h-3 text-emerald-400" />
+                                  <span>Black-Ops X-Ray</span>
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => autoFixItem(item.id)}
                                   className={`text-[10.5px] font-bold flex items-center gap-1 px-2 py-0.5 rounded-md border transition cursor-pointer ${
                                     themeMode === 'light'
@@ -3884,11 +3987,28 @@ export default function App() {
                           {/* Semantic Color-Coded Keywords with Top 10 High-Ranking Badges & 1-Click Slot #1 Promotion */}
                           <SemanticKeywordBadges
                             keywords={item.result.keywords}
+                            recommendedTitle={item.result.recommendedTitle}
                             keywordTaxonomy={item.result.keywordTaxonomy}
                             buyerSearchPhrases={item.result.buyerSearchPhrases}
                             showToast={showToast}
                             themeMode={themeMode}
                             onReorderKeywords={(newKws) => handleSaveAlgorithmKeywords(item.id, newKws)}
+                            onSyncTitleWithTopSlots={(newTitle, newKws) => {
+                              setItems((prev) =>
+                                prev.map((it) =>
+                                  it.id === item.id && it.result
+                                    ? {
+                                        ...it,
+                                        result: {
+                                          ...it.result,
+                                          recommendedTitle: newTitle,
+                                          keywords: newKws,
+                                        },
+                                      }
+                                    : it
+                                )
+                              );
+                            }}
                           />
                         </div>
                       ) : (
@@ -5154,6 +5274,37 @@ export default function App() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Autonomous Self-Running Hacker Telemetry & 1-Click Niche Hijack HUD */}
+      <AutonomousHackerHudBar
+        onOpenTerminal={() => setShowBlackOpsTerminal(true)}
+        onInterceptedUrl={(pasted) => {
+          setInterceptedBlackOpsQuery(pasted);
+          setShowBlackOpsTerminal(true);
+        }}
+        showToast={showToast}
+        themeMode={themeMode}
+      />
+
+      {/* Classified Black-Ops Stock Intelligence & Binary Forensic Scrubber Terminal */}
+      <HackerBlackOpsTerminal
+        isOpen={showBlackOpsTerminal}
+        onClose={() => setShowBlackOpsTerminal(false)}
+        initialTargetQuery={interceptedBlackOpsQuery}
+        isCyberMatrixMode={isCyberMatrixMode}
+        onToggleCyberMatrixMode={() => {
+          const next = !isCyberMatrixMode;
+          setIsCyberMatrixMode(next);
+          if (next) setThemeMode('dark');
+          try { localStorage.setItem('adobemeta_cyber_matrix', String(next)); } catch {}
+          showToast(next ? '🟢 CYBER-MATRIX OVERDRIVE: ENGAGED' : 'Cyber-Matrix Skin: Disengaged');
+        }}
+        customApiKey={customApiKey}
+        showToast={showToast}
+        onLoadHijackTitleToStudio={(title, tags) => {
+          navigator.clipboard.writeText(`${title}\n\n${tags.join(', ')}`);
+        }}
+      />
 
       {/* Full-Screen EPS Vector & Adobe Stock Metadata Viewer Modal */}
       {epsViewerItemId && (
