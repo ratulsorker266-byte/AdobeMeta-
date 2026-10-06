@@ -1015,8 +1015,8 @@ export const HackerBlackOpsTerminal: React.FC<HackerBlackOpsTerminalProps> = ({
                 },
                 {
                   id: 'forensics',
-                  label: '02 // BINARY SCRUBBER',
-                  icon: ShieldAlert,
+                  label: '02 // AI DISCLOSURE & POLICY HELPER',
+                  icon: ShieldCheck,
                 },
                 {
                   id: 'arbitrage',
@@ -1370,19 +1370,63 @@ export const HackerBlackOpsTerminal: React.FC<HackerBlackOpsTerminalProps> = ({
             )}
 
             {/* ============================================================== */}
-            {/* MODULE 02: BINARY EXIF/C2PA FORENSIC SCRUBBER & STEALTH ENGINE  */}
+            {/* MODULE 02: AI CONTENT DISCLOSURE HELPER & POLICY INSPECTOR      */}
             {/* ============================================================== */}
             {activeTab === 'forensics' && (
               <div className="space-y-4">
+                {/* Official Adobe Stock Generative AI Disclosure Helper Card */}
+                <div className="p-5 rounded-xl bg-emerald-950/30 border border-emerald-500/45 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <h3 className="text-xs sm:text-sm font-black text-emerald-300 uppercase tracking-wider">
+                          OFFICIAL GENERATIVE AI CONTENT DISCLOSURE HELPER &amp; POLICY SANITIZER
+                        </h3>
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9.5px] font-black">
+                          100% ADOBE POLICY COMPLIANT
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-emerald-400/90 mt-1">
+                        Uploading AI-generated artwork? Follow Adobe Stock&apos;s official <strong>&ldquo;Created using generative AI tools&rdquo;</strong> disclosure checklist below and sanitize your Title &amp; Keywords so zero forbidden artist names, brand trademarks, or prompt tags cause rejection.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3.5 rounded-xl bg-[#030906] border border-emerald-500/30 space-y-2">
+                      <div className="text-[11px] font-black text-amber-400 uppercase">
+                        REQUIRED PORTAL CHECKBOXES FOR AI FILES:
+                      </div>
+                      <ul className="space-y-1.5 text-[11px] text-emerald-100">
+                        <li>☑️ Check <strong>&ldquo;Created using generative AI tools&rdquo;</strong> in Adobe Stock portal.</li>
+                        <li>☑️ Choose <strong>&ldquo;Illustration&rdquo;</strong> for vector/stylized AI, or <strong>&ldquo;Photo&rdquo;</strong> for realistic subjects.</li>
+                        <li>☑️ Attach a <strong>Property Release</strong> if your AI asset depicts a realistic human likeness.</li>
+                        <li>🔒 <strong>Privacy Note:</strong> All file checks happen 100% locally in your browser (never uploaded to external servers).</li>
+                      </ul>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-[#030906] border border-emerald-500/30 space-y-2">
+                      <div className="text-[11px] font-black text-emerald-400 uppercase">
+                        ALLOWED VS FORBIDDEN IN AI TITLES &amp; TAGS:
+                      </div>
+                      <ul className="space-y-1.5 text-[11px] text-emerald-200">
+                        <li>✅ <strong>Allowed:</strong> Literal visual subjects, commercial concepts, composition terms (copy space, isometric).</li>
+                        <li>❌ <strong>Forbidden:</strong> AI tool names (<em>Midjourney, Firefly, DALL-E</em>), artist names, camera brands (<em>Canon, Nikon</em>), or prompt parameters (<em>8k, --ar 16:9, octane render, photorealistic</em>).</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="p-5 rounded-xl bg-black/70 border border-emerald-500/35 space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <h3 className="text-xs sm:text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-2">
                         <ShieldAlert className="w-4 h-4 text-amber-400" />
-                        <span>BINARY HEX FORENSIC INSPECTOR &amp; AI FOOTPRINT SCRUBBER</span>
+                        <span>LOCAL IN-BROWSER FILE RESOLUTION (≥4MP), IPTC EMBED &amp; METADATA CHECKER</span>
                       </h3>
                       <p className="text-[11px] text-emerald-500/90 mt-0.5">
-                        Detects hidden Midjourney/ComfyUI/DALL-E PNG chunks, C2PA manifests, and SHA-256 hashes—and scrubs images into clean, 98%-quality sRGB commercial masters in 1 click.
+                        Checks 4MP resolution gateway, detects AI generator metadata strings, and embeds policy-compliant IPTC/XMP tags directly in your browser.
                       </p>
                     </div>
 

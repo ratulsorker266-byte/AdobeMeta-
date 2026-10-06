@@ -26,7 +26,7 @@ export const SeoRankBoosterView: React.FC<SeoRankBoosterViewProps> = ({
   themeMode = 'light'
 }) => {
   const [testQuery, setTestQuery] = useState('ramadan kareem vector lantern banner');
-  const [titleFormat] = useState<'clean' | 'detailed'>('clean');
+  const [titleFormat, setTitleFormat] = useState<'clean' | 'detailed'>('clean');
   const [copiedTitle, setCopiedTitle] = useState(false);
   const [copiedTags, setCopiedTags] = useState(false);
 
@@ -170,11 +170,35 @@ export const SeoRankBoosterView: React.FC<SeoRankBoosterViewProps> = ({
         <div className={`p-4 rounded-xl border space-y-2 ${
           isLight ? 'bg-[#fbfaf8] border-neutral-200/80' : 'bg-neutral-950 border-neutral-800'
         }`}>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-[10.5px] font-mono font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Algorithm Recommended Title (&lt; 70 characters)
             </span>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
+              <div className="inline-flex rounded-lg p-0.5 bg-neutral-200/70 dark:bg-neutral-900 border border-neutral-300/60 dark:border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setTitleFormat('clean')}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                    titleFormat === 'clean'
+                      ? 'bg-neutral-950 text-white dark:bg-white dark:text-black'
+                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  Clean (&lt;70c)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTitleFormat('detailed')}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition cursor-pointer ${
+                    titleFormat === 'detailed'
+                      ? 'bg-neutral-950 text-white dark:bg-white dark:text-black'
+                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  Detailed
+                </button>
+              </div>
               <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
                 generatedTitle.length <= 70 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
               }`}>

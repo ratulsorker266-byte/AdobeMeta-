@@ -13,7 +13,10 @@ import {
   CheckCircle2,
   Lock,
   Droplets,
-  Terminal
+  Terminal,
+  ShieldCheck,
+  Globe,
+  SlidersHorizontal
 } from 'lucide-react';
 import { AdobeMetaProLogo } from './AdobeMetaProLogo';
 import store01MetadataEps from '../assets/images/store01_metadata_eps_1791118931620.jpg';
@@ -45,6 +48,11 @@ interface EditorialHeroProps {
   isWaterWorldActive?: boolean;
   onToggleWaterWorld?: () => void;
   onOpenBlackOps?: () => void;
+  onOpenProToolkit?: (tab?: 'presubmit' | 'rejection' | 'aidisclosure' | 'tracker' | 'embed' | 'kwscore') => void;
+  isLiteMode?: boolean;
+  onToggleLiteMode?: () => void;
+  uiLang?: 'en' | 'bn';
+  onToggleLang?: () => void;
 }
 
 export interface BoutiqueStoreItem {
@@ -77,14 +85,52 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   itemsCount = 0,
   isWaterWorldActive = true,
   onToggleWaterWorld,
-  onOpenBlackOps
+  onOpenBlackOps,
+  onOpenProToolkit,
+  isLiteMode = false,
+  onToggleLiteMode,
+  uiLang = 'en',
+  onToggleLang
 }) => {
   const [activeDepartment, setActiveDepartment] = useState<'all' | 'metadata' | 'creative' | 'monetize'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewStoreIdx, setPreviewStoreIdx] = useState<number>(0);
   const [isHoveringSpecimen, setIsHoveringSpecimen] = useState<boolean>(false);
+  const [showHeaderControlsMenu, setShowHeaderControlsMenu] = useState<boolean>(false);
+  const [activeSkin, setActiveSkin] = useState<'obsidian' | 'matrix' | 'sapphire' | 'ivory'>(() => {
+    try {
+      const saved = localStorage.getItem('adobemeta_luxury_skin') as any;
+      if (saved === 'obsidian' || saved === 'matrix' || saved === 'sapphire' || saved === 'ivory') {
+        return saved;
+      }
+    } catch {}
+    return themeMode === 'light' ? 'ivory' : 'obsidian';
+  });
 
   const isLight = themeMode === 'light';
+  const isBn = false;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isLight) {
+      root.removeAttribute('data-skin');
+    } else {
+      const skinToApply = activeSkin === 'ivory' ? 'obsidian' : activeSkin;
+      root.setAttribute('data-skin', skinToApply);
+    }
+  }, [activeSkin, isLight]);
+
+  const handleSelectSkin = (skin: 'obsidian' | 'matrix' | 'sapphire' | 'ivory') => {
+    setActiveSkin(skin);
+    try {
+      localStorage.setItem('adobemeta_luxury_skin', skin);
+    } catch {}
+    if (skin === 'ivory' && !isLight) {
+      onToggleTheme();
+    } else if (skin !== 'ivory' && isLight) {
+      onToggleTheme();
+    }
+  };
 
   // 8 Specialized Creative Stores (Dokans) in the Coffy.net Market Grid
   const marketStores: BoutiqueStoreItem[] = [
@@ -159,15 +205,15 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     {
       id: 'store-seo-rank',
       storeNumber: '05 . STORE',
-      title: '100% Rank #1 SEO Booster',
-      category: 'ALGORITHM · TOP 10 SLOTS · SEARCH WEIGHTING',
+      title: 'Adobe Stock Search & Keyword Optimizer',
+      category: 'SEARCH RELEVANCE · TOP 10 SLOTS · KEYWORD QUALITY',
       department: 'metadata',
       image: store05Rank1Seo,
-      badge: 'RANK #1 ENGINE',
-      statLabel: '75% Top-10 Weight',
-      description: 'Lock your exact buyer search query into Keyword Slots #1–#10 and first 4 title words to rank on Page 1.',
-      features: ['First-10 Slot Lock', '<70 Char Calibrator', 'Live Search Audit'],
-      ctaText: 'Open Rank Booster',
+      badge: 'SEARCH OPTIMIZER',
+      statLabel: 'Keyword Quality Score',
+      description: 'Helps optimize titles and keywords for Adobe Stock search by aligning your primary visual subject with the first 10 keyword slots.',
+      features: ['Keyword Quality Score', '<70 Char Calibrator', 'Relevance Audit'],
+      ctaText: 'Open Search Optimizer',
       actionType: 'view',
       targetView: 'seo-rank',
       sampleTitle: 'Sustainable Alpine Forest With Golden Sunbeams And Morning Mist',
@@ -269,25 +315,47 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
         : 'bg-[#08090b] text-[#f2f2f0]'
     } font-sans transition-colors duration-300`}>
 
-      {/* Architectural Subtle Grid Hairline Backdrop */}
+      {/* Architectural Subtle Grid & Ambient Aurora Lighting Backdrop */}
       <div
         className={`pointer-events-none absolute inset-0 ${
           isLight
-            ? 'bg-[radial-gradient(#d6d3cd_1px,transparent_1px)] [background-size:28px_28px] opacity-40'
-            : 'bg-[radial-gradient(#23252c_1px,transparent_1px)] [background-size:28px_28px] opacity-35'
+            ? 'bg-[radial-gradient(#d6d3cd_1px,transparent_1px)] [background-size:28px_28px] opacity-45'
+            : 'bg-[radial-gradient(#23252c_1px,transparent_1px)] [background-size:28px_28px] opacity-40'
+        }`}
+      />
+      <div
+        className={`pointer-events-none absolute -top-40 left-1/4 w-[620px] h-[420px] rounded-full blur-[130px] transition-all duration-700 ${
+          isLight
+            ? 'bg-amber-300/30'
+            : activeSkin === 'matrix'
+            ? 'bg-emerald-500/20'
+            : activeSkin === 'sapphire'
+            ? 'bg-sky-500/20'
+            : 'bg-amber-500/18'
+        }`}
+      />
+      <div
+        className={`pointer-events-none absolute top-24 right-10 w-[520px] h-[380px] rounded-full blur-[130px] transition-all duration-700 ${
+          isLight
+            ? 'bg-emerald-300/25'
+            : activeSkin === 'matrix'
+            ? 'bg-teal-500/18'
+            : activeSkin === 'sapphire'
+            ? 'bg-indigo-500/20'
+            : 'bg-emerald-500/14'
         }`}
       />
 
       {/* ============================================================ */}
-      {/* ULTRA-MINIMALIST COFFY.NET HEADER (Feather-light 1px border) */}
+      {/* ULTRA-MINIMALIST COFFY.NET HEADER (Feather-light & Breathable) */}
       {/* ============================================================ */}
       <header className={`sticky top-0 z-50 w-full ${
         isLight ? 'bg-[#fbfaf8]/90 border-b border-neutral-200/70' : 'bg-[#08090b]/90 border-b border-neutral-900'
       } backdrop-blur-xl transition-colors duration-200`}>
-        <div className="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14 h-16 sm:h-18 flex items-center justify-between">
+        <div className="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14 h-16 flex items-center justify-between gap-4">
           
           {/* Zone 1: Brand Identity */}
-          <div className="flex items-center">
+          <div className="flex items-center shrink-0">
             <AdobeMetaProLogo
               size="sm"
               showText={true}
@@ -300,8 +368,8 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             />
           </div>
 
-          {/* Zone 2: Whisper-Quiet Editorial Navigation Links */}
-          <nav className="hidden md:flex items-center gap-7 text-[11px] font-semibold tracking-[0.16em] uppercase">
+          {/* Zone 2: Whisper-Quiet Editorial Navigation Links (Clean 4-link core) */}
+          <nav className="hidden lg:flex items-center gap-8 text-[11px] font-semibold tracking-[0.16em] uppercase">
             <button
               onClick={() => {
                 setActiveDepartment('all');
@@ -313,7 +381,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   : (isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white')
               }`}
             >
-              <span>Market</span>
+              <span>{isBn ? 'মার্কেট' : 'Market'}</span>
               {activeDepartment === 'all' && (
                 <span className={`absolute bottom-0 left-0 right-0 h-[1.5px] ${isLight ? 'bg-black' : 'bg-white'}`} />
               )}
@@ -325,7 +393,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <span>Studio</span>
+              <span>{isBn ? 'স্টুডিও' : 'Studio'}</span>
             </button>
 
             <button
@@ -334,7 +402,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <span>Rank SEO</span>
+              <span>{isBn ? 'সার্চ এসইও' : 'Search SEO'}</span>
             </button>
 
             <button
@@ -343,16 +411,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <span>Calendar</span>
-            </button>
-
-            <button
-              onClick={() => onNavigateView('prompts')}
-              className={`hidden lg:inline-block transition cursor-pointer relative py-1 whitespace-nowrap ${
-                isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <span>Prompts</span>
+              <span>{isBn ? 'ক্যালেন্ডার' : 'Calendar'}</span>
             </button>
 
             <button
@@ -361,86 +420,216 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <span>Monetize</span>
-            </button>
-
-            <button
-              onClick={() => {
-                if (onOpenAbout) onOpenAbout();
-              }}
-              className={`hidden xl:inline-block transition cursor-pointer whitespace-nowrap ${
-                isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <span>About</span>
+              <span>{isBn ? 'আয় ও মনিটাইজ' : 'Monetize'}</span>
             </button>
           </nav>
 
-          {/* Zone 3: Minimalist Controls & Text AI Chat Trigger */}
-          <div className="flex items-center gap-2">
-            {onOpenBlackOps && (
+          {/* Zone 3: Uncluttered Action Bar (Pre-Check + Language + Quick Controls Popover + Open Studio) */}
+          <div className="flex items-center gap-2 shrink-0 relative">
+            {onOpenProToolkit && (
               <button
                 type="button"
-                onClick={onOpenBlackOps}
-                className={`px-3 py-1.5 rounded-full text-[10.5px] font-mono font-bold tracking-[0.12em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
+                onClick={() => onOpenProToolkit('presubmit')}
+                className={`px-3 py-1.5 rounded-full text-[10.5px] font-bold tracking-[0.06em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
                   isLight
-                    ? 'bg-emerald-950 hover:bg-black text-emerald-300 border-emerald-700/80 shadow-2xs'
-                    : 'bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border-emerald-500/45 shadow-[0_0_18px_rgba(16,185,129,0.25)]'
+                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300'
+                    : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
                 }`}
-                title="Open Classified Black-Ops Intelligence & Forensic Scrubber (Ctrl+K)"
+                title="Pre-Submission Checker, Rejection Helper, AI Disclosure & Earnings Tracker"
               >
-                <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="hidden sm:inline">Black-Ops</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="hidden sm:inline">Pre-Check</span>
               </button>
             )}
 
-            {onToggleWaterWorld && (
+            {/* Consolidated Quick Controls & Modes Trigger (Eliminates Header Clutter) */}
+            <div className="relative">
               <button
                 type="button"
-                onClick={onToggleWaterWorld}
-                className={`px-3 py-1.5 rounded-full text-[10.5px] font-semibold tracking-[0.1em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
-                  isWaterWorldActive
+                onClick={() => setShowHeaderControlsMenu((prev) => !prev)}
+                className={`px-2.5 py-1.5 rounded-full text-[10.5px] font-semibold tracking-[0.08em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
+                  showHeaderControlsMenu
                     ? isLight
-                      ? 'bg-sky-50/90 hover:bg-sky-100 text-sky-900 border-sky-300/90 shadow-2xs'
-                      : 'bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border-sky-500/40'
+                      ? 'bg-neutral-900 text-white border-neutral-900'
+                      : 'bg-white text-black border-white'
                     : isLight
-                    ? 'bg-white hover:bg-neutral-100 text-neutral-500 border-neutral-200/90'
-                    : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-400 border-neutral-800'
+                    ? 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200/90'
+                    : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800'
                 }`}
-                title="Toggle Interactive Crystal Water World & Buoyancy Physics"
+                title="More Tools, Black-Ops Terminal, Lite Mode & Display Settings"
               >
-                <Droplets className={`w-3.5 h-3.5 ${isWaterWorldActive ? 'text-sky-500' : 'text-neutral-400'}`} />
-                <span className="hidden md:inline">{isWaterWorldActive ? 'Water FX' : 'Water OFF'}</span>
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">{isBn ? 'কন্ট্রোল' : 'Controls'}</span>
               </button>
-            )}
 
-            {onOpenChat && (
-              <button
-                onClick={onOpenChat}
-                className={`px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.1em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
-                  isLight
-                    ? 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-200/90 shadow-2xs'
-                    : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border-neutral-800'
-                }`}
-                title="Open Minimalist Text AI Assistant"
-              >
-                <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-                <span className="hidden sm:inline">AI Chat</span>
-              </button>
-            )}
+              <AnimatePresence>
+                {showHeaderControlsMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowHeaderControlsMenu(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                      transition={{ duration: 0.15 }}
+                      className={`absolute right-0 mt-2 w-64 rounded-2xl border p-2 shadow-2xl z-50 ${
+                        isLight
+                          ? 'bg-white/95 border-neutral-200 text-neutral-900'
+                          : 'bg-[#0e1116]/95 border-neutral-800 text-neutral-100'
+                      } backdrop-blur-xl space-y-1`}
+                    >
+                      <div className="px-2.5 py-1 text-[9.5px] font-mono uppercase tracking-[0.16em] text-neutral-400">
+                        {isBn ? 'লাক্সারি থিম স্কিন (৪টি)' : 'SIGNATURE LUXURY THEME'}
+                      </div>
 
-            <a
-              href="mailto:ratulsorker266@gmail.com"
-              aria-label="Contact Studio"
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer ${
-                isLight 
-                  ? 'text-neutral-500 hover:text-black hover:bg-neutral-200/50' 
-                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
-              }`}
-              title="Contact Studio (ratulsorker266@gmail.com)"
-            >
-              <Mail className="w-3.5 h-3.5" />
-            </a>
+                      <div className="grid grid-cols-2 gap-1.5 px-1 pb-2 border-b border-neutral-200/70 dark:border-neutral-800">
+                        {[
+                          { id: 'obsidian' as const, label: 'Obsidian Gold', dot: 'bg-amber-400' },
+                          { id: 'matrix' as const, label: 'Cyber Matrix', dot: 'bg-emerald-400' },
+                          { id: 'sapphire' as const, label: 'Royal Sapphire', dot: 'bg-sky-400' },
+                          { id: 'ivory' as const, label: 'Editorial Ivory', dot: 'bg-stone-300 border border-stone-500' },
+                        ].map((sk) => {
+                          const isSelected =
+                            (isLight && sk.id === 'ivory') || (!isLight && activeSkin === sk.id);
+                          return (
+                            <button
+                              key={sk.id}
+                              type="button"
+                              onClick={() => handleSelectSkin(sk.id)}
+                              className={`px-2.5 py-1.5 rounded-xl text-[10.5px] font-bold flex items-center gap-1.5 border transition cursor-pointer ${
+                                isSelected
+                                  ? isLight
+                                    ? 'bg-neutral-950 text-white border-neutral-950'
+                                    : 'bg-white text-black border-white'
+                                  : isLight
+                                  ? 'bg-neutral-100/80 hover:bg-neutral-200/70 text-neutral-700 border-neutral-200'
+                                  : 'bg-neutral-900/90 hover:bg-neutral-800 text-neutral-300 border-neutral-800'
+                              }`}
+                            >
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${sk.dot}`} />
+                              <span className="truncate">{sk.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="px-2.5 pt-1 text-[9.5px] font-mono uppercase tracking-[0.16em] text-neutral-400">
+                        {isBn ? 'টুলস এবং পারফরম্যান্স' : 'WORKSPACE & PERFORMANCE'}
+                      </div>
+
+                      {onOpenBlackOps && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowHeaderControlsMenu(false);
+                            onOpenBlackOps();
+                          }}
+                          className="w-full px-3 py-2 rounded-xl text-left text-xs font-mono font-bold flex items-center justify-between bg-emerald-950/90 hover:bg-black text-emerald-300 border border-emerald-500/35 transition cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Black-Ops Terminal</span>
+                          </span>
+                          <span className="text-[9.5px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                            Ctrl+K
+                          </span>
+                        </button>
+                      )}
+
+                      {onToggleLiteMode && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onToggleLiteMode();
+                          }}
+                          className={`w-full px-3 py-2 rounded-xl text-left text-xs font-medium flex items-center justify-between transition cursor-pointer ${
+                            isLight ? 'hover:bg-neutral-100' : 'hover:bg-neutral-800/80'
+                          }`}
+                        >
+                          <span>{isBn ? '⚡ লাইট মোড (ফাস্ট ফোন)' : '⚡ Lite Mode (Low-End Phone)'}</span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              isLiteMode
+                                ? 'bg-amber-500 text-black'
+                                : isLight
+                                ? 'bg-neutral-200 text-neutral-700'
+                                : 'bg-neutral-800 text-neutral-400'
+                            }`}
+                          >
+                            {isLiteMode ? 'ON' : 'OFF'}
+                          </span>
+                        </button>
+                      )}
+
+                      {onToggleWaterWorld && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onToggleWaterWorld();
+                          }}
+                          className={`w-full px-3 py-2 rounded-xl text-left text-xs font-medium flex items-center justify-between transition cursor-pointer ${
+                            isLight ? 'hover:bg-neutral-100' : 'hover:bg-neutral-800/80'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Droplets className="w-3.5 h-3.5 text-sky-500" />
+                            <span>{isBn ? 'ওয়াটার ফিজিক্স FX' : 'Crystal Water FX'}</span>
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              isWaterWorldActive
+                                ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
+                                : isLight
+                                ? 'bg-neutral-200 text-neutral-700'
+                                : 'bg-neutral-800 text-neutral-400'
+                            }`}
+                          >
+                            {isWaterWorldActive ? 'ON' : 'OFF'}
+                          </span>
+                        </button>
+                      )}
+
+                      {onOpenChat && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowHeaderControlsMenu(false);
+                            onOpenChat();
+                          }}
+                          className={`w-full px-3 py-2 rounded-xl text-left text-xs font-medium flex items-center justify-between transition cursor-pointer ${
+                            isLight ? 'hover:bg-neutral-100' : 'hover:bg-neutral-800/80'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
+                            <span>{isBn ? 'এআই চ্যাট অ্যাসিস্ট্যান্ট' : 'AI Chat Assistant'}</span>
+                          </span>
+                          <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
+                        </button>
+                      )}
+
+                      {onOpenAbout && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowHeaderControlsMenu(false);
+                            onOpenAbout();
+                          }}
+                          className={`w-full px-3 py-2 rounded-xl text-left text-xs font-medium flex items-center justify-between transition cursor-pointer ${
+                            isLight ? 'hover:bg-neutral-100' : 'hover:bg-neutral-800/80'
+                          }`}
+                        >
+                          <span>{isBn ? 'প্রম্পট ও অ্যাবাউট গাইড' : 'About & Studio Guide'}</span>
+                          <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
+                        </button>
+                      )}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
 
             <button
               onClick={onToggleTheme}
@@ -463,7 +652,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   : 'bg-white hover:bg-neutral-200 text-black'
               }`}
             >
-              <span>Open Studio</span>
+              <span>{isBn ? 'স্টুডিও খুলুন' : 'Open Studio'}</span>
               <ArrowRight className="w-3 h-3" />
             </button>
           </div>
@@ -485,76 +674,85 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             className="lg:col-span-7 space-y-5 text-left"
           >
             {/* Quiet Editorial Kicker (Zero-Pill Unboxed Metadata) */}
-            <div className="flex flex-wrap items-center gap-2 text-[10.5px] font-mono tracking-[0.2em] uppercase text-neutral-400">
+            <div className="flex flex-wrap items-center gap-2 text-[10.5px] font-mono tracking-[0.14em] uppercase text-neutral-400">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className={isLight ? 'text-neutral-900 font-semibold' : 'text-neutral-200 font-semibold'}>ZERO-CLICK AUTOPILOT ON</span>
-              <span aria-hidden="true">·</span>
-              <span>49/49 ADOBE STOCK SEO</span>
-              <span aria-hidden="true">·</span>
-              <span>DROP FILES ANYWHERE</span>
+              <span className={isLight ? 'text-neutral-900 font-semibold' : 'text-neutral-200 font-semibold'}>
+                {isBn
+                  ? '🔒 ১০০% ব্রাউজার প্রসেসিং — আপনার ফাইল কখনো সার্ভারে যায় না'
+                  : '🔒 100% LOCAL IN-BROWSER — YOUR FILES NEVER LEAVE YOUR DEVICE'}
+              </span>
             </div>
 
             {/* Museum-Grade Editorial Headline */}
-            <h1 className={`text-[34px] sm:text-[50px] xl:text-[60px] font-bold tracking-[-0.035em] leading-[1.03] ${
+            <h1 className={`text-[32px] sm:text-[48px] xl:text-[54px] font-bold tracking-[-0.035em] leading-[1.06] ${
               isLight ? 'text-neutral-950' : 'text-white'
             }`}>
-              Autonomous Stock{' '}
-              <span className="font-editorial italic font-normal text-amber-500 aquatic-caustic-text">Metadata</span>{' '}
-              &amp; Creative Stores.
+              {isBn ? (
+                <>
+                  Adobe Stock সার্চের জন্য{' '}
+                  <span className="font-editorial italic font-normal luxury-headline-gradient">
+                    টাইটেল ও কীওয়ার্ড
+                  </span>{' '}
+                  অপ্টিমাইজার।
+                </>
+              ) : (
+                <>
+                  Optimize Stock{' '}
+                  <span className="font-editorial italic font-normal luxury-headline-gradient">
+                    Metadata
+                  </span>{' '}
+                  &amp; Prevent Rejections.
+                </>
+              )}
             </h1>
 
-            <p className={`text-[14px] sm:text-[15.5px] font-normal max-w-2xl leading-relaxed ${
+            <p className={`text-[14px] sm:text-[15px] font-normal max-w-xl leading-relaxed ${
               isLight ? 'text-neutral-600' : 'text-neutral-400'
             }`}>
-              Feather-light, zero-click automation for stock contributors. Simply drop your <code className="text-xs font-mono px-1.5 py-0.5 rounded bg-neutral-200/60 dark:bg-neutral-800/80">.eps</code>, photos, or footage anywhere—Autopilot automatically renders vector previews, locks Top-10 Adobe Stock keywords, and prepares your CSV.
+              {isBn ? (
+                <>
+                  Helps optimize titles and keywords for Adobe Stock search. আপনার ফাইল ড্রপ করুন—আপলোডের আগেই ≥4MP রেজোলিউশন, ট্রেডমার্ক, ডুপ্লিকেট কীওয়ার্ড ও AI ডিসক্লোজার চেক করে সরাসরি ফাইলে IPTC/XMP এম্বেড করুন।
+                </>
+              ) : (
+                <>
+                  Helps optimize titles and keywords for Adobe Stock search. Check ≥4MP resolution, trademark safety, and AI disclosure rules, then embed IPTC/XMP directly in your browser.
+                </>
+              )}
             </p>
 
-            {/* Primary Action Row */}
+            {/* Primary Action Row + 1-Click Luxury Skin Switcher Pills */}
             <div className="pt-1 flex flex-wrap items-center gap-3">
               <button
                 onClick={onStartGenerating}
-                className={`px-6 py-3 rounded-full text-xs font-bold tracking-[0.14em] uppercase transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
+                className={`px-6 py-3 rounded-full text-xs font-bold tracking-[0.14em] uppercase transition-all flex items-center gap-2 cursor-pointer ${
                   isLight
-                    ? 'bg-neutral-950 hover:bg-black text-white'
-                    : 'bg-white hover:bg-neutral-200 text-neutral-950'
+                    ? 'bg-neutral-950 hover:bg-black text-white shadow-[0_10px_28px_-6px_rgba(0,0,0,0.35)]'
+                    : 'bg-gradient-to-r from-amber-400 via-amber-300 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 text-neutral-950 shadow-[0_10px_32px_-6px_rgba(245,158,11,0.45)]'
                 }`}
               >
-                <span>Drop or Select Files (Auto-Runs)</span>
+                <span>
+                  {isBn ? 'ফাইল আপলোড করুন' : 'Upload Files'}
+                </span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
 
-              <button
-                onClick={() => onNavigateView('upload')}
-                className={`px-5 py-3 rounded-full text-xs font-semibold tracking-[0.12em] uppercase border transition cursor-pointer flex items-center gap-2 ${
-                  isLight
-                    ? 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-200/90'
-                    : 'bg-neutral-900/90 hover:bg-neutral-800 text-neutral-200 border-neutral-800'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Open Autopilot Studio</span>
-              </button>
-            </div>
-
-            {/* Unboxed Quantitative Telemetry Strip */}
-            <div className={`pt-4 border-t flex flex-wrap items-center gap-x-6 gap-y-2 text-xs ${
-              isLight ? 'border-neutral-200/70 text-neutral-500' : 'border-neutral-900 text-neutral-400'
-            }`}>
-              <div>
-                <strong className={`font-mono font-bold tabular-nums ${isLight ? 'text-neutral-950' : 'text-white'}`}>49/49</strong> Weighted Tags
-              </div>
-              <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
-              <div>
-                <strong className={`font-mono font-bold tabular-nums ${isLight ? 'text-neutral-950' : 'text-white'}`}>119ms</strong> Ghostscript EPS
-              </div>
-              <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
-              <div>
-                <strong className={`font-mono font-bold tabular-nums ${isLight ? 'text-neutral-950' : 'text-white'}`}>&lt;70 Chars</strong> Adobe Stock Title Rule
-              </div>
-              <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
-              <div>
-                <strong className={`font-mono font-bold tabular-nums ${isLight ? 'text-neutral-950' : 'text-white'}`}>08</strong> Active Stores
-              </div>
+              {onOpenProToolkit && (
+                <button
+                  onClick={() => onOpenProToolkit('presubmit')}
+                  className={`px-5 py-3 rounded-full text-xs font-semibold tracking-[0.1em] uppercase border transition cursor-pointer flex items-center gap-2 ${
+                    isLight
+                      ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border-emerald-300'
+                      : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/45 shadow-[0_0_24px_-6px_rgba(16,185,129,0.35)]'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                  <span>
+                    {isBn
+                      ? 'প্রি-সাবমিশন চেকার'
+                      : 'Pre-Submission Checker'}
+                  </span>
+                </button>
+              )}
             </div>
           </motion.div>
 
@@ -715,7 +913,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
         </div>
 
         {/* ============================================================ */}
-        {/* WORLD'S #1 METADATA × ALGORITHMIC HACK CONNECTION DECK       */}
+        {/* CONTRIBUTOR PRE-SUBMISSION, AI DISCLOSURE & TRACKER SUITE    */}
         {/* ============================================================ */}
         <div
           data-bounce-card="true"
@@ -725,90 +923,73 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               : 'bg-[#0b0e13]/95 border-neutral-800/90 shadow-2xl'
           }`}
         >
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 mb-4 border-b border-neutral-200/70 dark:border-neutral-800/80">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-[10px] font-mono font-bold tracking-[0.18em] uppercase text-emerald-600 dark:text-emerald-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                <span>WORLD&apos;S #1 METADATA × ALGORITHMIC HACK ARCHITECTURE</span>
-              </div>
-              <h3
-                className={`text-base sm:text-lg font-bold tracking-tight ${
-                  isLight ? 'text-neutral-950' : 'text-white'
-                }`}
-              >
-                Why Ordinary Metadata Fails — And How Our 4-Stage Algorithmic Hack Ranks #1
-              </h3>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {onOpenBlackOps && (
-                <button
-                  type="button"
-                  onClick={onOpenBlackOps}
-                  className={`px-3.5 py-2 rounded-xl text-[10.5px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 border transition cursor-pointer ${
-                    isLight
-                      ? 'bg-neutral-950 hover:bg-black text-emerald-300 border-neutral-950'
-                      : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
-                  }`}
-                >
-                  <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Launch Black-Ops X-Ray (Ctrl+K)</span>
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => onNavigateView('upload')}
-                className={`px-3.5 py-2 rounded-xl text-[10.5px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 border transition cursor-pointer ${
-                  isLight
-                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
-                    : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/40'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Run Autopilot Studio</span>
-              </button>
-            </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 mb-4 border-b border-neutral-200/70 dark:border-neutral-800/80">
+            <h3
+              className={`text-sm sm:text-base font-bold tracking-tight flex items-center gap-2 ${
+                isLight ? 'text-neutral-950' : 'text-white'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>
+                {isBn
+                  ? 'কন্ট্রিবিউটর টুলকিট (যেকোনো কার্ডে ক্লিক করে ওপেন করুন)'
+                  : 'Contributor Protection & Optimization Suite (Click any card to launch)'}
+              </span>
+            </h3>
+            <span className="text-[10.5px] font-mono text-emerald-600 dark:text-emerald-400">
+              {isBn ? '১০০% ব্রাউজার ভিত্তিক · কোনো সার্ভার আপলোড নেই' : '100% LOCAL IN-BROWSER'}
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {[
               {
-                stage: 'STAGE 01 // PACKET INTERCEPT',
-                title: '75% First-10 Slot Lock',
-                metric: '99% SLOT #1 WEIGHT',
-                desc: 'Adobe Stock gives 75% of all search ranking power to Keyword Slots #1–#10. Our engine locks your exact Title subject into Slot #1 automatically.',
+                tab: 'presubmit' as const,
+                stage: '01 · PRE-CHECK',
+                title: isBn ? 'ফাইল ও ট্রেডমার্ক প্রি-চেক' : '4MP, EPS & Trademark Check',
+                desc: isBn
+                  ? 'আপলোডের আগে 4MP রেজোলিউশন, EPS ভার্সন, ডুপ্লিকেট ট্যাগ ও ট্রেডমার্ক চেক।'
+                  : 'Verify ≥4MP resolution, EPS version, duplicate tags, and restricted trademarks.',
               },
               {
-                stage: 'STAGE 02 // BUYER INTENT HIJACK',
-                title: '49/49 B2B Compound Taxonomy',
-                metric: '$3.80–$19.50 RPD',
-                desc: 'Replaces weak generic tags with high-paying Enterprise B2B compound search phrases that corporate agencies license at Extended rates.',
+                tab: 'rejection' as const,
+                stage: '02 · REJECTION & AI',
+                title: isBn ? 'রিজেকশন সমাধান ও AI গাইড' : 'Rejection Fix & AI Policy',
+                desc: isBn
+                  ? 'Similar content বা Noise রিজেকশন সমাধান ও জেনারেটিভ AI ফ্ল্যাগ গাইড।'
+                  : 'Fix Similar Content or Noise rejections and validate Generative AI flags.',
               },
               {
-                stage: 'STAGE 03 // PIXEL LSB + EYE-TRACKING',
-                title: 'RGB Bit-0 & 140ms Heatmap',
-                metric: 'PHI=1.618 + STEGO',
-                desc: 'Locks 49 tags inside Pixel RGB Bit-0 and runs a 140ms Neural Buyer Eye-Tracking Saliency Heatmap with Golden Ratio alignment.',
+                tab: 'kwscore' as const,
+                stage: '03 · IPTC & SCORE',
+                title: isBn ? 'কীওয়ার্ড স্কোর ও ফাইলে এম্বেড' : 'Keyword Score & IPTC Embed',
+                desc: isBn
+                  ? 'কীওয়ার্ড প্রাসঙ্গিকতা স্কোর এবং সরাসরি JPG/EPS ও .xmp ফাইলে এম্বেড।'
+                  : 'Score keyword relevance and embed IPTC/XMP directly into JPG/EPS or .xmp.',
               },
               {
-                stage: 'STAGE 04 // 10-MODULE BLACK-OPS',
-                title: '6-Country & 50-Query Sim',
-                metric: '100% PAGE-1 LOCK',
-                desc: 'Interleaves English + Tokyo/Berlin/Paris/Seoul native buyer tags and runs a 50-Query Monte Carlo Rank #1 Simulator with 7-Series Empire export.',
+                tab: 'tracker' as const,
+                stage: '04 · CSV TRACKER',
+                title: isBn ? 'আপলোড ও আর্নিং CSV ট্র্যাকার' : 'Submission & Earnings Tracker',
+                desc: isBn
+                  ? 'ফাইল স্ট্যাটাস ও আর্নিং CSV ইমপোর্ট করে টপ-সেলিং টপিক বিশ্লেষণ।'
+                  : 'Track submission status and analyze Adobe Stock earnings CSV locally.',
               },
             ].map((item, idx) => (
               <div
                 key={idx}
-                onClick={() => (idx === 2 && onOpenBlackOps ? onOpenBlackOps() : onNavigateView('upload'))}
-                className={`p-3.5 rounded-xl border transition cursor-pointer ${
+                onClick={() =>
+                  onOpenProToolkit ? onOpenProToolkit(item.tab) : onNavigateView('upload')
+                }
+                className={`p-3.5 rounded-xl border transition cursor-pointer group ${
                   isLight
                     ? 'bg-[#faf9f6] hover:bg-white border-neutral-200/80 hover:border-neutral-900'
                     : 'bg-[#11141c] hover:bg-[#151923] border-neutral-800/90 hover:border-emerald-500/40'
                 }`}
               >
-                <div className="flex items-center justify-between text-[9.5px] font-mono font-bold tracking-wider uppercase mb-1.5">
-                  <span className="text-neutral-400">{item.stage}</span>
-                  <span className="text-emerald-600 dark:text-emerald-400">{item.metric}</span>
+                <div className="flex items-center justify-between text-[9.5px] font-mono font-bold tracking-wider uppercase mb-1 text-emerald-600 dark:text-emerald-400">
+                  <span>{item.stage}</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                 </div>
                 <div
                   className={`text-xs font-bold mb-1 ${
@@ -818,7 +999,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   {item.title}
                 </div>
                 <p
-                  className={`text-[11px] leading-relaxed ${
+                  className={`text-[11px] leading-snug line-clamp-2 ${
                     isLight ? 'text-neutral-500' : 'text-neutral-400'
                   }`}
                 >
@@ -963,10 +1144,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   </div>
 
                   {/* Coffy Details Typography Block */}
-                  <div className="space-y-1 pt-0.5">
-                    <div className="text-[9.5px] font-mono tracking-[0.13em] uppercase text-neutral-400 truncate">
-                      {store.category}
-                    </div>
+                  <div className="space-y-1.5 pt-1">
                     <h3 className={`text-[15.5px] font-bold tracking-tight leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors ${
                       isLight ? 'text-neutral-950' : 'text-white'
                     }`}>
@@ -979,84 +1157,11 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                     </p>
                   </div>
                 </div>
-
-                {/* Store Sub-Features Micro-List */}
-                <div className={`mt-4 pt-3 border-t flex flex-wrap items-center gap-x-2 gap-y-1 text-[10.5px] font-medium ${
-                  isLight ? 'border-neutral-100 text-neutral-500' : 'border-neutral-800/80 text-neutral-400'
-                }`}>
-                  {store.features.map((feat, fIdx) => (
-                    <React.Fragment key={fIdx}>
-                      <span>{feat}</span>
-                      {fIdx < store.features.length - 1 && (
-                        <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </div>
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
 
-      </section>
-
-      {/* ============================================================ */}
-      {/* ARCHITECTURAL WORKFLOW & MONETIZATION PROOF STRIP */}
-      {/* ============================================================ */}
-      <section id="why-choose-section" className={`relative z-10 border-t ${
-        isLight ? 'border-neutral-200/70 bg-white' : 'border-neutral-900 bg-[#060709]'
-      } py-14 transition-colors duration-200`}>
-        <div className="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div onClick={() => onNavigateView('upload')} className="space-y-1.5 cursor-pointer group">
-              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-neutral-400 group-hover:text-amber-500 transition-colors">
-                01 . 75% FIRST-10 LOCK
-              </div>
-              <h3 className={`text-sm font-bold tracking-tight ${isLight ? 'text-neutral-950' : 'text-white'}`}>
-                Title-to-Slot #1 Correlation
-              </h3>
-              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                Locks primary subjects and exact buyer search phrases into Slots #1–#10 for maximum Adobe Stock search weight.
-              </p>
-            </div>
-
-            <div onClick={() => onNavigateView('upload')} className="space-y-1.5 cursor-pointer group">
-              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-neutral-400 group-hover:text-emerald-500 transition-colors">
-                02 . GHOSTSCRIPT EPS ENGINE
-              </div>
-              <h3 className={`text-sm font-bold tracking-tight ${isLight ? 'text-neutral-950' : 'text-white'}`}>
-                119ms True Vector Rendering
-              </h3>
-              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                Renders PostScript `.eps` and `.ai` vectors into crisp previews in 119ms and prioritizes subject keywords first.
-              </p>
-            </div>
-
-            <div onClick={() => onNavigateView('seo-rank')} className="space-y-1.5 cursor-pointer group">
-              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-neutral-400 group-hover:text-amber-500 transition-colors">
-                03 . BUYER PSYCHOLOGY
-              </div>
-              <h3 className={`text-sm font-bold tracking-tight ${isLight ? 'text-neutral-950' : 'text-white'}`}>
-                49/49 Full-Capacity Taxonomy
-              </h3>
-              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                Combines high-RPD B2B concepts, long-tail 3-word buyer phrases, and separated descriptive attributes.
-              </p>
-            </div>
-
-            <div onClick={() => onNavigateView('monetize')} className="space-y-1.5 cursor-pointer group">
-              <div className="text-[10px] font-mono tracking-[0.2em] uppercase text-neutral-400 group-hover:text-emerald-500 transition-colors">
-                04 . DIRECT IPTC &amp; CSV
-              </div>
-              <h3 className={`text-sm font-bold tracking-tight ${isLight ? 'text-neutral-950' : 'text-white'}`}>
-                1-Click Embedded Export
-              </h3>
-              <p className={`text-xs leading-relaxed ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                Embeds EXIF/IPTC/XMP directly into JPGs &amp; EPS files and exports 100% compliant CSVs for all 5 agencies.
-              </p>
-            </div>
-          </div>
-        </div>
       </section>
 
     </div>

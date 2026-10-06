@@ -395,22 +395,106 @@ html.aquatic-water-world .aquatic-caustic-text {
 }
 
 /* ============================================================================
-   CYBER-MATRIX HACKER OVERDRIVE SKIN (OPTIONAL GLOBAL TERMINAL THEME)
-   Transforms the entire workspace into a classified emerald cyber-intelligence deck
-   while keeping every tool and workflow 100% intact.
+   CYBER-MATRIX HACKER OVERDRIVE SKIN & 4 SIGNATURE LUXURY THEME PRESETS
    ============================================================================ */
 html.cyber-hacker-matrix body,
-html.cyber-hacker-matrix .min-h-screen {
-  background-color: #020705 !important;
-  background-image: radial-gradient(rgba(16, 185, 129, 0.16) 1px, transparent 1px),
-                    linear-gradient(180deg, rgba(4, 18, 12, 0.92) 0%, rgba(2, 7, 5, 0.98) 100%) !important;
-  background-size: 24px 24px, 100% 100% !important;
-  color: #d1fae5 !important;
+html.cyber-hacker-matrix .min-h-screen,
+html[data-skin="matrix"] body,
+html[data-skin="matrix"] .min-h-screen {
+  background-color: #020806 !important;
+  background-image:
+    radial-gradient(850px circle at 15% 10%, rgba(16, 185, 129, 0.16), transparent 60%),
+    radial-gradient(700px circle at 85% 20%, rgba(6, 182, 212, 0.12), transparent 60%),
+    radial-gradient(rgba(16, 185, 129, 0.18) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 100%, 26px 26px !important;
+  color: #ecfdf5 !important;
 }
 
 html.cyber-hacker-matrix [data-bounce-card],
-html.cyber-hacker-matrix header {
-  border-color: rgba(16, 185, 129, 0.38) !important;
-  box-shadow: 0 0 32px -10px rgba(16, 185, 129, 0.28),
-              inset 0 1px 0 0 rgba(16, 185, 129, 0.25) !important;
+html.cyber-hacker-matrix header,
+html[data-skin="matrix"] [data-bounce-card],
+html[data-skin="matrix"] header {
+  border-color: rgba(16, 185, 129, 0.36) !important;
+  box-shadow: 0 18px 42px -14px rgba(16, 185, 129, 0.24),
+              inset 0 1px 0 0 rgba(52, 211, 153, 0.28) !important;
 }
+
+/* Royal Sapphire Midnight Aurora Skin */
+html[data-skin="sapphire"] body,
+html[data-skin="sapphire"] .min-h-screen {
+  background-color: #040711 !important;
+  background-image:
+    radial-gradient(900px circle at 18% 8%, rgba(56, 189, 248, 0.16), transparent 60%),
+    radial-gradient(800px circle at 82% 18%, rgba(99, 102, 241, 0.16), transparent 62%),
+    radial-gradient(rgba(56, 189, 248, 0.14) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 100%, 28px 28px !important;
+  color: #f0f9ff !important;
+}
+
+html[data-skin="sapphire"] [data-bounce-card],
+html[data-skin="sapphire"] header {
+  border-color: rgba(56, 189, 248, 0.32) !important;
+  box-shadow: 0 20px 48px -15px rgba(14, 165, 233, 0.25),
+              inset 0 1px 0 0 rgba(125, 211, 252, 0.25) !important;
+}
+
+/* Obsidian Champagne Gold Luxury Skin */
+html[data-skin="obsidian"] body,
+html[data-skin="obsidian"] .min-h-screen {
+  background-color: #070709 !important;
+  background-image:
+    radial-gradient(900px circle at 16% 8%, rgba(245, 158, 11, 0.14), transparent 58%),
+    radial-gradient(750px circle at 85% 15%, rgba(16, 185, 129, 0.11), transparent 60%),
+    radial-gradient(rgba(245, 158, 11, 0.12) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 100%, 28px 28px !important;
+}
+
+html[data-skin="obsidian"] [data-bounce-card] {
+  border-color: rgba(245, 158, 11, 0.24) !important;
+  box-shadow: 0 20px 46px -16px rgba(245, 158, 11, 0.16),
+              inset 0 1px 0 0 rgba(254, 243, 199, 0.16) !important;
+}
+
+/* Luminous Headline Shimmer */
+.luxury-headline-gradient {
+  background: linear-gradient(
+    115deg,
+    #f59e0b 0%,
+    #fde047 28%,
+    #34d399 58%,
+    #38bdf8 82%,
+    #f59e0b 100%
+  );
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  animation: causticTextFlow 6.5s ease-in-out infinite;
+}
+
+/* ============================================================================
+   ACCESSIBILITY & LITE PERFORMANCE MODE (FOR LOW-END PHONES & REDUCED MOTION)
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html.aquatic-water-world [data-bounce-card] {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+html.lite-performance-mode [data-bounce-card],
+html.lite-performance-mode button,
+html.lite-performance-mode a {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+

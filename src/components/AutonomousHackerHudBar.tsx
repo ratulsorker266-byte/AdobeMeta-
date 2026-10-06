@@ -126,9 +126,10 @@ export const AutonomousHackerHudBar: React.FC<AutonomousHackerHudBarProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [minimized, setMinimized] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('adobemeta_hud_minimized') === 'true';
+      const saved = localStorage.getItem('adobemeta_hud_minimized');
+      return saved === null ? true : saved === 'true';
     } catch {
-      return false;
+      return true;
     }
   });
   const [interceptedClip, setInterceptedClip] = useState<string | null>(null);
@@ -328,7 +329,7 @@ export const AutonomousHackerHudBar: React.FC<AutonomousHackerHudBarProps> = ({
               }`}
             >
               <ClipboardCheck className="w-3 h-3 shrink-0 text-amber-500" />
-              <span>Tip: Press Ctrl+V anywhere to auto-X-Ray any link</span>
+              <span>🔒 ফাইল সার্ভারে যায় না, সব ব্রাউজারেই প্রসেস হয় · Ctrl+V Auto-Scan</span>
             </div>
           </div>
 

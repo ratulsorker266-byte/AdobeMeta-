@@ -54,6 +54,7 @@ import { EpsArtworkViewerModal } from './components/EpsArtworkViewerModal';
 import { FuturisticPhysicsEngine } from './components/FuturisticPhysicsEngine';
 import { HackerBlackOpsTerminal } from './components/HackerBlackOpsTerminal';
 import { AutonomousHackerHudBar } from './components/AutonomousHackerHudBar';
+import { ContributorProToolkitModal } from './components/ContributorProToolkitModal';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   useEffect(() => {
@@ -478,47 +479,63 @@ const CompetitorDashboard = ({ onBack, customApiKey, themeMode = 'light' }: { on
       if (image) {
         try { URL.revokeObjectURL(image); } catch (_) {}
       }
-      const url = URL.createObjectURL(file);
-      setImage(url);
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      let previewSourceUrl = URL.createObjectURL(file);
+      if (ext === 'eps' || ext === 'ai') {
+        try {
+          const vectorRes = await renderVectorFileToDataUrl(file);
+          previewSourceUrl = vectorRes.dataUrl;
+        } catch (_) {}
+      }
+      setImage(previewSourceUrl);
       setIsAnalyzing(true);
       setError(null);
       setResult(null);
 
       try {
-        const base64Data = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            const img = new Image();
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              const MAX_SIZE = 512;
-              let width = img.width;
-              let height = img.height;
-              if (width > height) {
-                if (width > MAX_SIZE) {
-                  height = Math.round(height * (MAX_SIZE / width));
-                  width = MAX_SIZE;
-                }
-              } else {
-                if (height > MAX_SIZE) {
-                  width = Math.round(width * (MAX_SIZE / height));
-                  height = MAX_SIZE;
-                }
-              }
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext('2d');
-              if (!ctx) return reject(new Error('Canvas context unavailable'));
-              ctx.fillStyle = '#FFFFFF';
-              ctx.fillRect(0, 0, width, height);
-              ctx.drawImage(img, 0, 0, width, height);
-              resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
-            };
-            img.onerror = reject;
-            img.src = ev.target?.result as string;
+        const base64Data = await new Promise<string>((resolve) => {
+          const fallbackCard = () => {
+            const c = document.createElement('canvas');
+            c.width = 512;
+            c.height = 512;
+            const ctx = c.getContext('2d');
+            if (ctx) {
+              ctx.fillStyle = '#18181b';
+              ctx.fillRect(0, 0, 512, 512);
+              ctx.fillStyle = '#f59e0b';
+              ctx.font = 'bold 22px sans-serif';
+              ctx.fillText(file.name.replace(/\.[^/.]+$/, ''), 32, 256);
+            }
+            resolve(c.toDataURL('image/jpeg', 0.8).split(',')[1]);
           };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_SIZE = 512;
+            let width = img.width || 512;
+            let height = img.height || 512;
+            if (width > height) {
+              if (width > MAX_SIZE) {
+                height = Math.round(height * (MAX_SIZE / width));
+                width = MAX_SIZE;
+              }
+            } else {
+              if (height > MAX_SIZE) {
+                width = Math.round(width * (MAX_SIZE / height));
+                height = MAX_SIZE;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return fallbackCard();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+          };
+          img.onerror = () => fallbackCard();
+          img.src = previewSourceUrl;
         });
 
         const res = await fetch('/api/analyze', {
@@ -533,7 +550,8 @@ const CompetitorDashboard = ({ onBack, customApiKey, themeMode = 'light' }: { on
             marketplace: 'adobe_stock',
             tier: 'pro',
             language: 'English',
-            isAiGenerated: false
+            isAiGenerated: false,
+            fileName: file.name
           })
         });
 
@@ -878,6 +896,21 @@ export default function App() {
   const [isCyberMatrixMode, setIsCyberMatrixMode] = useState<boolean>(() => {
     try { return localStorage.getItem('adobemeta_cyber_matrix') === 'true'; } catch { return false; }
   });
+  const [showProToolkitModal, setShowProToolkitModal] = useState<boolean>(false);
+  const [proToolkitTab, setProToolkitTab] = useState<'presubmit' | 'rejection' | 'aidisclosure' | 'tracker' | 'embed' | 'kwscore'>('presubmit');
+  const [isLiteMode, setIsLiteMode] = useState<boolean>(() => {
+    try { return localStorage.getItem('adobemeta_lite_mode') === 'true'; } catch { return false; }
+  });
+  const [uiLang, setUiLang] = useState<'en' | 'bn'>('en');
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isLiteMode) {
+      root.classList.add('lite-performance-mode');
+    } else {
+      root.classList.remove('lite-performance-mode');
+    }
+  }, [isLiteMode]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -2098,7 +2131,7 @@ export default function App() {
       if (typeof createImageBitmap === 'function') {
         try {
           const bitmap = await createImageBitmap(file);
-          const MAX_SIZE = isTurboMode ? 400 : 512;
+          const MAX_SIZE = isTurboMode ? 512 : 768;
           let width = bitmap.width;
           let height = bitmap.height;
 
@@ -2147,7 +2180,7 @@ export default function App() {
             clearTimeout(safetyTimer);
             try {
               const canvas = document.createElement('canvas');
-              const MAX_SIZE = isTurboMode ? 400 : 512;
+              const MAX_SIZE = isTurboMode ? 512 : 768;
               let width = img.width || 512;
               let height = img.height || 512;
 
@@ -2937,7 +2970,7 @@ export default function App() {
       )}
 
       {/* Zero-Lag 60FPS GPU Futuristic Pointer Bounce & Magnetic Physics Engine */}
-      <FuturisticPhysicsEngine enabled={isFuturisticBounce} themeMode={themeMode} />
+      <FuturisticPhysicsEngine enabled={isFuturisticBounce && !isLiteMode} themeMode={themeMode} />
       {/* Top Main Coffy.net Storefront Marketplace Hub - Active on Main 'home' View */}
       {currentView === 'home' && (
         <EditorialHeroSection
@@ -2963,14 +2996,30 @@ export default function App() {
           onOpenChat={() => setIsChatOpen(true)}
           currentView={currentView}
           itemsCount={items.length}
-          isWaterWorldActive={isFuturisticBounce}
+          isWaterWorldActive={isFuturisticBounce && !isLiteMode}
           onToggleWaterWorld={() => {
             const next = !isFuturisticBounce;
             setIsFuturisticBounce(next);
+            if (next && isLiteMode) {
+              setIsLiteMode(false);
+              try { localStorage.setItem('adobemeta_lite_mode', 'false'); } catch {}
+            }
             try { localStorage.setItem('adobemeta_futuristic_bounce', String(next)); } catch {}
             showToast(next ? '💧 Crystal Water World & Hydro-Bounce: ON' : 'Water World & Bounce: OFF');
           }}
           onOpenBlackOps={() => setShowBlackOpsTerminal(true)}
+          onOpenProToolkit={(tab) => {
+            setProToolkitTab(tab || 'presubmit');
+            setShowProToolkitModal(true);
+          }}
+          isLiteMode={isLiteMode}
+          onToggleLiteMode={() => {
+            const next = !isLiteMode;
+            setIsLiteMode(next);
+            try { localStorage.setItem('adobemeta_lite_mode', String(next)); } catch {}
+            showToast(next ? '⚡ Lite Performance Mode: ON (Fastest for mobile)' : 'Lite Mode: OFF');
+          }}
+          uiLang="en"
         />
       )}
 
@@ -2980,13 +3029,13 @@ export default function App() {
           themeMode === 'light'
             ? 'bg-[#fbfaf8]/90 border-neutral-200/70 text-neutral-900'
             : 'bg-[#08090b]/90 border-neutral-900 text-neutral-100'
-        } backdrop-blur-xl border-b py-3 px-6 sm:px-10 lg:px-14 flex items-center justify-between gap-4 transition-colors duration-200`}>
-          <div className="flex items-center gap-4">
+        } backdrop-blur-xl border-b py-2.5 px-6 sm:px-10 lg:px-14 flex items-center justify-between gap-4 transition-colors duration-200`}>
+          <div className="flex items-center gap-3 shrink-0">
             <AdobeMetaProLogo
               size="sm"
               showText={true}
               theme={themeMode === 'light' ? 'light' : 'dark'}
-              subtitle="STORE MARKETPLACE"
+              subtitle="STUDIO WORKSPACE"
               onClick={() => {
                 setCurrentView('home');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2994,23 +3043,22 @@ export default function App() {
             />
           </div>
 
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-1">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
             {[
-              { id: 'home', label: 'Market' },
-              { id: 'upload', label: '01. Studio' },
-              { id: 'calendar', label: '02. Calendar' },
-              { id: 'prompts', label: '03. Prompts' },
-              { id: 'monetize', label: '04. Monetize' },
-              { id: 'seo-rank', label: '05. Rank SEO' },
-              { id: 'trends', label: '06. Trends' },
-              { id: 'competitor', label: '07. Spy' },
+              { id: 'upload', label: 'Studio' },
+              { id: 'seo-rank', label: 'Search SEO' },
+              { id: 'calendar', label: 'Calendar' },
+              { id: 'prompts', label: 'Prompts' },
+              { id: 'monetize', label: 'Monetize' },
+              { id: 'trends', label: 'Trends' },
+              { id: 'competitor', label: 'Spy' },
             ].map((tab) => {
               const isActive = currentView === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setCurrentView(tab.id as any)}
-                  className={`px-3 py-1.5 rounded-full text-[10.5px] font-semibold tracking-[0.12em] uppercase transition cursor-pointer whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-full text-[10.5px] font-semibold tracking-[0.1em] uppercase transition cursor-pointer whitespace-nowrap ${
                     isActive
                       ? (themeMode === 'light' ? 'bg-black text-white' : 'bg-white text-black')
                       : (themeMode === 'light' ? 'text-neutral-500 hover:text-black hover:bg-neutral-100' : 'text-neutral-400 hover:text-white hover:bg-neutral-900')
@@ -3025,59 +3073,29 @@ export default function App() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
+              onClick={() => {
+                setProToolkitTab('presubmit');
+                setShowProToolkitModal(true);
+              }}
+              className={`px-3 py-1.5 rounded-full text-[10.5px] font-bold tracking-[0.06em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
+                themeMode === 'light'
+                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300'
+                  : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
+              }`}
+              title="Open Pre-Submission Checker, Rejection Helper, AI Disclosure & Earnings Tracker"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="hidden sm:inline">Pre-Check</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setShowBlackOpsTerminal(true)}
-              className="px-3 py-1.5 rounded-full text-[10.5px] font-mono font-bold tracking-[0.12em] uppercase flex items-center gap-1.5 border bg-emerald-950/90 hover:bg-black text-emerald-300 border-emerald-500/45 shadow-[0_0_16px_rgba(16,185,129,0.22)] transition cursor-pointer"
-              title="Open Classified Black-Ops Intelligence & Forensic Scrubber (Ctrl+K)"
+              className="px-2.5 py-1.5 rounded-full text-[10.5px] font-mono font-bold tracking-[0.08em] uppercase flex items-center gap-1.5 border bg-emerald-950/90 hover:bg-black text-emerald-300 border-emerald-500/45 transition cursor-pointer"
+              title="Open Black-Ops Terminal (Ctrl+K)"
             >
               <FileCode className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Black-Ops</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                const next = !isFuturisticBounce;
-                setIsFuturisticBounce(next);
-                try { localStorage.setItem('adobemeta_futuristic_bounce', String(next)); } catch {}
-                showToast(next ? '💧 Crystal Water World & Hydro-Bounce: ON' : 'Water World & Bounce: OFF');
-              }}
-              className={`px-3 py-1.5 rounded-full text-[10.5px] font-semibold tracking-[0.1em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
-                isFuturisticBounce
-                  ? (themeMode === 'light' ? 'bg-sky-50 border-sky-300 text-sky-900' : 'bg-sky-500/15 border-sky-500/40 text-sky-300')
-                  : (themeMode === 'light' ? 'bg-white border-neutral-200 text-neutral-500' : 'bg-neutral-900 border-neutral-800 text-neutral-400')
-              }`}
-              title="Toggle Interactive Crystal Water World & Buoyancy Bounce"
-            >
-              <Zap className="w-3.5 h-3.5 text-sky-500" />
-              <span className="hidden md:inline">{isFuturisticBounce ? 'Water FX' : 'Water OFF'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsChatOpen(true)}
-              className={`px-3 py-1.5 rounded-full text-[10.5px] font-semibold tracking-[0.1em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
-                themeMode === 'light'
-                  ? 'bg-white hover:bg-neutral-100 border-neutral-200 text-neutral-800'
-                  : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-200'
-              }`}
-              title="Open Minimalist Text AI Assistant"
-            >
-              <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-              <span className="hidden sm:inline">AI Chat</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowToolsHubModal(true)}
-              className={`px-3 py-1.5 rounded-full text-[10.5px] font-semibold tracking-[0.1em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
-                themeMode === 'light'
-                  ? 'bg-white hover:bg-neutral-100 border-neutral-200 text-neutral-800'
-                  : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-200'
-              }`}
-              title="Open 12 Contributor Pro Tools"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span className="hidden lg:inline">Tools</span>
+              <span className="hidden xl:inline">Black-Ops</span>
             </button>
 
             <button
@@ -3118,7 +3136,7 @@ export default function App() {
               }`}
             >
               <ArrowLeft className="w-3 h-3" />
-              <span className="hidden sm:inline">All Stores</span>
+              <span className="hidden sm:inline">Home</span>
             </button>
           </div>
         </header>
@@ -3592,21 +3610,11 @@ export default function App() {
                       </h4>
                       <p className={`text-xs ${themeMode === 'light' ? 'text-neutral-500' : 'text-neutral-400'}`}>
                         {isProcessing
-                          ? 'Ultra-Conversion SEO Engine is scanning visual composition and locking Top-10 search weights...'
+                          ? 'Scanning visual composition and locking Top-10 search weights...'
                           : items.filter(i => i.result).length > 0
                           ? '49 Weighted Keywords & Subject-First Titles ready! Export ZIP with embedded IPTC/XMP or Agency CSV.'
                           : 'Click "Start Auto Keywording" to generate 49 high-converting SEO tags.'}
                       </p>
-                      {isProcessing && (
-                        <button
-                          type="button"
-                          onClick={() => setShowArcadeModal(true)}
-                          className="mt-2.5 inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/25 via-indigo-600/35 to-purple-600/35 hover:from-amber-500/40 hover:to-purple-600/50 text-amber-600 dark:text-amber-300 border border-amber-500/40 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-md cursor-pointer"
-                        >
-                          <Gamepad2 className="w-4 h-4 text-amber-500" />
-                          <span>Waiting for Metadata? Play Contributor Games (🎮)</span>
-                        </button>
-                      )}
                     </div>
                   </div>
 
@@ -3878,47 +3886,26 @@ export default function App() {
                       </div>
 
                       {item.result ? (
-                        <div className="flex-1 px-2 sm:px-4 space-y-3.5 min-w-[300px]">
-                          {/* Official Adobe Stock Compliance & Category Strip */}
-                          <div className={`px-3 py-2 rounded-xl border flex flex-wrap items-center justify-between gap-2 text-[11px] ${
-                            themeMode === 'light'
-                              ? 'bg-emerald-50/70 border-emerald-200/90 text-emerald-900'
-                              : 'bg-emerald-950/20 border-emerald-500/25 text-emerald-300'
-                          }`}>
-                            <div className="flex flex-wrap items-center gap-2.5 font-bold">
-                              <span className="inline-flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                                <span>Adobe Stock Rules Verified</span>
-                              </span>
-                              <span className="opacity-40">·</span>
-                              <span className="font-mono text-[10.5px]">Top-10 Title Sync: 100%</span>
-                              <span className="opacity-40">·</span>
-                              <span className="font-mono text-[10.5px]">{item.result.keywords.length}/49 Tags</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] uppercase font-extrabold opacity-75">Category:</span>
-                              <span className={`px-2 py-0.5 rounded-md font-bold text-[10.5px] border ${
-                                themeMode === 'light'
-                                  ? 'bg-white border-emerald-200 text-neutral-900'
-                                  : 'bg-neutral-900 border-emerald-500/30 text-white'
-                              }`}>
-                                {item.result.category || (item.file.name.match(/\.(eps|ai|svg)$/i) ? 'Graphic Resources' : 'Business')}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Subject-First Commercial Title with 1-Click Copy */}
+                        <div className="flex-1 px-2 sm:px-4 space-y-3 min-w-[300px]">
+                          {/* Subject-First Commercial Title with Category & 1-Click Copy */}
                           <div className={`p-3 rounded-xl border ${
                             themeMode === 'light'
                               ? 'bg-[#faf8f5] border-stone-200/90'
                               : 'bg-slate-900/70 border-slate-800/90'
                           } space-y-1.5`}>
                             <div className="flex items-center justify-between text-[11px] flex-wrap gap-2">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className={`font-extrabold uppercase tracking-[0.12em] text-[10px] ${
                                   themeMode === 'light' ? 'text-neutral-900' : 'text-amber-400'
                                 }`}>
                                   Subject-First Commercial Title
+                                </span>
+                                <span className={`px-2 py-0.2 rounded font-bold text-[10px] border ${
+                                  themeMode === 'light'
+                                    ? 'bg-white border-emerald-200 text-emerald-800'
+                                    : 'bg-neutral-900 border-emerald-500/30 text-emerald-300'
+                                }`}>
+                                  {item.result.category || (item.file.name.match(/\.(eps|ai|svg)$/i) ? 'Graphic Resources' : 'Business')}
                                 </span>
                                 <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded border ${
                                   (item.result.recommendedTitle || '').length <= 70
@@ -4025,12 +4012,9 @@ export default function App() {
                                     <RefreshCw className="w-3 h-3 animate-spin text-indigo-400" /> 🧠 Agent 2 (Pro): Injecting high-buyer-intent SEO keywords...
                                   </motion.span>
                                 </motion.div>
-                              ) : (
+                                ) : (
                                 <div className="text-slate-400 text-xs">
-                                  <span className="flex items-center gap-2"><RefreshCw className="w-3 h-3 animate-spin" /> Basic AI Processing...</span>
-                                  <p className="mt-1 text-[9px] text-amber-500/60 blur-[0.5px] flex items-center gap-1 font-bold">
-                                    <Lock className="w-3 h-3" /> Upgrade to PRO for Dual-Agent Deep Scan
-                                  </p>
+                                  <span className="flex items-center gap-2"><RefreshCw className="w-3 h-3 animate-spin" /> Processing metadata...</span>
                                 </div>
                               )}
                             </div>
@@ -4073,19 +4057,15 @@ export default function App() {
 
                           <button
                             type="button"
-                            onClick={() => {
-                              setAlgorithmActiveItem(item);
-                              setShowAlgorithmBoosterModal(true);
-                            }}
+                            onClick={() => openEditor(item)}
                             className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition cursor-pointer ${
                               themeMode === 'light'
                                 ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-800'
                                 : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-200'
                             }`}
-                            title="Marketplace Algorithm Priority Booster (Top 10 Slots)"
                           >
-                            <Zap className="w-3.5 h-3.5 text-amber-500" />
-                            <span>Top-10 Boost</span>
+                            <Edit3 className="w-3.5 h-3.5 text-neutral-500" />
+                            <span>Edit Tags</span>
                           </button>
 
                           <button
@@ -4102,37 +4082,10 @@ export default function App() {
                                 ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-800'
                                 : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-200'
                             }`}
-                            title="Predict Search Ranking & SEO Score"
+                            title="Check Keyword Relevance & Search Score"
                           >
                             <Target className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>Rank Audit</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setMockupItem(item)}
-                            className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition cursor-pointer ${
-                              themeMode === 'light'
-                                ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-800'
-                                : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-200'
-                            }`}
-                            title="Preview as real Adobe Stock / Shutterstock Buyer Page"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-neutral-500" />
-                            <span>Buyer Preview</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => openEditor(item)}
-                            className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition cursor-pointer ${
-                              themeMode === 'light'
-                                ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-800'
-                                : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-200'
-                            }`}
-                          >
-                            <Edit3 className="w-3.5 h-3.5 text-neutral-500" />
-                            <span>Edit Tags</span>
+                            <span>SEO Score</span>
                           </button>
 
                           {!item.isHistory && (
@@ -4577,121 +4530,6 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {/* Sticky Floating Action Bar */}
-      <AnimatePresence>
-        {items.length > 0 && currentView === 'upload' && (
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-4xl px-4 pointer-events-none"
-          >
-            <div className="pointer-events-auto bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-3 rounded-2xl flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3 pl-2 flex-wrap">
-                <div className="flex items-center gap-3 bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700/50">
-                  <input
-                    type="checkbox"
-                    id="aiCheckFloating"
-                    checked={isAiGenerated}
-                    onChange={(e) => setIsAiGenerated(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-600 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-slate-900 bg-slate-700"
-                  />
-                  <label htmlFor="aiCheckFloating" className="text-sm font-medium text-slate-200 flex items-center gap-2 cursor-pointer">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span className="hidden sm:inline">Generated via AI</span>
-                    <span className="sm:hidden">AI</span>
-                  </label>
-                </div>
-
-                {/* Instant Turbo Speed Mode Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !isTurboMode;
-                    setIsTurboMode(next);
-                    localStorage.setItem('turbo_mode', String(next));
-                    showToast(next ? "⚡ Turbo Speed Mode: ON (Instant parallel processing enabled)" : "🐢 Safe Mode: ON (Sequential processing)");
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition cursor-pointer ${
-                    isTurboMode
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/20'
-                      : 'bg-slate-800/60 text-slate-400 border-slate-700 hover:text-slate-200'
-                  }`}
-                  title={isTurboMode ? "Turbo Mode is active: Fast parallel metadata generation with optimized token payload" : "Click to enable Turbo Mode"}
-                >
-                  <Zap className={`w-3.5 h-3.5 ${isTurboMode ? 'text-amber-400 fill-amber-400 animate-pulse' : 'text-slate-500'}`} />
-                  <span>Turbo Speed</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-black uppercase ${isTurboMode ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-700 text-slate-400'}`}>
-                    {isTurboMode ? '2x Fast' : 'Off'}
-                  </span>
-                </button>
-
-                <span className="text-sm font-bold text-indigo-300 bg-indigo-900/30 px-3 py-1.5 rounded-lg border border-indigo-500/20">
-                  {items.length} Files
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {showClearConfirm ? (
-                  <div className="flex items-center gap-1">
-                    <button onClick={clearAllItems} className="bg-red-600 hover:bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-1">
-                      <Check className="w-4 h-4" /> Yes
-                    </button>
-                    <button onClick={() => setShowClearConfirm(false)} className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl transition">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <button onClick={() => setShowClearConfirm(true)} className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-2" title="Clear All">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-                
-                {items.filter(i => i.result).length > 0 && (
-                  <button onClick={exportBatchZip} className="bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500 text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-2">
-                    <Download className="w-4 h-4 text-white" /> <span className="hidden sm:inline">Embed to ZIP</span>
-                  </button>
-                )}
-                
-                {items.filter(i => i.result).length > 0 && (
-                  <button onClick={() => setShowMultiCsvModal(true)} className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-2" title="Multi-Marketplace CSV & Rename">
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> <span className="hidden sm:inline">Multi-CSV</span>
-                  </button>
-                )}
-
-                {items.filter(i => i.result).length > 0 && (
-                  <button onClick={exportBatchCSV} className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-2">
-                    <FileDown className="w-4 h-4 text-emerald-400" /> <span className="hidden sm:inline">CSV</span>
-                  </button>
-                )}
-                
-                {/* Retry Failed button - ONLY shows when there are failed items */}
-                {items.some(i => i.status === 'error') && (
-                  <button
-                    onClick={retryFailedItems}
-                    disabled={isProcessing}
-                    className="bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 text-sm font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-amber-500/25 animate-pulse cursor-pointer shrink-0"
-                    title="Retry all failed files"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
-                    <span>Retry Failed ({items.filter(i => i.status === 'error').length})</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={() => startBulkProcessing()}
-                  disabled={isProcessing || !items.some(i => i.status === 'pending' || i.status === 'error')}
-                  className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-sm font-bold px-6 py-2 rounded-xl transition flex items-center gap-2 shadow-lg shadow-indigo-600/25 cursor-pointer"
-                >
-                  {isProcessing ? <RefreshCw className="animate-spin w-4 h-4" /> : <Layers className="w-4 h-4" />}
-                  {isProcessing ? 'Autopilot Running...' : 'Generate AI'}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Pro Upgrade Modal */}
       <AnimatePresence>
@@ -5079,30 +4917,8 @@ export default function App() {
       <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
       <ResourcesModal isOpen={showResourcesModal} onClose={() => setShowResourcesModal(false)} />
 
-      {/* Minimalist Text-Only AI Assistant Launcher & Drawer */}
+      {/* Minimalist Text-Only AI Assistant Drawer (Triggered via Header Controls Menu) */}
       <div className="fixed bottom-6 right-6 z-[90]">
-        <AnimatePresence>
-          {!isChatOpen && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setIsChatOpen(true)}
-              className={`px-4 py-2.5 rounded-full border shadow-lg flex items-center gap-2 text-xs font-semibold tracking-wide transition cursor-pointer ${
-                themeMode === 'light'
-                  ? 'bg-neutral-950 text-white border-neutral-800 hover:bg-black shadow-neutral-950/15'
-                  : 'bg-white text-neutral-950 border-neutral-200 hover:bg-neutral-100 shadow-black/40'
-              }`}
-              title="Open Minimalist Text AI Assistant"
-            >
-              <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-              <span>AI Assistant</span>
-            </motion.button>
-          )}
-        </AnimatePresence>
-
         <AnimatePresence>
           {isChatOpen && (
             <motion.div
@@ -5250,7 +5066,7 @@ export default function App() {
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Ask in English or বাংলায় লিখুন..."
+                  placeholder="Ask about SEO titles, keywords, or Adobe Stock rules..."
                   disabled={isChatLoading}
                   className={`flex-1 text-xs rounded-xl px-3.5 py-2.5 border focus:outline-none transition ${
                     themeMode === 'light'
@@ -5284,6 +5100,17 @@ export default function App() {
         }}
         showToast={showToast}
         themeMode={themeMode}
+      />
+
+      {/* Contributor Pre-Submission Checker, Rejection Reason Helper, AI Disclosure & Earnings Tracker */}
+      <ContributorProToolkitModal
+        isOpen={showProToolkitModal}
+        onClose={() => setShowProToolkitModal(false)}
+        initialTab={proToolkitTab}
+        uiLang="en"
+        onToggleLang={() => {}}
+        themeMode={themeMode}
+        showToast={showToast}
       />
 
       {/* Classified Black-Ops Stock Intelligence & Binary Forensic Scrubber Terminal */}

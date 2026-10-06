@@ -86,7 +86,7 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState<TaxonomyFilter>('all');
   const [copiedType, setCopiedType] = useState<string | null>(null);
-  const [xrayMode, setXrayMode] = useState<boolean>(true);
+  const [xrayMode, setXrayMode] = useState<boolean>(false);
   const isLight = themeMode === 'light';
 
   const effectiveLongTail =
@@ -254,84 +254,7 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
 
   return (
     <div className="space-y-2.5 pt-1">
-      {/* ==================================================================== */}
-      {/* ALGORITHMIC METADATA HACK TELEMETRY BAR (WORLD'S #1 SEO CONNECTION) */}
-      {/* ==================================================================== */}
-      <div
-        className={`px-3.5 py-2.5 rounded-xl border flex flex-wrap items-center justify-between gap-2.5 transition-all ${
-          isLight
-            ? 'bg-gradient-to-r from-[#faf9f5] via-emerald-50/40 to-amber-50/40 border-neutral-200/90 text-neutral-900'
-            : 'bg-gradient-to-r from-[#060d0a] via-[#091410] to-[#0c1017] border-emerald-500/30 text-emerald-100'
-        }`}
-      >
-        <div className="flex flex-wrap items-center gap-2.5 text-[11px]">
-          <span
-            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-mono font-bold text-[10px] uppercase tracking-wider border ${
-              isLight
-                ? 'bg-neutral-950 text-emerald-300 border-neutral-900'
-                : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-            }`}
-          >
-            <Terminal className="w-3 h-3 text-emerald-400" />
-            <span>ALGO-HACK TELEMETRY</span>
-          </span>
-
-          <span className="font-mono text-[10.5px] font-bold flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Dominance Score:</span>
-            <strong className="text-emerald-600 dark:text-emerald-400">
-              {algoDominanceScore}%
-            </strong>
-          </span>
-
-          <span className="opacity-30 hidden sm:inline">|</span>
-
-          <span className="font-mono text-[10.5px] hidden md:inline text-neutral-500 dark:text-emerald-300/80">
-            Slots #1–#10 = <strong>75% Search Weight</strong>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => {
-              playTickSound();
-              setXrayMode((prev) => !prev);
-            }}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider border transition cursor-pointer flex items-center gap-1 ${
-              xrayMode
-                ? isLight
-                  ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
-                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                : isLight
-                ? 'bg-white text-neutral-500 border-neutral-200'
-                : 'bg-neutral-900 text-neutral-400 border-neutral-800'
-            }`}
-            title="Show/Hide Per-Keyword Algorithmic Weight & RPD Telemetry"
-          >
-            <TrendingUp className="w-3 h-3 text-emerald-500" />
-            <span>{xrayMode ? 'Weight X-Ray: ON' : 'Weight X-Ray: OFF'}</span>
-          </button>
-
-          {onReorderKeywords && (
-            <button
-              type="button"
-              onClick={handleOneClickAlgorithmicHack}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider border transition cursor-pointer flex items-center gap-1 ${
-                isLight
-                  ? 'bg-neutral-950 hover:bg-black text-amber-300 border-neutral-950 shadow-2xs'
-                  : 'bg-amber-500 hover:bg-amber-400 text-black border-amber-400 font-black shadow-[0_0_15px_rgba(245,158,11,0.3)]'
-              }`}
-              title="1-Click Algorithmic Rank-Hack: Lock highest-converting compound nouns into Slots #1-#10"
-            >
-              <Zap className="w-3 h-3" />
-              <span>1-Click Rank Hack</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Category Filter Bar & Quick Actions */}
+      {/* Unified Category Filter & Quick Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div
           className={`flex flex-wrap items-center gap-1 ${
@@ -417,12 +340,49 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            Commercial Concept
+            Commercial
           </button>
         </div>
 
-        {/* 1-Click Copy Controls */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* 1-Click Actions & Copy Controls */}
+        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              playTickSound();
+              setXrayMode((prev) => !prev);
+            }}
+            className={`px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-bold border transition cursor-pointer flex items-center gap-1 ${
+              xrayMode
+                ? isLight
+                  ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                : isLight
+                ? 'bg-white text-neutral-500 border-neutral-200'
+                : 'bg-neutral-900 text-neutral-400 border-neutral-800'
+            }`}
+            title="Show/Hide Per-Keyword Algorithmic Weight%"
+          >
+            <TrendingUp className="w-3 h-3 text-emerald-500" />
+            <span>{xrayMode ? 'Weights: ON' : 'Weights'}</span>
+          </button>
+
+          {onReorderKeywords && (
+            <button
+              type="button"
+              onClick={handleOneClickAlgorithmicHack}
+              className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+                isLight
+                  ? 'bg-neutral-950 hover:bg-black text-amber-300 border-neutral-950'
+                  : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40'
+              }`}
+              title="1-Click Algorithmic Rank-Hack: Lock highest-converting compound nouns into Slots #1-#10"
+            >
+              <Zap className="w-3 h-3 text-amber-400" />
+              <span>Rank Hack ({algoDominanceScore}%)</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => copyTags(top10, 'Top 10 Heavyweight Keywords')}
@@ -470,8 +430,8 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
         </div>
       </div>
 
-      {/* High-Intent Long-Tail Buyer Search Phrases Strip */}
-      {effectiveLongTail.length > 0 && activeFilter === 'all' && (
+      {/* High-Intent Long-Tail Buyer Search Phrases Strip (Shown when Buyer Phrases filter is active) */}
+      {effectiveLongTail.length > 0 && activeFilter === 'longtail' && (
         <div
           className={`px-3 py-2 rounded-xl border flex flex-wrap items-center gap-1.5 text-[11px] ${
             isLight

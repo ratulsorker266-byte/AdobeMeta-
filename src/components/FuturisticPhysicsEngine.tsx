@@ -80,7 +80,12 @@ export const FuturisticPhysicsEngine: React.FC<FuturisticPhysicsEngineProps> = (
 
   useEffect(() => {
     const root = document.documentElement;
-    if (enabled) {
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (enabled && !prefersReducedMotion) {
       root.classList.add('futuristic-bounce-active', 'aquatic-water-world');
     } else {
       root.classList.remove('futuristic-bounce-active', 'aquatic-water-world');
