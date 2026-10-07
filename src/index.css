@@ -3,8 +3,8 @@
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
-  background-color: #faf9f6;
-  color: #18191c;
+  background-color: #030407;
+  color: #f4f4f6;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
@@ -258,35 +258,67 @@ code, kbd, samp, pre {
   animation: shockwaveExpand 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Subtle, Crisp Institutional + Phantom Monster Giant Micro-Interactions */
+/* ============================================================================
+   SOVEREIGN OBSIDIAN & LIQUID PRISMATIC CHRONOMETER THEME ENGINE
+   ============================================================================ */
+:root,
+html[data-skin="obsidian"] {
+  --prism-accent-primary: #10b981;
+  --prism-accent-secondary: #d4af37;
+  --prism-accent-tertiary: #38bdf8;
+  --prism-glow-rgba: rgba(16, 185, 129, 0.22);
+  --prism-gold-rgba: rgba(212, 175, 55, 0.2);
+}
+
+html[data-skin="matrix"] {
+  --prism-accent-primary: #00ff9d;
+  --prism-accent-secondary: #06b6d4;
+  --prism-accent-tertiary: #10b981;
+  --prism-glow-rgba: rgba(0, 255, 157, 0.25);
+  --prism-gold-rgba: rgba(6, 182, 212, 0.22);
+}
+
+html[data-skin="sapphire"] {
+  --prism-accent-primary: #38bdf8;
+  --prism-accent-secondary: #818cf8;
+  --prism-accent-tertiary: #f472b6;
+  --prism-glow-rgba: rgba(56, 189, 248, 0.24);
+  --prism-gold-rgba: rgba(129, 140, 248, 0.22);
+}
+
 @keyframes ghostSpectralDrift {
   0%, 100% {
     transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.42;
+    opacity: 0.48;
   }
   50% {
-    transform: translate3d(28px, -18px, 0) scale(1.08);
-    opacity: 0.72;
+    transform: translate3d(34px, -22px, 0) scale(1.1);
+    opacity: 0.78;
   }
 }
 
 @keyframes phantomPulseRing {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 18px 50px -15px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06),
+                0 20px 55px -15px rgba(0, 0, 0, 0.75),
+                0 0 35px -8px var(--prism-glow-rgba);
   }
   50% {
-    box-shadow: 0 0 28px -4px rgba(16, 185, 129, 0.22), 0 24px 60px -12px rgba(0, 0, 0, 0.75);
+    box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.28),
+                0 26px 65px -12px rgba(0, 0, 0, 0.85),
+                0 0 48px -4px var(--prism-gold-rgba);
   }
 }
 
-@keyframes colossalTextBreath {
-  0%, 100% {
-    opacity: 0.035;
-    transform: translateX(-50%) scale(1);
+@keyframes prismHorizonSweep {
+  0% {
+    background-position: 0% 50%;
   }
   50% {
-    opacity: 0.065;
-    transform: translateX(-50%) scale(1.025);
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 
@@ -294,12 +326,211 @@ code, kbd, samp, pre {
   animation: ghostSpectralDrift 11s ease-in-out infinite;
 }
 
-.animate-colossal-breath {
-  animation: colossalTextBreath 9s ease-in-out infinite;
-}
-
 .phantom-monolith-card {
   animation: phantomPulseRing 6s ease-in-out infinite;
+}
+
+/* Prismatic Specular Card Surface */
+.sovereign-prism-card {
+  position: relative;
+  backdrop-filter: blur(28px) saturate(185%);
+  -webkit-backdrop-filter: blur(28px) saturate(185%);
+  box-shadow: inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.32),
+              inset 0 -1px 1px 0 rgba(255, 255, 255, 0.08),
+              0 18px 42px -12px rgba(0, 0, 0, 0.45);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease;
+}
+
+.sovereign-prism-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.25px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(16, 185, 129, 0.35) 38%,
+    rgba(212, 175, 55, 0.38) 72%,
+    rgba(56, 189, 248, 0.35) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.78;
+  transition: opacity 0.3s ease;
+}
+
+.sovereign-prism-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    125deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.03) 32%,
+    transparent 55%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  pointer-events: none;
+}
+
+.sovereign-prism-card:hover::before {
+  opacity: 1;
+}
+
+/* ============================================================================
+   FULL-WEBSITE CRYSTAL GLASS ENCLOSURE (ENCAPSULATED IN GLASS)
+   Makes the entire viewport & every panel look encased in 3D optical crystal glass
+   ============================================================================ */
+@keyframes glassCausticSweep {
+  0% {
+    transform: translateX(-120%) skewX(-24deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateX(180%) skewX(-24deg);
+    opacity: 0.85;
+  }
+  65%, 100% {
+    transform: translateX(220%) skewX(-24deg);
+    opacity: 0;
+  }
+}
+
+/* Fixed 3D Beveled Glass Viewport Frame (Front-facing curved crystal screen) */
+.crystal-viewport-enclosure-dark {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 80;
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.16),
+    inset 0 2px 3px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 4px 0 rgba(56, 189, 248, 0.18),
+    inset 0 0 42px rgba(255, 255, 255, 0.035);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.075) 0%,
+      rgba(255, 255, 255, 0.018) 22%,
+      transparent 48%,
+      rgba(16, 185, 129, 0.02) 78%,
+      rgba(255, 255, 255, 0.055) 100%
+    );
+}
+
+.crystal-viewport-enclosure-light {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 80;
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.9),
+    inset 0 2px 6px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -2px 5px 0 rgba(14, 165, 233, 0.14),
+    inset 0 0 48px rgba(255, 255, 255, 0.45);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.42) 0%,
+      rgba(255, 255, 255, 0.12) 24%,
+      transparent 50%,
+      rgba(56, 189, 248, 0.04) 78%,
+      rgba(255, 255, 255, 0.32) 100%
+    );
+}
+
+/* Subtle diagonal glass sheen sweeping across the front crystal screen */
+.crystal-viewport-sheen {
+  position: fixed;
+  top: -20%;
+  left: 0;
+  width: 38%;
+  height: 140%;
+  pointer-events: none;
+  z-index: 79;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.038) 45%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.038) 55%,
+    transparent 100%
+  );
+  animation: glassCausticSweep 11s ease-in-out infinite;
+}
+
+/* Master Architectural Glass Slab Container (Wraps main website sections in thick frosted glass) */
+.crystal-architectural-slab-dark {
+  background: linear-gradient(
+    145deg,
+    rgba(18, 24, 38, 0.56) 0%,
+    rgba(10, 14, 24, 0.42) 55%,
+    rgba(16, 22, 35, 0.58) 100%
+  );
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 1px 0 rgba(255, 255, 255, 0.07),
+    0 28px 70px -18px rgba(0, 0, 0, 0.72),
+    0 0 40px -12px rgba(16, 185, 129, 0.14);
+}
+
+.crystal-architectural-slab-light {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 255, 255, 0.52) 55%,
+    rgba(255, 255, 255, 0.76) 100%
+  );
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  box-shadow:
+    inset 0 2px 2px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 2px 0 rgba(14, 165, 233, 0.12),
+    0 24px 60px -15px rgba(15, 23, 42, 0.09),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+/* Individual Crystal Glass Pill / Card (For nested cards, headers & controls) */
+.crystal-glass-panel-dark {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.09) 0%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.3),
+    0 14px 34px -10px rgba(0, 0, 0, 0.55);
+}
+
+.crystal-glass-panel-light {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(255, 255, 255, 0.54) 100%
+  );
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  box-shadow:
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 1),
+    0 14px 32px -10px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
 }
 
 html.futuristic-bounce-active button,
@@ -317,9 +548,17 @@ html.futuristic-bounce-active [data-bounce-card]:hover {
   transform: translateY(-4px) scale(1.008);
 }
 
-/* Clean Editorial Accent Typography */
+/* Liquid Gold, Bioluminescent Emerald & Cyan Horizon Headline Gradient */
 .luxury-headline-gradient {
-  background: linear-gradient(135deg, #10b981 0%, #38bdf8 50%, #f59e0b 100%);
+  background: linear-gradient(
+    120deg,
+    var(--prism-accent-primary) 0%,
+    #fef08a 32%,
+    var(--prism-accent-secondary) 58%,
+    var(--prism-accent-tertiary) 100%
+  );
+  background-size: 200% 200%;
+  animation: prismHorizonSweep 8s ease infinite;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

@@ -101,40 +101,15 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   const [isHoveringSpecimen, setIsHoveringSpecimen] = useState<boolean>(false);
   const [showHeaderControlsMenu, setShowHeaderControlsMenu] = useState<boolean>(false);
   const [isHeroDragging, setIsHeroDragging] = useState<boolean>(false);
-  const [activeSkin, setActiveSkin] = useState<'obsidian' | 'matrix' | 'sapphire' | 'ivory'>(() => {
-    try {
-      const saved = localStorage.getItem('adobemeta_luxury_skin') as any;
-      if (saved === 'obsidian' || saved === 'matrix' || saved === 'sapphire' || saved === 'ivory') {
-        return saved;
-      }
-    } catch {}
-    return themeMode === 'light' ? 'ivory' : 'obsidian';
-  });
+  const [mouseSpotlight, setMouseSpotlight] = useState<{ x: number; y: number }>({ x: 650, y: 260 });
 
   const isLight = themeMode === 'light';
   const isBn = false;
 
   useEffect(() => {
     const root = document.documentElement;
-    if (isLight) {
-      root.removeAttribute('data-skin');
-    } else {
-      const skinToApply = activeSkin === 'ivory' ? 'obsidian' : activeSkin;
-      root.setAttribute('data-skin', skinToApply);
-    }
-  }, [activeSkin, isLight]);
-
-  const handleSelectSkin = (skin: 'obsidian' | 'matrix' | 'sapphire' | 'ivory') => {
-    setActiveSkin(skin);
-    try {
-      localStorage.setItem('adobemeta_luxury_skin', skin);
-    } catch {}
-    if (skin === 'ivory' && !isLight) {
-      onToggleTheme();
-    } else if (skin !== 'ivory' && isLight) {
-      onToggleTheme();
-    }
-  };
+    root.removeAttribute('data-skin');
+  }, [isLight]);
 
   // 8 Specialized Creative Modules in the Enterprise Workspace Directory
   const marketStores: BoutiqueStoreItem[] = [
@@ -312,51 +287,59 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  return (
-    <div className={`relative w-full overflow-hidden ${
-      isLight 
-        ? 'bg-[#fbfaf8] text-[#111215]' 
-        : 'bg-[#050608] text-[#f4f4f6]'
-    } font-sans transition-colors duration-300`}>
+  const skinPalette = isLight
+    ? {
+        orbOne: 'bg-amber-300/25',
+        orbTwo: 'bg-emerald-300/20',
+        orbThree: 'bg-sky-300/20',
+        horizonBeam: 'from-transparent via-amber-500/50 to-transparent',
+        spotlightColor: 'rgba(212, 175, 55, 0.09)',
+        accentBadge: 'text-amber-700 border-amber-400/50 bg-amber-500/10',
+      }
+    : {
+        orbOne: 'bg-amber-500/18',
+        orbTwo: 'bg-emerald-500/18',
+        orbThree: 'bg-sky-500/14',
+        horizonBeam: 'from-transparent via-amber-400/80 to-transparent',
+        spotlightColor: 'rgba(212, 175, 55, 0.11)',
+        accentBadge: 'text-amber-300 border-amber-400/40 bg-amber-500/15',
+      };
 
-      {/* Subtle Architectural Grid Backdrop */}
+  return (
+    <div
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setMouseSpotlight({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      }}
+      className={`relative w-full overflow-hidden bg-transparent ${
+        isLight ? 'text-[#111215]' : 'text-[#f4f4f6]'
+      } font-sans transition-colors duration-500`}
+    >
+
+      {/* Interactive Cursor-Tracked Prismatic Aura Spotlight */}
       <div
-        className={`pointer-events-none absolute inset-0 ${
-          isLight
-            ? 'bg-[radial-gradient(#e5e3dc_1px,transparent_1px)] [background-size:24px_24px] opacity-60'
-            : 'bg-[radial-gradient(#1b202c_1px,transparent_1px)] [background-size:24px_24px] opacity-65'
-        }`}
+        className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(720px circle at ${mouseSpotlight.x}px ${mouseSpotlight.y}px, ${skinPalette.spotlightColor}, transparent 70%)`,
+        }}
       />
 
-      {/* PHANTOM GHOST SPECTRAL AURORA ORBS & COLOSSAL MONSTER GIANT WATERMARK */}
-      <div className="pointer-events-none select-none absolute inset-x-0 top-0 h-[780px] overflow-hidden z-0">
+      {/* Top Specular Prismatic Horizon Line */}
+      <div className="pointer-events-none select-none absolute inset-x-0 top-0 h-24 overflow-hidden z-0">
         <div
-          className={`absolute -top-32 left-1/4 w-[540px] h-[540px] rounded-full blur-[130px] animate-ghost-drift ${
-            isLight ? 'bg-emerald-400/15' : 'bg-emerald-500/14'
-          }`}
+          className={`absolute top-16 inset-x-0 h-[1px] bg-gradient-to-r ${skinPalette.horizonBeam} opacity-80`}
         />
-        <div
-          className={`absolute top-24 right-1/5 w-[480px] h-[480px] rounded-full blur-[140px] animate-aurora-2 ${
-            isLight ? 'bg-amber-400/15' : 'bg-cyan-500/12'
-          }`}
-        />
-        <div
-          aria-hidden="true"
-          className={`absolute top-20 left-1/2 -translate-x-1/2 text-[14vw] font-black tracking-[-0.06em] uppercase leading-none whitespace-nowrap animate-colossal-breath ${
-            isLight ? 'text-neutral-950/[0.03]' : 'text-white/[0.035]'
-          }`}
-        >
-          PHANTOM TITAN
-        </div>
       </div>
 
       {/* ============================================================ */}
-      {/* ULTRA-MINIMALIST COFFY.NET HEADER (Feather-light & Breathable) */}
+      {/* FLOATING 3D OPTICAL CRYSTAL GLASS HEADER (DAY & NIGHT MODE) */}
       {/* ============================================================ */}
-      <header className={`sticky top-0 z-50 w-full ${
-        isLight ? 'bg-[#fbfaf8]/90 border-b border-neutral-200/70' : 'bg-[#08090b]/90 border-b border-neutral-900'
-      } backdrop-blur-xl transition-colors duration-200`}>
-        <div className="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14 h-16 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-50 w-full px-3 sm:px-6 lg:px-10 pt-2.5 transition-all duration-300">
+        <div className={`max-w-[1400px] mx-auto px-5 sm:px-8 h-15 rounded-2xl flex items-center justify-between gap-4 transition-all duration-300 ${
+          isLight
+            ? 'crystal-glass-panel-light'
+            : 'crystal-glass-panel-dark'
+        }`}>
           
           {/* Zone 1: Brand Identity */}
           <div className="flex items-center shrink-0">
@@ -372,8 +355,8 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             />
           </div>
 
-          {/* Zone 2: Whisper-Quiet Editorial Navigation Links (Clean 4-link core) */}
-          <nav className="hidden lg:flex items-center gap-8 text-[11px] font-semibold tracking-[0.16em] uppercase">
+          {/* Zone 2: Clean Editorial Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-7 text-[11px] font-semibold tracking-[0.15em] uppercase">
             <button
               onClick={() => {
                 setActiveDepartment('all');
@@ -387,7 +370,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             >
               <span>{isBn ? 'মার্কেট' : 'Market'}</span>
               {activeDepartment === 'all' && (
-                <span className={`absolute bottom-0 left-0 right-0 h-[1.5px] ${isLight ? 'bg-black' : 'bg-white'}`} />
+                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-amber-400 to-sky-400 rounded-full" />
               )}
             </button>
 
@@ -428,7 +411,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             </button>
           </nav>
 
-          {/* Zone 3: Uncluttered Action Bar (Pre-Check + Language + Quick Controls Popover + Open Studio) */}
+          {/* Zone 3: Pre-Check + Controls + Day/Night Mode + Studio CTA */}
           <div className="flex items-center gap-2 shrink-0 relative">
             {onOpenProToolkit && (
               <button
@@ -484,41 +467,6 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                           : 'bg-[#0e1116]/95 border-neutral-800 text-neutral-100'
                       } backdrop-blur-xl space-y-1`}
                     >
-                      <div className="px-2.5 py-1 text-[9.5px] font-mono uppercase tracking-[0.16em] text-neutral-400">
-                        {isBn ? 'লাক্সারি থিম স্কিন (৪টি)' : 'SIGNATURE LUXURY THEME'}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-1.5 px-1 pb-2 border-b border-neutral-200/70 dark:border-neutral-800">
-                        {[
-                          { id: 'obsidian' as const, label: 'Obsidian Gold', dot: 'bg-amber-400' },
-                          { id: 'matrix' as const, label: 'Cyber Matrix', dot: 'bg-emerald-400' },
-                          { id: 'sapphire' as const, label: 'Royal Sapphire', dot: 'bg-sky-400' },
-                          { id: 'ivory' as const, label: 'Editorial Ivory', dot: 'bg-stone-300 border border-stone-500' },
-                        ].map((sk) => {
-                          const isSelected =
-                            (isLight && sk.id === 'ivory') || (!isLight && activeSkin === sk.id);
-                          return (
-                            <button
-                              key={sk.id}
-                              type="button"
-                              onClick={() => handleSelectSkin(sk.id)}
-                              className={`px-2.5 py-1.5 rounded-xl text-[10.5px] font-bold flex items-center gap-1.5 border transition cursor-pointer ${
-                                isSelected
-                                  ? isLight
-                                    ? 'bg-neutral-950 text-white border-neutral-950'
-                                    : 'bg-white text-black border-white'
-                                  : isLight
-                                  ? 'bg-neutral-100/80 hover:bg-neutral-200/70 text-neutral-700 border-neutral-200'
-                                  : 'bg-neutral-900/90 hover:bg-neutral-800 text-neutral-300 border-neutral-800'
-                              }`}
-                            >
-                              <span className={`w-2 h-2 rounded-full shrink-0 ${sk.dot}`} />
-                              <span className="truncate">{sk.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
                       <div className="px-2.5 pt-1 text-[9.5px] font-mono uppercase tracking-[0.16em] text-neutral-400">
                         {isBn ? 'টুলস এবং পারফরম্যান্স' : 'WORKSPACE & PERFORMANCE'}
                       </div>
@@ -665,10 +613,23 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       </header>
 
       {/* ============================================================ */}
-      {/* BREATHABLE EDITORIAL HERO & INTERACTIVE METADATA PREVIEW DECK */}
+      {/* BREATHABLE EDITORIAL HERO ENCASED IN 3D OPTICAL CRYSTAL GLASS */}
       {/* ============================================================ */}
-      <div className="relative z-10 pt-10 sm:pt-14 pb-10 max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+      <div className="relative z-10 pt-6 sm:pt-8 pb-10 max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12">
+        <div className={`rounded-3xl p-6 sm:p-9 lg:p-11 relative overflow-hidden transition-all duration-500 ${
+          isLight ? 'crystal-architectural-slab-light' : 'crystal-architectural-slab-dark'
+        }`}>
+          {/* Top-Left Specular Glass Reflection Glint */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/15 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 inset-x-10 h-[1.5px] bg-gradient-to-r from-transparent via-white/60 to-transparent"
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative z-10">
           
           {/* Left 7 Columns: Editorial Headline, Department Switcher & Primary CTA */}
           <motion.div
@@ -678,7 +639,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             className="lg:col-span-7 space-y-5 text-left"
           >
             {/* Quiet Editorial Kicker */}
-            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em] text-emerald-400">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em] text-emerald-500 dark:text-emerald-400">
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               <span>
                 IFRIT AUTONOMOUS ENGINE · ZERO-CLICK DROP OR CTRL+V PASTE ANYWHERE
@@ -697,9 +658,9 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             </h1>
 
             <p className={`text-[14px] sm:text-[15.5px] font-normal max-w-xl leading-relaxed ${
-              isLight ? 'text-neutral-600' : 'text-neutral-400'
+              isLight ? 'text-neutral-600' : 'text-neutral-300'
             }`}>
-              Drop any EPS vector, PSD, photo, or press <kbd className="px-1.5 py-0.5 text-[11px] font-mono rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">Ctrl+V</kbd> anywhere on screen. The engine renders vector previews, locks Top-10 Adobe Stock search weights (75% ranking power), and prepares your agency CSV automatically.
+              Drop any EPS vector, PSD, photo, or press <kbd className="px-1.5 py-0.5 text-[11px] font-mono rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 dark:text-emerald-400">Ctrl+V</kbd> anywhere on screen. The engine renders vector previews, locks Top-10 Adobe Stock search weights (75% ranking power), and prepares your agency CSV automatically.
             </p>
 
             {/* Instant Ifrit Ghost Dropzone Bar right inside the Hero */}
@@ -721,56 +682,56 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 }
               }}
               onClick={onStartGenerating}
-              className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+              className={`p-4 rounded-2xl transition-all duration-300 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 sovereign-prism-card ${
                 isHeroDragging
                   ? 'border-emerald-400 bg-emerald-500/15 scale-[1.01]'
                   : isLight
-                  ? 'bg-white hover:bg-neutral-50 border-neutral-300 shadow-sm'
-                  : 'bg-[#0b0e14]/90 hover:bg-[#10151f] border-emerald-500/30 hover:border-emerald-400/60 shadow-[0_12px_36px_-12px_rgba(16,185,129,0.2)]'
+                  ? 'crystal-glass-panel-light hover:border-neutral-900'
+                  : 'crystal-glass-panel-dark hover:border-amber-400/50'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+              <div className="flex items-center gap-3 relative z-10">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border backdrop-blur-xl ${
                   isLight
-                    ? 'bg-neutral-950 text-white border-neutral-950'
-                    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40'
+                    ? 'bg-neutral-950/90 text-amber-300 border-white/40 shadow-md'
+                    : 'bg-white/10 text-amber-300 border-white/25 shadow-inner'
                 }`}>
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className={`text-xs sm:text-sm font-bold flex items-center gap-2 ${
+                  <div className={`text-xs sm:text-sm font-bold flex flex-wrap items-center gap-2 ${
                     isLight ? 'text-neutral-950' : 'text-white'
                   }`}>
                     <span>Drop EPS, AI, PSD, JPG or Press Ctrl+V</span>
-                    <span className="text-[9.5px] font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <span className={`text-[9.5px] font-mono uppercase px-2 py-0.5 rounded border backdrop-blur-md ${skinPalette.accentBadge}`}>
                       Instant Autopilot
                     </span>
                   </div>
-                  <div className="text-[11px] text-neutral-400 mt-0.5">
+                  <div className={`text-[11px] mt-0.5 ${isLight ? 'text-neutral-600' : 'text-neutral-300'}`}>
                     Zero-click ghost execution · Automatically extracts artwork, 49 tags, title &amp; CSV
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 relative z-10">
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onWatchDemo();
                   }}
-                  className={`px-3 py-2 rounded-xl text-[11px] font-semibold border transition cursor-pointer ${
+                  className={`px-3 py-2 rounded-xl text-[11px] font-semibold border transition cursor-pointer backdrop-blur-md ${
                     isLight
-                      ? 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border-neutral-200'
-                      : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800'
+                      ? 'bg-white/70 hover:bg-white text-neutral-800 border-white/90 shadow-xs'
+                      : 'bg-white/10 hover:bg-white/15 text-neutral-100 border-white/20'
                   }`}
                 >
                   1-Click Live Demo
                 </button>
-                <span className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
+                <span className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md ${
                   isLight
                     ? 'bg-neutral-950 text-white'
-                    : 'bg-emerald-500 text-neutral-950'
+                    : 'bg-gradient-to-r from-emerald-400 via-amber-300 to-emerald-400 text-neutral-950'
                 }`}>
                   <span>Select Files</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -784,10 +745,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenProToolkit('presubmit')}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border font-semibold text-[11px] transition cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold text-[11px] transition cursor-pointer ${
                     isLight
-                      ? 'bg-white hover:bg-neutral-100 border-neutral-300 text-neutral-900'
-                      : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-200'
+                      ? 'crystal-glass-panel-light text-neutral-900 hover:bg-white/90'
+                      : 'crystal-glass-panel-dark text-neutral-100 hover:bg-white/15'
                   }`}
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
@@ -808,10 +769,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               data-bounce-card="true"
               onMouseEnter={() => setIsHoveringSpecimen(true)}
               onMouseLeave={() => setIsHoveringSpecimen(false)}
-              className={`rounded-2xl border p-5 transition-all duration-300 relative overflow-hidden phantom-monolith-card ${
+              className={`rounded-2xl p-5 transition-all duration-300 relative overflow-hidden phantom-monolith-card sovereign-prism-card ${
               isLight
-                ? 'bg-white border-neutral-200/90 shadow-[0_12px_40px_-15px_rgba(0,0,0,0.07)]'
-                : 'bg-[#0b0e14]/95 border-emerald-500/30 shadow-2xl'
+                ? 'crystal-glass-panel-light'
+                : 'crystal-glass-panel-dark'
             }`}>
               {/* Subtle Ghost Laser Scan Line inside Specimen Card */}
               <div
@@ -947,6 +908,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             </div>
           </motion.div>
 
+          </div>
         </div>
 
         {/* ============================================================ */}
@@ -954,13 +916,13 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
         {/* ============================================================ */}
         <div
           data-bounce-card="true"
-          className={`mt-10 rounded-2xl border p-5 sm:p-6 transition-all ${
+          className={`mt-8 rounded-3xl p-5 sm:p-7 transition-all relative overflow-hidden ${
             isLight
-              ? 'bg-white/90 border-neutral-200/90 shadow-[0_12px_36px_-16px_rgba(14,165,233,0.12)]'
-              : 'bg-[#0b0e13]/95 border-neutral-800/90 shadow-2xl'
+              ? 'crystal-architectural-slab-light'
+              : 'crystal-architectural-slab-dark'
           }`}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 mb-4 border-b border-neutral-200/70 dark:border-neutral-800/80">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 mb-4 border-b border-black/10 dark:border-white/10">
             <h3
               className={`text-sm sm:text-base font-bold tracking-tight flex items-center gap-2 ${
                 isLight ? 'text-neutral-950' : 'text-white'
@@ -1018,26 +980,26 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 onClick={() =>
                   onOpenProToolkit ? onOpenProToolkit(item.tab) : onNavigateView('upload')
                 }
-                className={`p-3.5 rounded-xl border transition cursor-pointer group ${
+                className={`p-3.5 rounded-2xl transition cursor-pointer group sovereign-prism-card ${
                   isLight
-                    ? 'bg-[#faf9f6] hover:bg-white border-neutral-200/80 hover:border-neutral-900'
-                    : 'bg-[#11141c] hover:bg-[#151923] border-neutral-800/90 hover:border-emerald-500/40'
+                    ? 'crystal-glass-panel-light hover:border-neutral-900'
+                    : 'crystal-glass-panel-dark hover:border-emerald-400/50'
                 }`}
               >
-                <div className="flex items-center justify-between text-[9.5px] font-mono font-bold tracking-wider uppercase mb-1 text-emerald-600 dark:text-emerald-400">
+                <div className="flex items-center justify-between text-[9.5px] font-mono font-bold tracking-wider uppercase mb-1 text-emerald-600 dark:text-emerald-400 relative z-10">
                   <span>{item.stage}</span>
                   <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                 </div>
                 <div
-                  className={`text-xs font-bold mb-1 ${
+                  className={`text-xs font-bold mb-1 relative z-10 ${
                     isLight ? 'text-neutral-950' : 'text-white'
                   }`}
                 >
                   {item.title}
                 </div>
                 <p
-                  className={`text-[11px] leading-snug line-clamp-2 ${
-                    isLight ? 'text-neutral-500' : 'text-neutral-400'
+                  className={`text-[11px] leading-snug line-clamp-2 relative z-10 ${
+                    isLight ? 'text-neutral-600' : 'text-neutral-300'
                   }`}
                 >
                   {item.desc}
@@ -1050,8 +1012,8 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
         {/* ============================================================ */}
         {/* DEPARTMENT FILTER BAR & DIRECTORY HEADER */}
         {/* ============================================================ */}
-        <div className={`mt-12 pt-8 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-          isLight ? 'border-neutral-200/70' : 'border-neutral-900'
+        <div className={`mt-10 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+          isLight ? 'crystal-glass-panel-light' : 'crystal-glass-panel-dark'
         }`}>
           <div>
             <h2 className={`text-sm font-bold uppercase tracking-[0.16em] ${
@@ -1059,7 +1021,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             }`}>
               Specialized Creative Stores Directory (08)
             </h2>
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <p className={`text-xs mt-0.5 ${isLight ? 'text-neutral-600' : 'text-neutral-300'}`}>
               Select a specialized store below to launch its dedicated workspace
             </p>
           </div>
@@ -1076,14 +1038,14 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 <button
                   key={tab.id}
                   onClick={() => setActiveDepartment(tab.id as any)}
-                  className={`text-[10.5px] font-semibold tracking-[0.12em] uppercase px-3.5 py-1.5 rounded-full border transition cursor-pointer whitespace-nowrap ${
+                  className={`text-[10.5px] font-semibold tracking-[0.12em] uppercase px-3.5 py-1.5 rounded-full border transition cursor-pointer whitespace-nowrap backdrop-blur-md ${
                     isActive
                       ? isLight
                         ? 'bg-neutral-950 text-white border-neutral-950 shadow-2xs'
                         : 'bg-white text-black border-white'
                       : isLight
-                      ? 'bg-white text-neutral-500 border-neutral-200/90 hover:border-neutral-900 hover:text-black'
-                      : 'bg-neutral-900/60 text-neutral-400 border-neutral-800 hover:border-neutral-600 hover:text-white'
+                      ? 'bg-white/70 text-neutral-700 border-white/90 hover:border-neutral-900 hover:text-black'
+                      : 'bg-white/5 text-neutral-300 border-white/15 hover:border-white/40 hover:text-white'
                   }`}
                 >
                   {tab.label}
@@ -1097,7 +1059,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       {/* ============================================================ */}
       {/* COFFY.NET BOUTIQUE STOREFRONT GALLERY GRID (8 DOKANS) */}
       {/* ============================================================ */}
-      <section className="relative z-10 max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14 pb-20">
+      <section className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 pb-20">
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <AnimatePresence mode="popLayout">
@@ -1115,10 +1077,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   if (foundIdx !== -1) setPreviewStoreIdx(foundIdx);
                 }}
                 onClick={() => handleOpenStore(store)}
-                className={`group cursor-pointer rounded-2xl border p-4 flex flex-col justify-between transition-all duration-300 ${
+                className={`group cursor-pointer rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 sovereign-prism-card ${
                   isLight
-                    ? 'bg-white border-neutral-200/85 hover:border-neutral-900 hover:shadow-[0_14px_35px_-12px_rgba(0,0,0,0.1)]'
-                    : 'bg-[#0e1015] border-neutral-800/90 hover:border-neutral-600 hover:shadow-2xl'
+                    ? 'crystal-glass-panel-light hover:border-neutral-900'
+                    : 'crystal-glass-panel-dark hover:border-amber-400/50'
                 }`}
               >
                 <div className="space-y-3.5">

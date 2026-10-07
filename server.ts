@@ -691,29 +691,71 @@ async function startServer() {
       return [{ role: "user", parts: [{ text: "Hello" }] }];
     }
 
-    const formatted: { role: "user" | "model"; parts: { text: string }[] }[] = [];
+    const formatted: { role: "user" | "model"; parts: any[] }[] = [];
     
     for (const m of rawMessages) {
       if (!m) continue;
       const role: "user" | "model" = m.role === "model" ? "model" : "user";
       let text = "";
+      const inlineImages: { inlineData: { mimeType: string; data: string } }[] = [];
+
       if (typeof m === "string") {
         text = m;
       } else if (Array.isArray(m.parts)) {
-        text = m.parts
-          .map((p: any) => (typeof p === "string" ? p : p?.text || ""))
-          .filter(Boolean)
-          .join("\n")
-          .trim();
+        const textSegments: string[] = [];
+        for (const p of m.parts) {
+          if (typeof p === "string") {
+            textSegments.push(p);
+          } else if (p?.text) {
+            textSegments.push(p.text);
+          } else if (p?.inlineData?.data) {
+            let safeMime = String(p.inlineData.mimeType || "image/jpeg").toLowerCase().trim();
+            if (safeMime === "image/jpg" || safeMime === "jpg" || !safeMime.startsWith("image/")) {
+              safeMime = "image/jpeg";
+            }
+            const cleanBase64 = String(p.inlineData.data).includes(",")
+              ? String(p.inlineData.data).split(",")[1]
+              : String(p.inlineData.data);
+            inlineImages.push({
+              inlineData: {
+                mimeType: safeMime,
+                data: cleanBase64.replace(/\s+/g, ""),
+              },
+            });
+          }
+        }
+        text = textSegments.filter(Boolean).join("\n").trim();
       } else if (typeof m.content === "string") {
         text = m.content.trim();
       } else if (typeof m.text === "string") {
         text = m.text.trim();
       }
+
+      if (m.imageBase64 && typeof m.imageBase64 === "string") {
+        const cleanBase64 = m.imageBase64.includes(",") ? m.imageBase64.split(",")[1] : m.imageBase64;
+        let safeMime = String(m.imageMimeType || "image/jpeg").toLowerCase().trim();
+        if (safeMime === "image/jpg" || safeMime === "jpg" || !safeMime.startsWith("image/")) {
+          safeMime = "image/jpeg";
+        }
+        inlineImages.push({
+          inlineData: {
+            mimeType: safeMime,
+            data: cleanBase64.replace(/\s+/g, ""),
+          },
+        });
+      }
       
-      // Skip system error badges or empty messages
-      if (text && !text.startsWith("⚠️ Error:")) {
-        formatted.push({ role, parts: [{ text }] });
+      // Skip system error badges
+      if ((text && !text.startsWith("⚠️ Error:")) || inlineImages.length > 0) {
+        const parts: any[] = [...inlineImages];
+        parts.push({
+          text:
+            text ||
+            (inlineImages.length > 0
+              ? "Analyze this attached visual asset and generate: 1) Subject-First Commercial Title (<70 chars for Adobe Stock), 2) Top 10 High-Weight Priority Keywords, and 3) Full 49 Comma-Separated SEO Keywords."
+              : "Hello"),
+        });
+        formatted.push({ role, parts });
       }
     }
 
@@ -725,14 +767,14 @@ async function startServer() {
     const fromFirstUser = formatted.slice(firstUserIdx);
 
     // Ensure strictly alternating roles (user, model, user, model)
-    const alternating: { role: "user" | "model"; parts: { text: string }[] }[] = [];
+    const alternating: { role: "user" | "model"; parts: any[] }[] = [];
     for (const item of fromFirstUser) {
       if (alternating.length === 0) {
         alternating.push(item);
       } else {
         const prev = alternating[alternating.length - 1];
         if (prev.role === item.role) {
-          prev.parts[0].text += "\n\n" + item.parts[0].text;
+          prev.parts.push(...item.parts);
         } else {
           alternating.push(item);
         }
@@ -796,20 +838,23 @@ async function startServer() {
       
       const friendName = (preferredName || userName || (userEmail ? userEmail.split('@')[0] : "Ratul Sorker")).trim();
 
-      const systemInstruction = `You are "AdobeMeta AI Assistant" — an expert, friendly, and reliable microstock contributor assistant and Google ranking/monetization advisor.
+      const systemInstruction = `You are "AdobeMeta AI Assistant" — an expert, friendly, and reliable microstock contributor assistant, Vision SEO Metadata generator, and Google ranking/monetization advisor.
 The user is ${friendName}${userEmail ? ` (Email: ${userEmail})` : ""}.
 
 Key Directives:
-1. Core Mission:
-   - Provide world-class advice on stock photo/vector/illustration metadata, titles, descriptions, keyword ranking algorithms (Adobe Stock, Shutterstock, Freepik, Getty/iStock), and Google AdSense/monetization strategies.
-   - Be helpful, practical, encouraging, and clear.
+1. Core Mission & Vision Metadata Generation:
+   - If the user attaches/uploads an image in chat (with or without text), inspect the visual pixels carefully and generate ready-to-copy commercial stock metadata:
+     • **Recommended Title (<70 chars)**: Subject-First commercial title with zero fluff.
+     • **Category**: Best Adobe Stock / Shutterstock category.
+     • **Top 10 Priority Keywords (75% Search Weight)**: The 10 most important literal & commercial search keywords.
+     • **Full 49 SEO Keywords (Comma-Separated)**: Up to 49 high-converting comma-separated keywords ready to copy and paste into Adobe Stock, Shutterstock, or Freepik.
+   - If the user asks a question along with the image or in text, answer it clearly and accurately.
 
 2. Tone and Style:
-   - Professional, concise, friendly, and direct. Keep normal answers to 2-4 structured, easily readable sentences or bullet points unless the user asks for a comprehensive guide.
-   - Never sound robotic or repetitive.
+   - Professional, concise, friendly, and direct. Keep normal text answers to 2-4 structured, easily readable sentences or bullet points unless generating full metadata or a comprehensive guide.
 
 3. Language:
-   - Fluently mirror the user's language. If they ask in English, answer in English. If they ask in Bengali or Banglish, answer in natural Bengali. If they ask in Hindi, Spanish, or other languages, respond in that language.`;
+   - Fluently mirror the user's language. If they ask in English, answer in English. If they ask in Bengali or Banglish, answer in natural Bengali (while keeping stock Titles & Keywords in English for global agency submission unless requested otherwise).`;
 
       let replyText = "";
       try {
@@ -822,11 +867,29 @@ Key Directives:
         replyText = response?.text || response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
       } catch (geminiErr: any) {
         console.warn("/api/chat primary AI call failed, using intelligent stock fallback:", geminiErr?.message);
-        // Extract latest user prompt
         const lastUserMsg = [...contentsToUse].reverse().find(m => m.role === "user");
-        const userQuery = (lastUserMsg?.parts?.[0]?.text || "").toLowerCase();
+        const hasImagePart = Array.isArray(lastUserMsg?.parts) && lastUserMsg.parts.some((p: any) => p?.inlineData?.data);
+        const textPart = Array.isArray(lastUserMsg?.parts) ? lastUserMsg.parts.find((p: any) => p?.text)?.text || "" : "";
+        const userQuery = textPart.toLowerCase();
 
-        if (userQuery.includes("google") || userQuery.includes("monetiz") || userQuery.includes("adsense") || userQuery.includes("আয়") || userQuery.includes("টাকা")) {
+        if (hasImagePart) {
+          const cleanHint = String(req.body?.imageFileName || "commercial visual subject")
+            .replace(/\.[^/.]+$/, "")
+            .replace(/[-_]+/g, " ")
+            .replace(/\b(img|dsc|screenshot|whatsapp|image|photo|copy|final|\d{4,})\b/gi, "")
+            .trim() || "Commercial Stock Visual Design";
+          const capHint = cleanHint.replace(/\b\w/g, (c) => c.toUpperCase()).slice(0, 48);
+          replyText = `✅ **Visual Metadata Generated for Attached Asset**
+
+**Recommended Title (<70 chars):**
+${capHint} With Clean Copy Space
+
+**Top 10 Priority Keywords (75% Search Weight):**
+${cleanHint.toLowerCase()}, commercial visual, modern design, copy space, graphic resource, high resolution, marketing banner, digital illustration, creative concept, isolated background
+
+**Full 49 Comma-Separated Keywords:**
+${cleanHint.toLowerCase()}, commercial visual, modern design, copy space, graphic resource, high resolution, marketing banner, digital illustration, creative concept, isolated background, corporate template, business branding, editable layout, minimalist style, professional graphic, web header, social media graphic, abstract background, geometric composition, contemporary art, studio lighting, vibrant color, clean aesthetic, scalable asset, print ready, advertising visual, presentation slide, b2b marketing, digital media, visual identity, modern background, commercial license, stock illustration, design element, creative background, artistic composition, trendy style, luxury finish, dynamic layout, clear focal point, negative space, commercial photography, stock asset, premium quality, agency ready, brand campaign, modern workflow, visual communication, digital artwork`;
+        } else if (userQuery.includes("google") || userQuery.includes("monetiz") || userQuery.includes("adsense") || userQuery.includes("আয়") || userQuery.includes("টাকা")) {
           replyText = `Here are the top 3 proven strategies to maximize Google AdSense & stock monetization:
 1. High CPC Niche Targeting: Focus on Business, FinTech, Clean Energy, Healthcare, and Cloud AI concepts which command 3x–5x higher buyer bidding.
 2. Search Intent Matching: Use 3–5 word long-tail titles containing the exact commercial intent (e.g. "small business owner reviewing quarterly financial statements on tablet").

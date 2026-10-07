@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, CheckCircle2, Camera, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe, Gamepad2, Phone, PhoneCall, Heart, Headphones, Mic, Compass, Grid, Sun, Moon, Volume2, VolumeX, Award } from 'lucide-react';
+import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, CheckCircle2, Camera, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe, Gamepad2, Phone, PhoneCall, Heart, Headphones, Mic, Compass, Grid, Sun, Moon, Volume2, VolumeX, Award, Clock } from 'lucide-react';
 import { BulkItem, TargetMarketplace, TrendData, MetadataResult, MetadataVersion } from './types';
 import { embedJpegMetadata, generateXmpSidecarXml, embedMetadataIntoEps } from './lib/metadataEmbedder';
 import { playShutterSound, playTickSound, playChimeSound, isSoundEnabled, setSoundEnabled } from './lib/audioFeedback';
@@ -767,7 +767,65 @@ export default function App() {
       return 'Ratul Sorker';
     }
   });
-  const [chatMessages, setChatMessages] = useState<any[]>([{ role: "model", parts: [{ text: "Hello! I am your AdobeMeta AI Assistant. How can I help you with your microstock keywords, titles, or portfolio strategy today?" }] }]);
+  const DEFAULT_WELCOME_MSG = {
+    role: "model",
+    parts: [
+      {
+        text: "Hello! I am your AdobeMeta AI Assistant. Upload any image/vector for instant 49-tag SEO metadata, or ask me anything about titles, keywords, and portfolio monetization."
+      }
+    ]
+  };
+  const [chatSessions, setChatSessions] = useState<
+    Array<{ id: string; title: string; updatedAt: number; messages: any[] }>
+  >(() => {
+    try {
+      const raw = localStorage.getItem('adobemeta_chat_sessions_v1');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    const initId = 'chat_' + Date.now();
+    return [
+      {
+        id: initId,
+        title: 'New Chat',
+        updatedAt: Date.now(),
+        messages: [DEFAULT_WELCOME_MSG]
+      }
+    ];
+  });
+  const [activeChatSessionId, setActiveChatSessionId] = useState<string>(() => {
+    try {
+      const raw = localStorage.getItem('adobemeta_chat_sessions_v1');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed[0]?.id) return parsed[0].id;
+      }
+    } catch {}
+    return '';
+  });
+  const [showChatHistorySidebar, setShowChatHistorySidebar] = useState<boolean>(false);
+  const [chatAttachedImage, setChatAttachedImage] = useState<{
+    previewUrl: string;
+    base64: string;
+    mimeType: string;
+    fileName: string;
+  } | null>(null);
+  const chatFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [chatMessages, setChatMessages] = useState<any[]>(() => {
+    try {
+      const raw = localStorage.getItem('adobemeta_chat_sessions_v1');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed[0]?.messages?.length > 0) {
+          return parsed[0].messages;
+        }
+      }
+    } catch {}
+    return [DEFAULT_WELCOME_MSG];
+  });
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -1715,9 +1773,215 @@ export default function App() {
     }
   };
 
+  // Sync active chat messages into chatSessions and persist lightweight history to localStorage
+  useEffect(() => {
+    setChatSessions((prev) => {
+      const currentId = activeChatSessionId || prev[0]?.id || 'chat_default';
+      const firstUserMsg = chatMessages.find((m) => m.role === 'user');
+      const rawUserText =
+        firstUserMsg?.parts?.find((p: any) => p?.text)?.text ||
+        (firstUserMsg?.imagePreview || firstUserMsg?.imageFileName
+          ? `📷 ${firstUserMsg.imageFileName || 'Image Metadata'}`
+          : '');
+      const computedTitle = rawUserText
+        ? rawUserText.replace(/\s+/g, ' ').trim().slice(0, 34)
+        : 'New Chat';
+
+      const exists = prev.some((s) => s.id === currentId);
+      const updated = exists
+        ? prev.map((s) =>
+            s.id === currentId
+              ? {
+                  ...s,
+                  title: s.title === 'New Chat' && computedTitle !== 'New Chat' ? computedTitle : s.title,
+                  updatedAt: Date.now(),
+                  messages: chatMessages
+                }
+              : s
+          )
+        : [
+            {
+              id: currentId,
+              title: computedTitle,
+              updatedAt: Date.now(),
+              messages: chatMessages
+            },
+            ...prev
+          ];
+
+      try {
+        // Strip heavy raw base64 payloads before saving to localStorage to prevent quota overflow while preserving text + small thumbnail preview
+        const storageSafe = updated.slice(0, 25).map((s) => ({
+          ...s,
+          messages: (s.messages || []).map((m: any) => ({
+            role: m.role,
+            imagePreview: m.imagePreview,
+            imageFileName: m.imageFileName,
+            parts: Array.isArray(m.parts)
+              ? m.parts
+                  .filter((p: any) => p?.text)
+                  .map((p: any) => ({ text: p.text }))
+              : [{ text: '' }]
+          }))
+        }));
+        localStorage.setItem('adobemeta_chat_sessions_v1', JSON.stringify(storageSafe));
+      } catch {}
+
+      return updated;
+    });
+  }, [chatMessages, activeChatSessionId]);
+
+  const handleStartNewChat = () => {
+    const newId = 'chat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    const freshSession = {
+      id: newId,
+      title: 'New Chat',
+      updatedAt: Date.now(),
+      messages: [DEFAULT_WELCOME_MSG]
+    };
+    setChatSessions((prev) => [freshSession, ...prev]);
+    setActiveChatSessionId(newId);
+    setChatMessages([DEFAULT_WELCOME_MSG]);
+    setChatInput('');
+    setChatAttachedImage(null);
+    setShowChatHistorySidebar(false);
+  };
+
+  const handleSelectChatSession = (sessionId: string) => {
+    const target = chatSessions.find((s) => s.id === sessionId);
+    if (!target) return;
+    setActiveChatSessionId(target.id);
+    setChatMessages(target.messages?.length ? target.messages : [DEFAULT_WELCOME_MSG]);
+    setChatAttachedImage(null);
+    setShowChatHistorySidebar(false);
+  };
+
+  const handleDeleteChatSession = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setChatSessions((prev) => {
+      const remaining = prev.filter((s) => s.id !== sessionId);
+      if (remaining.length === 0) {
+        const fallbackId = 'chat_' + Date.now();
+        const fresh = {
+          id: fallbackId,
+          title: 'New Chat',
+          updatedAt: Date.now(),
+          messages: [DEFAULT_WELCOME_MSG]
+        };
+        setActiveChatSessionId(fallbackId);
+        setChatMessages([DEFAULT_WELCOME_MSG]);
+        try {
+          localStorage.setItem('adobemeta_chat_sessions_v1', JSON.stringify([fresh]));
+        } catch {}
+        return [fresh];
+      }
+      if (activeChatSessionId === sessionId) {
+        setActiveChatSessionId(remaining[0].id);
+        setChatMessages(remaining[0].messages || [DEFAULT_WELCOME_MSG]);
+      }
+      try {
+        localStorage.setItem('adobemeta_chat_sessions_v1', JSON.stringify(remaining));
+      } catch {}
+      return remaining;
+    });
+  };
+
+  const handleChatImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      if (ext === 'eps' || ext === 'ai' || isEpsFile(file)) {
+        const epsData = await parseEpsFile(file);
+        const b64 =
+          epsData.base64ForAi ||
+          (epsData.previewUrl?.startsWith('data:image/') ? epsData.previewUrl.split(',')[1] : '');
+        if (b64) {
+          setChatAttachedImage({
+            previewUrl: epsData.previewUrl || `data:image/jpeg;base64,${b64}`,
+            base64: b64,
+            mimeType: 'image/jpeg',
+            fileName: file.name
+          });
+          return;
+        }
+      }
+
+      if (isPsdFile(file)) {
+        const psdData = await parsePsdFile(file);
+        const b64 = psdData.previewUrl?.startsWith('data:image/')
+          ? psdData.previewUrl.split(',')[1]
+          : '';
+        if (b64) {
+          setChatAttachedImage({
+            previewUrl: psdData.previewUrl,
+            base64: b64,
+            mimeType: 'image/jpeg',
+            fileName: file.name
+          });
+          return;
+        }
+      }
+
+      // Compress image onto a crisp 768px canvas for fast vision metadata analysis
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = String(ev.target?.result || '');
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_DIM = 768;
+          let w = img.width || 512;
+          let h = img.height || 512;
+          if (w > h && w > MAX_DIM) {
+            h = Math.round((h * MAX_DIM) / w);
+            w = MAX_DIM;
+          } else if (h > MAX_DIM) {
+            w = Math.round((w * MAX_DIM) / h);
+            h = MAX_DIM;
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.84);
+            setChatAttachedImage({
+              previewUrl: compressedUrl,
+              base64: compressedUrl.split(',')[1] || '',
+              mimeType: 'image/jpeg',
+              fileName: file.name
+            });
+          }
+        };
+        img.onerror = () => {
+          const fallbackB64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : '';
+          if (fallbackB64) {
+            setChatAttachedImage({
+              previewUrl: dataUrl,
+              base64: fallbackB64,
+              mimeType: file.type || 'image/jpeg',
+              fileName: file.name
+            });
+          }
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn('Chat image attach error:', err);
+      showToast('Could not attach image. Please try a JPG, PNG, WebP, or EPS file.');
+    }
+  };
+
   const handleSendChat = async () => {
     const textToSend = chatInput.trim();
-    if (!textToSend) return;
+    const attachedImg = chatAttachedImage;
+    if (!textToSend && !attachedImg) return;
 
     if (planType === "free" && chatUsage >= 20) {
       showToast("Free trial limit reached (20 messages). Please upgrade to Pro.");
@@ -1725,10 +1989,37 @@ export default function App() {
       return;
     }
 
-    const newMessage = { role: "user", parts: [{ text: textToSend }] };
+    const effectivePrompt =
+      textToSend ||
+      (attachedImg
+        ? `Generate complete commercial stock metadata for this image (${attachedImg.fileName}): 1) Subject-First Recommended Title (<70 chars for Adobe Stock), 2) Category, 3) Top 10 High-Weight Priority Keywords, and 4) Full 49 Comma-Separated SEO Keywords.`
+        : "");
+
+    const userParts: any[] = [];
+    if (attachedImg?.base64) {
+      userParts.push({
+        inlineData: {
+          mimeType: attachedImg.mimeType || "image/jpeg",
+          data: attachedImg.base64
+        }
+      });
+    }
+    userParts.push({ text: effectivePrompt });
+
+    const newMessage: any = {
+      role: "user",
+      parts: userParts,
+      ...(attachedImg
+        ? {
+            imagePreview: attachedImg.previewUrl,
+            imageFileName: attachedImg.fileName
+          }
+        : {})
+    };
     const newMessages = [...chatMessages, newMessage];
     setChatMessages(newMessages);
     setChatInput("");
+    setChatAttachedImage(null);
     setIsChatLoading(true);
 
     try {
@@ -1740,6 +2031,7 @@ export default function App() {
         },
         body: JSON.stringify({
           messages: newMessages,
+          imageFileName: attachedImg?.fileName,
           tier: planType,
           userName: user?.displayName || user?.email?.split('@')[0] || 'Ratul Sorker',
           preferredName: preferredNickname || user?.displayName || 'Ratul Sorker',
@@ -3001,9 +3293,9 @@ export default function App() {
       }}
       className={`min-h-screen ${
         themeMode === 'light' 
-          ? 'bg-white text-[#111215]' 
-          : 'bg-[#08090b] text-[#f2f2f0]'
-      } font-sans relative overflow-x-hidden transition-colors duration-300`}
+          ? 'bg-[#faf8f5] text-[#111215]' 
+          : 'bg-[#030407] text-[#f4f4f6]'
+      } font-sans relative overflow-x-hidden transition-colors duration-500`}
       style={customBgUrl ? {
         backgroundImage: `url(${customBgUrl})`,
         backgroundSize: 'cover',
@@ -3014,6 +3306,55 @@ export default function App() {
       {/* Dark overlay if custom background is used so content stays readable */}
       {customBgUrl && (
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px] z-0 pointer-events-none" />
+      )}
+
+      {/* ==================================================================== */}
+      {/* UNIFIED FULL-PAGE CHRONOMETER GRID & AMBIENT ORBS BEHIND GLASS       */}
+      {/* ==================================================================== */}
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none fixed inset-0 z-0 ${
+          themeMode === 'light'
+            ? 'bg-[linear-gradient(to_right,rgba(17,18,21,0.035)_1px,transparent_1px),linear-gradient(to_bottom,rgba(17,18,21,0.035)_1px,transparent_1px)] [background-size:48px_48px]'
+            : 'bg-[linear-gradient(to_right,rgba(255,255,255,0.028)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.028)_1px,transparent_1px)] [background-size:48px_48px]'
+        }`}
+      />
+
+      {/* Global Ambient Orbs Behind the Crystal Glass Surface */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 overflow-hidden z-0"
+      >
+        <div
+          className={`absolute -top-32 left-1/4 w-[560px] h-[560px] rounded-full blur-[150px] ${
+            themeMode === 'light' ? 'bg-amber-300/25' : 'bg-amber-500/16'
+          }`}
+        />
+        <div
+          className={`absolute top-1/3 right-1/6 w-[520px] h-[520px] rounded-full blur-[150px] ${
+            themeMode === 'light' ? 'bg-emerald-300/20' : 'bg-emerald-500/14'
+          }`}
+        />
+        <div
+          className={`absolute -bottom-24 left-1/3 w-[600px] h-[420px] rounded-full blur-[160px] ${
+            themeMode === 'light' ? 'bg-sky-300/20' : 'bg-sky-500/14'
+          }`}
+        />
+      </div>
+
+      {/* ==================================================================== */}
+      {/* FULL-WEBSITE 3D OPTICAL CRYSTAL GLASS ENCLOSURE (FRONT GLASS SCREEN) */}
+      {/* ==================================================================== */}
+      <div
+        aria-hidden="true"
+        className={
+          themeMode === 'light'
+            ? 'crystal-viewport-enclosure-light'
+            : 'crystal-viewport-enclosure-dark'
+        }
+      />
+      {!isLiteMode && (
+        <div aria-hidden="true" className="crystal-viewport-sheen" />
       )}
 
       {/* Zero-Lag 60FPS GPU Futuristic Pointer Bounce & Magnetic Physics Engine */}
@@ -3075,13 +3416,14 @@ export default function App() {
         />
       )}
 
-      {/* Single Ultra-Minimalist Top Header for Dedicated Store Views */}
+      {/* Single Ultra-Minimalist Top Header for Dedicated Store Views (Encased in 3D Crystal Glass) */}
       {currentView !== 'home' && (
-        <header className={`sticky top-0 z-40 ${
-          themeMode === 'light'
-            ? 'bg-[#fbfaf8]/90 border-neutral-200/70 text-neutral-900'
-            : 'bg-[#08090b]/90 border-neutral-900 text-neutral-100'
-        } backdrop-blur-xl border-b py-2.5 px-6 sm:px-10 lg:px-14 flex items-center justify-between gap-4 transition-colors duration-200`}>
+        <header className="sticky top-0 z-40 px-3 sm:px-6 lg:px-10 pt-2.5 transition-all duration-200">
+          <div className={`max-w-[1360px] mx-auto rounded-2xl py-2.5 px-5 sm:px-8 flex items-center justify-between gap-4 transition-all duration-200 ${
+            themeMode === 'light'
+              ? 'crystal-glass-panel-light text-neutral-900'
+              : 'crystal-glass-panel-dark text-neutral-100'
+          }`}>
           <div className="flex items-center gap-3 shrink-0">
             <AdobeMetaProLogo
               size="sm"
@@ -3195,6 +3537,7 @@ export default function App() {
               <span className="hidden sm:inline">Home</span>
             </button>
           </div>
+          </div>
         </header>
       )}
 
@@ -3202,7 +3545,9 @@ export default function App() {
         id="studio-workspace"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 space-y-6 relative z-10 pt-4"
+        className={`max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 space-y-6 relative z-10 ${
+          currentView === 'home' ? 'pt-0' : 'pt-4'
+        }`}
       >
         {currentView !== 'home' && (
           <>
@@ -3389,8 +3734,8 @@ export default function App() {
                 />
               ) : (
                 <>
-                  {/* Studio Metadata Precision & Hands-Free Autopilot Control Bar */}
-                  <div className={`${themeMode === 'light' ? 'bg-white border-neutral-200/80 text-neutral-800' : 'bg-[#101216] border-neutral-800 text-neutral-100'} border rounded-2xl p-4 space-y-3.5`}>
+                  {/* Studio Metadata Precision & Hands-Free Autopilot Control Bar (Encased in Crystal Glass) */}
+                  <div className={`${themeMode === 'light' ? 'crystal-architectural-slab-light text-neutral-800' : 'crystal-architectural-slab-dark text-neutral-100'} rounded-3xl p-5 space-y-3.5`}>
                     {/* Top Row: Hands-Free Autopilot Automation Engine Strip */}
                     <div className={`flex flex-wrap items-center justify-between gap-3 pb-3 border-b ${
                       themeMode === 'light' ? 'border-neutral-100' : 'border-neutral-800/80'
@@ -3546,12 +3891,12 @@ export default function App() {
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                   onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
                   onDrop={handleDrop}
-                  className={`border-2 border-dashed transition-colors duration-200 rounded-2xl p-8 sm:p-11 text-center relative group overflow-hidden ${
+                  className={`border-2 border-dashed transition-all duration-300 rounded-3xl p-8 sm:p-11 text-center relative group overflow-hidden sovereign-prism-card ${
                     isDragging 
-                      ? 'border-amber-500 bg-amber-500/5' 
+                      ? 'border-amber-500 bg-amber-500/10' 
                       : themeMode === 'light'
-                      ? 'border-neutral-300 bg-white hover:border-neutral-900'
-                      : 'border-neutral-800 bg-[#101216] hover:border-neutral-600'
+                      ? 'crystal-architectural-slab-light border-neutral-300/80 hover:border-neutral-900'
+                      : 'crystal-architectural-slab-dark border-white/15 hover:border-amber-400/50'
                   }`}
                 >
                   <input
@@ -3609,10 +3954,10 @@ export default function App() {
               {/* Minimalist 1-Click Sample Bar (when empty) */}
               {items.length === 0 && (
                 <div
-                  className={`rounded-2xl p-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                  className={`rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                     themeMode === 'light'
-                      ? 'bg-[#faf9f6] border-neutral-200/80 text-neutral-900'
-                      : 'bg-[#101216] border-neutral-800 text-white'
+                      ? 'crystal-glass-panel-light text-neutral-900'
+                      : 'crystal-glass-panel-dark text-white'
                   }`}
                 >
                   <div className="text-xs">
@@ -3644,9 +3989,9 @@ export default function App() {
               {items.length > 0 && (
                 <div className={`${
                   themeMode === 'light'
-                    ? 'bg-white/95 border-stone-200/90 text-neutral-900 shadow-md'
-                    : 'bg-[#111318]/95 border-neutral-800 text-white shadow-xl'
-                } backdrop-blur-md border rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4`}>
+                    ? 'crystal-architectural-slab-light text-neutral-900'
+                    : 'crystal-architectural-slab-dark text-white'
+                } rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4`}>
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border ${
                       themeMode === 'light'
@@ -3808,10 +4153,10 @@ export default function App() {
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className={`rounded-2xl p-4 sm:p-6 flex flex-wrap items-start gap-5 justify-between transition-all duration-300 relative group overflow-hidden border ${
+                        className={`rounded-3xl p-4 sm:p-6 flex flex-wrap items-start gap-5 justify-between transition-all duration-300 relative group overflow-hidden sovereign-prism-card ${
                           themeMode === 'light'
-                            ? 'bg-white border-stone-200/90 shadow-md text-neutral-900'
-                            : 'cinema-glass-card border-neutral-800 text-neutral-100'
+                            ? 'crystal-architectural-slab-light text-neutral-900'
+                            : 'crystal-architectural-slab-dark text-neutral-100'
                         }`}
                       >
                       <div className="flex items-center gap-4">
@@ -4999,7 +5344,7 @@ export default function App() {
       <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
       <ResourcesModal isOpen={showResourcesModal} onClose={() => setShowResourcesModal(false)} />
 
-      {/* Minimalist Text-Only AI Assistant Drawer (Triggered via Header Controls Menu) */}
+      {/* Minimalist AI Assistant Drawer with Gemini/ChatGPT History Sidebar & Vision Metadata (Same Size & Position) */}
       <div className="fixed bottom-6 right-6 z-[90]">
         <AnimatePresence>
           {isChatOpen && (
@@ -5008,46 +5353,50 @@ export default function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16, scale: 0.97 }}
               transition={{ duration: 0.2 }}
-              className={`w-[340px] sm:w-[380px] h-[470px] rounded-2xl border shadow-2xl flex flex-col overflow-hidden ${
+              className={`relative w-[340px] sm:w-[380px] h-[470px] rounded-2xl flex flex-col overflow-hidden sovereign-prism-card ${
                 themeMode === 'light'
-                  ? 'bg-[#fbfaf8] border-neutral-200/90 text-neutral-900 shadow-neutral-900/15'
-                  : 'bg-[#0e1014] border-neutral-800 text-neutral-100 shadow-black/70'
+                  ? 'crystal-architectural-slab-light text-neutral-900'
+                  : 'crystal-architectural-slab-dark text-neutral-100'
               }`}
             >
-              {/* Minimalist Chat Header */}
-              <div className={`px-4 py-3 border-b flex items-center justify-between ${
+              {/* Chat Header with History Toggle & New Chat */}
+              <div className={`px-3.5 py-2.5 border-b flex items-center justify-between z-20 ${
                 themeMode === 'light' ? 'bg-white border-neutral-200/80' : 'bg-[#13161c] border-neutral-800'
               }`}>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <div>
-                    <h3 className="text-xs font-bold tracking-tight">AdobeMeta Text AI</h3>
-                    <p className="text-[10px] text-neutral-400">SEO, Titles, Keywords &amp; Monetization</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2 min-w-0">
                   <button
                     type="button"
-                    onClick={() =>
-                      setChatMessages([
-                        {
-                          role: 'model',
-                          parts: [
-                            {
-                              text: 'Hello! Ask me anything about SEO titles, 49 keywords, Adobe Stock ranking, or Google monetization.'
-                            }
-                          ]
-                        }
-                      ])
-                    }
-                    className={`px-2 py-1 rounded text-[10px] font-medium transition cursor-pointer ${
-                      themeMode === 'light'
-                        ? 'text-neutral-500 hover:text-black hover:bg-neutral-100'
-                        : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                    onClick={() => setShowChatHistorySidebar((prev) => !prev)}
+                    className={`px-2 py-1 rounded-lg border text-[10px] font-semibold flex items-center gap-1 transition cursor-pointer ${
+                      showChatHistorySidebar
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-500'
+                        : themeMode === 'light'
+                        ? 'bg-neutral-100 hover:bg-neutral-200/80 border-neutral-200 text-neutral-700'
+                        : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
                     }`}
-                    title="Reset conversation"
+                    title="View Chat History (Like Gemini / ChatGPT)"
                   >
-                    Reset
+                    <Clock className="w-3 h-3" />
+                    <span>History ({chatSessions.length})</span>
+                  </button>
+                  <div className="truncate">
+                    <h3 className="text-xs font-bold tracking-tight truncate">AdobeMeta AI</h3>
+                    <p className="text-[9.5px] text-neutral-400 truncate">Vision Metadata &amp; SEO Chat</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleStartNewChat}
+                    className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                      themeMode === 'light'
+                        ? 'bg-neutral-950 text-white border-neutral-950 hover:bg-neutral-800'
+                        : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
+                    }`}
+                    title="Start a New Chat"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>New Chat</span>
                   </button>
                   <button
                     type="button"
@@ -5064,110 +5413,288 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Quick Text Prompts Bar */}
-              <div className={`px-3 py-2 border-b flex items-center gap-1.5 overflow-x-auto scrollbar-none ${
-                themeMode === 'light' ? 'bg-[#f6f5f2] border-neutral-200/60' : 'bg-[#0b0d10] border-neutral-800/80'
-              }`}>
-                {[
-                  'Give me 10 Rank #1 keywords for business vector',
-                  'Best Adobe Stock title formula (<70 chars)',
-                  'High CPC niches for Google Monetize'
-                ].map((q, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setChatInput(q)}
-                    className={`shrink-0 text-[10px] font-medium px-2.5 py-1 rounded-full border transition cursor-pointer ${
-                      themeMode === 'light'
-                        ? 'bg-white border-neutral-200/90 text-neutral-600 hover:border-neutral-900 hover:text-black'
-                        : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-600 hover:text-white'
-                    }`}
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-
-              {/* Messages Container (Pure Text Only) */}
-              <div
-                ref={chatContainerRef}
-                className="flex-1 overflow-y-auto p-4 space-y-3 text-xs leading-relaxed"
-              >
-                {chatMessages.map((msg, i) => {
-                  const isUser = msg.role === 'user';
-                  const textContent = msg.parts?.[0]?.text || '';
-                  return (
-                    <div
-                      key={i}
-                      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 whitespace-pre-wrap ${
-                          isUser
-                            ? themeMode === 'light'
-                              ? 'bg-neutral-950 text-white rounded-br-xs'
-                              : 'bg-white text-neutral-950 font-medium rounded-br-xs'
-                            : themeMode === 'light'
-                            ? 'bg-white border border-neutral-200/90 text-neutral-800 rounded-bl-xs shadow-2xs'
-                            : 'bg-neutral-900 border border-neutral-800 text-neutral-200 rounded-bl-xs'
-                        }`}
-                      >
-                        {textContent}
-                      </div>
-                    </div>
-                  );
-                })}
-                {isChatLoading && (
-                  <div className="flex justify-start">
-                    <div
-                      className={`rounded-2xl px-3.5 py-2 text-[11px] flex items-center gap-2 border ${
+              {/* Body Wrapper (Holds Slide-Out History Sidebar + Active Chat) */}
+              <div className="relative flex-1 flex flex-col overflow-hidden">
+                {/* Gemini / ChatGPT Style Side History Drawer inside the same box */}
+                <AnimatePresence>
+                  {showChatHistorySidebar && (
+                    <motion.div
+                      initial={{ x: '-100%', opacity: 0.5 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: '-100%', opacity: 0 }}
+                      transition={{ duration: 0.18, ease: 'easeOut' }}
+                      className={`absolute inset-y-0 left-0 w-[235px] z-30 border-r flex flex-col shadow-2xl ${
                         themeMode === 'light'
-                          ? 'bg-white border-neutral-200 text-neutral-500'
-                          : 'bg-neutral-900 border-neutral-800 text-neutral-400'
+                          ? 'bg-white/98 border-neutral-200 text-neutral-900'
+                          : 'bg-[#101319]/98 border-neutral-800 text-neutral-100'
+                      } backdrop-blur-md`}
+                    >
+                      <div className={`px-3 py-2.5 border-b flex items-center justify-between ${
+                        themeMode === 'light' ? 'border-neutral-200/80' : 'border-neutral-800'
+                      }`}>
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 font-bold">
+                          Saved Conversations
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleStartNewChat}
+                          className="text-[10px] font-bold text-emerald-500 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" /> New
+                        </button>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                        {chatSessions.map((session) => {
+                          const isCurrent = session.id === activeChatSessionId;
+                          const msgCount = Math.max(0, (session.messages?.length || 1) - 1);
+                          return (
+                            <div
+                              key={session.id}
+                              onClick={() => handleSelectChatSession(session.id)}
+                              className={`group flex items-center justify-between gap-1.5 px-2.5 py-2 rounded-xl text-left text-xs transition cursor-pointer border ${
+                                isCurrent
+                                  ? themeMode === 'light'
+                                    ? 'bg-neutral-900 text-white border-neutral-900 font-semibold'
+                                    : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 font-semibold'
+                                  : themeMode === 'light'
+                                  ? 'bg-neutral-50 hover:bg-neutral-100 border-transparent text-neutral-700'
+                                  : 'bg-neutral-900/50 hover:bg-neutral-800/80 border-transparent text-neutral-300'
+                              }`}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-[11px] leading-tight">
+                                  {session.title || 'New Chat'}
+                                </div>
+                                <div className={`text-[9.5px] mt-0.5 ${
+                                  isCurrent ? 'opacity-80' : 'text-neutral-400'
+                                }`}>
+                                  {msgCount} msg{msgCount === 1 ? '' : 's'} · {new Date(session.updatedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteChatSession(session.id, e)}
+                                className={`opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 hover:text-red-400 transition ${
+                                  isCurrent ? 'opacity-90' : ''
+                                }`}
+                                title="Delete chat"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Quick Prompts Bar */}
+                <div className={`px-3 py-1.5 border-b flex items-center gap-1.5 overflow-x-auto scrollbar-none ${
+                  themeMode === 'light' ? 'bg-[#f6f5f2] border-neutral-200/60' : 'bg-[#0b0d10] border-neutral-800/80'
+                }`}>
+                  <button
+                    type="button"
+                    onClick={() => chatFileInputRef.current?.click()}
+                    className="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <ImageIcon className="w-3 h-3" />
+                    <span>+ Upload Image for Metadata</span>
+                  </button>
+                  {[
+                    'Give me 10 Rank #1 keywords for business vector',
+                    'Best Adobe Stock title formula (<70 chars)',
+                    'High CPC niches for Google Monetize'
+                  ].map((q, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setChatInput(q)}
+                      className={`shrink-0 text-[10px] font-medium px-2.5 py-1 rounded-full border transition cursor-pointer ${
+                        themeMode === 'light'
+                          ? 'bg-white border-neutral-200/90 text-neutral-600 hover:border-neutral-900 hover:text-black'
+                          : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-600 hover:text-white'
                       }`}
                     >
-                      <RefreshCw className="w-3 h-3 animate-spin" />
-                      <span>Thinking...</span>
+                      {q}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Messages Container */}
+                <div
+                  ref={chatContainerRef}
+                  onClick={() => {
+                    if (showChatHistorySidebar) setShowChatHistorySidebar(false);
+                  }}
+                  className="flex-1 overflow-y-auto p-3.5 space-y-3 text-xs leading-relaxed"
+                >
+                  {chatMessages.map((msg, i) => {
+                    const isUser = msg.role === 'user';
+                    const textPartObj = Array.isArray(msg.parts)
+                      ? msg.parts.find((p: any) => typeof p?.text === 'string')
+                      : null;
+                    const textContent = textPartObj?.text || msg.parts?.[0]?.text || '';
+                    const imgPreview = msg.imagePreview;
+                    return (
+                      <div
+                        key={i}
+                        className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 whitespace-pre-wrap ${
+                            isUser
+                              ? themeMode === 'light'
+                                ? 'bg-neutral-950 text-white rounded-br-xs'
+                                : 'bg-white text-neutral-950 font-medium rounded-br-xs'
+                              : themeMode === 'light'
+                              ? 'bg-white border border-neutral-200/90 text-neutral-800 rounded-bl-xs shadow-2xs'
+                              : 'bg-neutral-900 border border-neutral-800 text-neutral-200 rounded-bl-xs'
+                          }`}
+                        >
+                          {imgPreview && (
+                            <div className="mb-2 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/20">
+                              <img
+                                src={imgPreview}
+                                alt={msg.imageFileName || 'Attached asset'}
+                                className="max-h-32 w-auto object-contain mx-auto"
+                              />
+                              {msg.imageFileName && (
+                                <div className="px-2 py-1 text-[9.5px] opacity-75 truncate bg-black/30 text-white">
+                                  📷 {msg.imageFileName}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div>{textContent}</div>
+                          {!isUser && textContent.length > 80 && (
+                            <div className="mt-2 pt-1.5 border-t border-neutral-200/60 dark:border-neutral-800 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(textContent);
+                                  showToast('✓ Copied AI response to clipboard!');
+                                }}
+                                className="text-[10px] font-semibold text-emerald-500 hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                <Copy className="w-2.5 h-2.5" /> Copy Metadata
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {isChatLoading && (
+                    <div className="flex justify-start">
+                      <div
+                        className={`rounded-2xl px-3.5 py-2 text-[11px] flex items-center gap-2 border ${
+                          themeMode === 'light'
+                            ? 'bg-white border-neutral-200 text-neutral-500'
+                            : 'bg-neutral-900 border-neutral-800 text-neutral-400'
+                        }`}
+                      >
+                        <RefreshCw className="w-3 h-3 animate-spin text-emerald-500" />
+                        <span>Analyzing &amp; generating metadata...</span>
+                      </div>
                     </div>
+                  )}
+                  <div ref={chatBottomRef} />
+                </div>
+
+                {/* Attached Image Preview Strip (Before Sending) */}
+                {chatAttachedImage && (
+                  <div className={`px-3 py-2 border-t flex items-center justify-between gap-2 ${
+                    themeMode === 'light' ? 'bg-emerald-50/70 border-emerald-200' : 'bg-emerald-950/30 border-emerald-500/30'
+                  }`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <img
+                        src={chatAttachedImage.previewUrl}
+                        alt="Preview"
+                        className="w-9 h-9 rounded-lg object-cover border border-emerald-500/40 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-[10.5px] font-bold truncate text-emerald-600 dark:text-emerald-400">
+                          {chatAttachedImage.fileName}
+                        </div>
+                        <div className="text-[9.5px] text-neutral-400">
+                          Ready for Vision Title + 49 Keywords
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setChatAttachedImage(null)}
+                      className="p-1 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-neutral-400 hover:text-red-400 transition cursor-pointer"
+                      title="Remove attached image"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 )}
-                <div ref={chatBottomRef} />
-              </div>
 
-              {/* Text Input Form */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSendChat();
-                }}
-                className={`p-3 border-t flex items-center gap-2 ${
-                  themeMode === 'light' ? 'bg-white border-neutral-200/80' : 'bg-[#13161c] border-neutral-800'
-                }`}
-              >
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Ask about SEO titles, keywords, or Adobe Stock rules..."
-                  disabled={isChatLoading}
-                  className={`flex-1 text-xs rounded-xl px-3.5 py-2.5 border focus:outline-none transition ${
-                    themeMode === 'light'
-                      ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-900 focus:border-neutral-900'
-                      : 'bg-neutral-950 border-neutral-800 text-white focus:border-neutral-600'
-                  }`}
-                />
-                <button
-                  type="submit"
-                  disabled={isChatLoading || !chatInput.trim()}
-                  className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-40 ${
-                    themeMode === 'light'
-                      ? 'bg-neutral-950 hover:bg-black text-white'
-                      : 'bg-white hover:bg-neutral-200 text-black'
+                {/* Input Form with Image Upload Button */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendChat();
+                  }}
+                  className={`p-2.5 border-t flex items-center gap-1.5 ${
+                    themeMode === 'light' ? 'bg-white border-neutral-200/80' : 'bg-[#13161c] border-neutral-800'
                   }`}
                 >
-                  Send
-                </button>
-              </form>
+                  <input
+                    ref={chatFileInputRef}
+                    type="file"
+                    accept="image/*,.eps,.ai,.psd"
+                    onChange={handleChatImageUpload}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => chatFileInputRef.current?.click()}
+                    disabled={isChatLoading}
+                    className={`p-2 rounded-xl border transition cursor-pointer shrink-0 ${
+                      chatAttachedImage
+                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                        : themeMode === 'light'
+                        ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-600'
+                        : 'bg-neutral-950 hover:bg-neutral-900 border-neutral-800 text-neutral-300'
+                    }`}
+                    title="Attach image/vector to generate Title & 49 Keywords"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder={
+                      chatAttachedImage
+                        ? 'Press Send for 49 tags or add instructions...'
+                        : 'Ask anything or upload an image for metadata...'
+                    }
+                    disabled={isChatLoading}
+                    className={`flex-1 text-xs rounded-xl px-3 py-2 border focus:outline-none transition min-w-0 ${
+                      themeMode === 'light'
+                        ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-900 focus:border-neutral-900'
+                        : 'bg-neutral-950 border-neutral-800 text-white focus:border-neutral-600'
+                    }`}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isChatLoading || (!chatInput.trim() && !chatAttachedImage)}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-40 shrink-0 ${
+                      themeMode === 'light'
+                        ? 'bg-neutral-950 hover:bg-black text-white'
+                        : 'bg-white hover:bg-neutral-200 text-black'
+                    }`}
+                  >
+                    Send
+                  </button>
+                </form>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
