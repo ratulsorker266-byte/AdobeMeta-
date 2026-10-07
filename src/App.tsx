@@ -483,8 +483,13 @@ const CompetitorDashboard = ({ onBack, customApiKey, themeMode = 'light' }: { on
       let previewSourceUrl = URL.createObjectURL(file);
       if (ext === 'eps' || ext === 'ai') {
         try {
-          const vectorRes = await renderVectorFileToDataUrl(file);
-          previewSourceUrl = vectorRes.dataUrl;
+          const epsRes = await parseEpsFile(file);
+          if (epsRes.previewUrl) previewSourceUrl = epsRes.previewUrl;
+        } catch (_) {}
+      } else if (ext === 'psd' || ext === 'psb') {
+        try {
+          const psdRes = await parsePsdFile(file);
+          if (psdRes.previewUrl) previewSourceUrl = psdRes.previewUrl;
         } catch (_) {}
       }
       setImage(previewSourceUrl);
@@ -853,17 +858,17 @@ export default function App() {
   const [showPricingModal, setShowPricingModal] = useState<boolean>(false);
   const [showResourcesModal, setShowResourcesModal] = useState<boolean>(false);
 
-  // Refined White Minimalist Architecture (Default)
+  // Phantom Dark Monolith Architecture (Default)
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
     try {
-      const stored = localStorage.getItem('adobemeta_theme');
-      if (stored === 'dark' && localStorage.getItem('adobemeta_theme_user_chosen') === 'true') {
-        return 'dark';
+      const stored = localStorage.getItem('adobemeta_theme_v3');
+      if (stored === 'light' || stored === 'dark') {
+        return stored;
       }
-      localStorage.setItem('adobemeta_theme', 'light');
-      return 'light';
+      localStorage.setItem('adobemeta_theme_v3', 'dark');
+      return 'dark';
     } catch {
-      return 'light';
+      return 'dark';
     }
   });
 
@@ -888,9 +893,7 @@ export default function App() {
 
   const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
   const [isAudioActive, setIsAudioActive] = useState<boolean>(() => isSoundEnabled());
-  const [isFuturisticBounce, setIsFuturisticBounce] = useState<boolean>(() => {
-    try { return localStorage.getItem('adobemeta_futuristic_bounce') !== 'false'; } catch { return true; }
-  });
+  const [isFuturisticBounce, setIsFuturisticBounce] = useState<boolean>(true);
   const [showBlackOpsTerminal, setShowBlackOpsTerminal] = useState<boolean>(false);
   const [interceptedBlackOpsQuery, setInterceptedBlackOpsQuery] = useState<string | null>(null);
   const [isCyberMatrixMode, setIsCyberMatrixMode] = useState<boolean>(() => {
@@ -1644,6 +1647,50 @@ export default function App() {
       window.removeEventListener('dragover', onWindowDragOver);
       window.removeEventListener('drop', onWindowDrop);
     };
+  });
+
+  // IFRIT GHOST ENGINE: Global Zero-Click Ctrl+V Clipboard Interceptor
+  // - Paste any screenshot/image anywhere -> Instantly opens Studio & generates 49 keywords + title
+  // - Paste any Adobe Stock / Shutterstock URL or concept text anywhere (outside inputs) -> Instantly hijacks & generates Rank #1 SEO metadata
+  useEffect(() => {
+    const onGlobalPaste = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      // 1. Check for pasted image / screenshot files in clipboard
+      const clipboardFiles = e.clipboardData?.files;
+      if (clipboardFiles && clipboardFiles.length > 0) {
+        const validImages = Array.from(clipboardFiles).filter(
+          (f) => f.type.startsWith('image/') || f.name.match(/\.(jpg|jpeg|png|webp|eps|ai|psd)$/i)
+        );
+        if (validImages.length > 0) {
+          e.preventDefault();
+          setCurrentView('upload');
+          processFiles(validImages);
+          showToast('⚡ Ifrit Ghost Engine: Intercepted clipboard image — generating 49 SEO tags automatically...');
+          return;
+        }
+      }
+
+      // 2. Check for pasted URL or search concept text
+      const pastedText = e.clipboardData?.getData('text/plain')?.trim();
+      if (pastedText && pastedText.length >= 4 && pastedText.length <= 280) {
+        e.preventDefault();
+        setInterceptedBlackOpsQuery(pastedText);
+        setShowBlackOpsTerminal(true);
+        showToast('⚡ Ifrit Ghost Engine: Intercepted clipboard query — synthesizing Rank #1 metadata...');
+      }
+    };
+
+    window.addEventListener('paste', onGlobalPaste);
+    return () => window.removeEventListener('paste', onGlobalPaste);
   });
 
   // Autonomous Queue Watcher: Whenever there are pending items and Autopilot is ON, automatically execute the batch pipeline
@@ -2975,6 +3022,11 @@ export default function App() {
       {currentView === 'home' && (
         <EditorialHeroSection
           onStartGenerating={handleStartGenerating}
+          onQuickDropFiles={(droppedFiles) => {
+            setCurrentView('upload');
+            processFiles(droppedFiles);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
           onWatchDemo={handleWatchDemo}
           onOpenPricing={() => setShowPricingModal(true)}
           onOpenResources={() => setShowResourcesModal(true)}
@@ -3077,25 +3129,29 @@ export default function App() {
                 setProToolkitTab('presubmit');
                 setShowProToolkitModal(true);
               }}
-              className={`px-3 py-1.5 rounded-full text-[10.5px] font-bold tracking-[0.06em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition cursor-pointer ${
                 themeMode === 'light'
-                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300'
-                  : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
+                  ? 'bg-white hover:bg-neutral-50 text-neutral-800 border-neutral-200'
+                  : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border-neutral-800'
               }`}
               title="Open Pre-Submission Checker, Rejection Helper, AI Disclosure & Earnings Tracker"
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="hidden sm:inline">Pre-Check</span>
+              <span className="hidden sm:inline">Pre-Submission Audit</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowBlackOpsTerminal(true)}
-              className="px-2.5 py-1.5 rounded-full text-[10.5px] font-mono font-bold tracking-[0.08em] uppercase flex items-center gap-1.5 border bg-emerald-950/90 hover:bg-black text-emerald-300 border-emerald-500/45 transition cursor-pointer"
-              title="Open Black-Ops Terminal (Ctrl+K)"
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition cursor-pointer ${
+                themeMode === 'light'
+                  ? 'bg-white hover:bg-neutral-50 text-neutral-700 border-neutral-200'
+                  : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800'
+              }`}
+              title="Open Metadata Inspector (Ctrl+K)"
             >
-              <FileCode className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden xl:inline">Black-Ops</span>
+              <FileCode className="w-3.5 h-3.5 text-neutral-500" />
+              <span className="hidden xl:inline">Inspector</span>
             </button>
 
             <button
@@ -3887,65 +3943,73 @@ export default function App() {
 
                       {item.result ? (
                         <div className="flex-1 px-2 sm:px-4 space-y-3 min-w-[300px]">
-                          {/* Subject-First Commercial Title with Category & 1-Click Copy */}
-                          <div className={`p-3 rounded-xl border ${
+                          {/* Subject-First Commercial Title with 1-Click Angle Switcher & Copy */}
+                          <div className={`p-3.5 rounded-xl border ${
                             themeMode === 'light'
-                              ? 'bg-[#faf8f5] border-stone-200/90'
-                              : 'bg-slate-900/70 border-slate-800/90'
-                          } space-y-1.5`}>
+                              ? 'bg-[#faf9f6] border-neutral-200/90'
+                              : 'bg-neutral-900/70 border-neutral-800/90'
+                          } space-y-2`}>
                             <div className="flex items-center justify-between text-[11px] flex-wrap gap-2">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className={`font-extrabold uppercase tracking-[0.12em] text-[10px] ${
-                                  themeMode === 'light' ? 'text-neutral-900' : 'text-amber-400'
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className={`font-bold uppercase tracking-[0.1em] text-[10px] ${
+                                  themeMode === 'light' ? 'text-neutral-900' : 'text-neutral-200'
                                 }`}>
-                                  Subject-First Commercial Title
+                                  Subject-First Title
                                 </span>
-                                <span className={`px-2 py-0.2 rounded font-bold text-[10px] border ${
+                                <span className={`px-2 py-0.5 rounded font-semibold text-[10px] border ${
                                   themeMode === 'light'
-                                    ? 'bg-white border-emerald-200 text-emerald-800'
-                                    : 'bg-neutral-900 border-emerald-500/30 text-emerald-300'
+                                    ? 'bg-white border-neutral-200 text-neutral-700'
+                                    : 'bg-neutral-950 border-neutral-800 text-neutral-300'
                                 }`}>
                                   {item.result.category || (item.file.name.match(/\.(eps|ai|svg)$/i) ? 'Graphic Resources' : 'Business')}
                                 </span>
-                                <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded border ${
+                                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
                                   (item.result.recommendedTitle || '').length <= 70
-                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25'
+                                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25'
                                 }`}>
                                   {(item.result.recommendedTitle || '').length}/70 chars
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex flex-wrap items-center gap-1.5">
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setInterceptedBlackOpsQuery(
-                                      item.result!.recommendedTitle || item.file.name
-                                    );
-                                    setShowBlackOpsTerminal(true);
-                                  }}
-                                  className={`text-[10.5px] font-mono font-bold flex items-center gap-1 px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                                  onClick={() => handleRegenerateItem(item.id, 'more_commercial')}
+                                  disabled={isRegenerating}
+                                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition cursor-pointer ${
                                     themeMode === 'light'
-                                      ? 'bg-neutral-950 hover:bg-black text-emerald-300 border-neutral-950'
-                                      : 'bg-emerald-950/60 hover:bg-emerald-900/70 text-emerald-300 border-emerald-500/40'
+                                      ? 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200'
+                                      : 'bg-neutral-950 hover:bg-neutral-800 text-neutral-300 border-neutral-800'
                                   }`}
-                                  title="Deep X-Ray this file's metadata in Black-Ops Terminal"
+                                  title="Re-angle title & top tags for high-paying B2B commercial buyers"
                                 >
-                                  <FileCode className="w-3 h-3 text-emerald-400" />
-                                  <span>Black-Ops X-Ray</span>
+                                  B2B Angle
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRegenerateItem(item.id, 'more_search_focused')}
+                                  disabled={isRegenerating}
+                                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                                    themeMode === 'light'
+                                      ? 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200'
+                                      : 'bg-neutral-950 hover:bg-neutral-800 text-neutral-300 border-neutral-800'
+                                  }`}
+                                  title="Re-angle title & top tags for high-volume organic search queries"
+                                >
+                                  High-Volume SEO
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => autoFixItem(item.id)}
-                                  className={`text-[10.5px] font-bold flex items-center gap-1 px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                                  className={`text-[10px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded-md border transition cursor-pointer ${
                                     themeMode === 'light'
                                       ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200'
                                       : 'bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 border-emerald-500/30'
                                   }`}
-                                  title="1-Click Auto-Optimize Title & 49 Tags"
+                                  title="1-Click Auto-Calibrate Title (<70 chars) & Top-10 Keyword Sync"
                                 >
                                   <Zap className="w-3 h-3 text-emerald-500" />
-                                  <span>Auto-Fix SEO</span>
+                                  <span>Calibrate</span>
                                 </button>
                                 <button
                                   type="button"
@@ -3953,10 +4017,10 @@ export default function App() {
                                     navigator.clipboard.writeText(item.result!.recommendedTitle || '');
                                     showToast('✓ Copied Subject-First Commercial Title!');
                                   }}
-                                  className={`text-[10.5px] font-bold flex items-center gap-1 px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                                  className={`text-[10px] font-semibold flex items-center gap-1 px-2.5 py-0.5 rounded-md border transition cursor-pointer ${
                                     themeMode === 'light'
-                                      ? 'bg-white hover:bg-stone-100 text-neutral-800 border-stone-200'
-                                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                                      ? 'bg-neutral-950 hover:bg-black text-white border-neutral-950'
+                                      : 'bg-white hover:bg-neutral-200 text-neutral-950 border-white'
                                   }`}
                                 >
                                   <Copy className="w-3 h-3" />
@@ -3964,11 +4028,29 @@ export default function App() {
                                 </button>
                               </div>
                             </div>
-                            <p className={`text-sm font-bold leading-snug ${
-                              themeMode === 'light' ? 'text-neutral-900' : 'text-slate-100'
+                            <p className={`text-sm font-semibold leading-snug ${
+                              themeMode === 'light' ? 'text-neutral-950' : 'text-white'
                             }`}>
                               {item.result.recommendedTitle}
                             </p>
+                            {item.result.commercialProblemSolved && (
+                              <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-neutral-200/60 dark:border-neutral-800/70 text-[11px] text-neutral-500 dark:text-neutral-400">
+                                <span className="truncate">
+                                  <strong className={themeMode === 'light' ? 'text-neutral-700' : 'text-neutral-300'}>Buyer Utility:</strong>{' '}
+                                  {item.result.commercialProblemSolved}
+                                </span>
+                                {item.result.searchIntent?.primaryIntent && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRegenerateItem(item.id, 'rank_one_guarantee', item.result!.searchIntent?.primaryIntent)}
+                                    className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 hover:underline shrink-0 cursor-pointer"
+                                    title="Click to lock this exact buyer query into Slot #1"
+                                  >
+                                    Target Query: &ldquo;{item.result.searchIntent.primaryIntent.slice(0, 38)}&rdquo;
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {/* Semantic Color-Coded Keywords with Top 10 High-Ranking Badges & 1-Click Slot #1 Promotion */}
@@ -5090,17 +5172,6 @@ export default function App() {
           )}
         </AnimatePresence>
       </div>
-
-      {/* Autonomous Self-Running Hacker Telemetry & 1-Click Niche Hijack HUD */}
-      <AutonomousHackerHudBar
-        onOpenTerminal={() => setShowBlackOpsTerminal(true)}
-        onInterceptedUrl={(pasted) => {
-          setInterceptedBlackOpsQuery(pasted);
-          setShowBlackOpsTerminal(true);
-        }}
-        showToast={showToast}
-        themeMode={themeMode}
-      />
 
       {/* Contributor Pre-Submission Checker, Rejection Reason Helper, AI Disclosure & Earnings Tracker */}
       <ContributorProToolkitModal

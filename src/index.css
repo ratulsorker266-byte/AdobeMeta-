@@ -258,218 +258,70 @@ code, kbd, samp, pre {
   animation: shockwaveExpand 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Elastic Spring Physics for all interactive elements when Futuristic Mode is ON */
+/* Subtle, Crisp Institutional + Phantom Monster Giant Micro-Interactions */
+@keyframes ghostSpectralDrift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.42;
+  }
+  50% {
+    transform: translate3d(28px, -18px, 0) scale(1.08);
+    opacity: 0.72;
+  }
+}
+
+@keyframes phantomPulseRing {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 18px 50px -15px rgba(0, 0, 0, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 28px -4px rgba(16, 185, 129, 0.22), 0 24px 60px -12px rgba(0, 0, 0, 0.75);
+  }
+}
+
+@keyframes colossalTextBreath {
+  0%, 100% {
+    opacity: 0.035;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.065;
+    transform: translateX(-50%) scale(1.025);
+  }
+}
+
+.animate-ghost-drift {
+  animation: ghostSpectralDrift 11s ease-in-out infinite;
+}
+
+.animate-colossal-breath {
+  animation: colossalTextBreath 9s ease-in-out infinite;
+}
+
+.phantom-monolith-card {
+  animation: phantomPulseRing 6s ease-in-out infinite;
+}
+
 html.futuristic-bounce-active button,
 html.futuristic-bounce-active a,
 html.futuristic-bounce-active label,
 html.futuristic-bounce-active select,
 html.futuristic-bounce-active .group,
 html.futuristic-bounce-active [data-bounce-card] {
-  transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-              border-color 0.25s ease !important;
-  will-change: transform;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.22s ease;
 }
 
-html.futuristic-bounce-active button:hover,
-html.futuristic-bounce-active a:hover,
-html.futuristic-bounce-active label:hover {
-  transform: translateY(-3.5px) scale(1.055);
-}
-
-html.futuristic-bounce-active button:active,
-html.futuristic-bounce-active a:active,
-html.futuristic-bounce-active label:active {
-  transform: translateY(1px) scale(0.94) !important;
-  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-html.futuristic-bounce-active .group:hover,
 html.futuristic-bounce-active [data-bounce-card]:hover {
-  transform: translateY(-8px) scale(1.022);
-  box-shadow: 0 26px 55px -14px rgba(14, 165, 233, 0.28),
-              0 12px 28px -10px rgba(0, 0, 0, 0.12),
-              inset 0 1px 0 0 rgba(255, 255, 255, 0.65) !important;
-  border-color: rgba(14, 165, 233, 0.55) !important;
+  transform: translateY(-4px) scale(1.008);
 }
 
-/* Interactive Wet-Glass Specular Shimmer following pointer inside every card */
-html.aquatic-water-world [data-bounce-card] {
-  position: relative;
-  overflow: hidden;
-  animation: waterBuoyancyBob 5.5s ease-in-out infinite;
-  box-shadow: 0 14px 36px -12px rgba(14, 165, 233, 0.12),
-              inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
-}
-
-html.aquatic-water-world [data-bounce-card]::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 65%;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(56, 189, 248, 0.85),
-    rgba(255, 255, 255, 0.95),
-    rgba(245, 158, 11, 0.75),
-    transparent
-  );
-  transition: left 0.65s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-  z-index: 2;
-}
-
-html.aquatic-water-world [data-bounce-card]:hover::before {
-  left: 125%;
-}
-
-html.aquatic-water-world [data-bounce-card]::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    380px circle at var(--spot-x, -500px) var(--spot-y, -500px),
-    rgba(56, 189, 248, 0.16),
-    rgba(245, 158, 11, 0.06) 42%,
-    transparent 75%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 1;
-}
-
-html.aquatic-water-world [data-bounce-card]:hover::after {
-  opacity: 1;
-}
-
-/* Gentle Water Buoyancy Bobbing for Cards inside the Water World */
-@keyframes waterBuoyancyBob {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-4.5px) rotate(0.28deg);
-  }
-}
-
-html.aquatic-water-world [data-bounce-card]:nth-child(even) {
-  animation-duration: 6.4s;
-  animation-delay: 0.8s;
-}
-
-html.aquatic-water-world [data-bounce-card]:hover {
-  animation-play-state: paused;
-}
-
-/* Liquid Caustic Shimmer for Editorial Accent Text */
-@keyframes causticTextFlow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-html.aquatic-water-world .aquatic-caustic-text {
-  background: linear-gradient(
-    110deg,
-    #0284c7 0%,
-    #38bdf8 25%,
-    #f59e0b 50%,
-    #0ea5e9 75%,
-    #0284c7 100%
-  );
-  background-size: 240% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent !important;
-  animation: causticTextFlow 6s ease-in-out infinite;
-}
-
-/* ============================================================================
-   CYBER-MATRIX HACKER OVERDRIVE SKIN & 4 SIGNATURE LUXURY THEME PRESETS
-   ============================================================================ */
-html.cyber-hacker-matrix body,
-html.cyber-hacker-matrix .min-h-screen,
-html[data-skin="matrix"] body,
-html[data-skin="matrix"] .min-h-screen {
-  background-color: #020806 !important;
-  background-image:
-    radial-gradient(850px circle at 15% 10%, rgba(16, 185, 129, 0.16), transparent 60%),
-    radial-gradient(700px circle at 85% 20%, rgba(6, 182, 212, 0.12), transparent 60%),
-    radial-gradient(rgba(16, 185, 129, 0.18) 1px, transparent 1px) !important;
-  background-size: 100% 100%, 100% 100%, 26px 26px !important;
-  color: #ecfdf5 !important;
-}
-
-html.cyber-hacker-matrix [data-bounce-card],
-html.cyber-hacker-matrix header,
-html[data-skin="matrix"] [data-bounce-card],
-html[data-skin="matrix"] header {
-  border-color: rgba(16, 185, 129, 0.36) !important;
-  box-shadow: 0 18px 42px -14px rgba(16, 185, 129, 0.24),
-              inset 0 1px 0 0 rgba(52, 211, 153, 0.28) !important;
-}
-
-/* Royal Sapphire Midnight Aurora Skin */
-html[data-skin="sapphire"] body,
-html[data-skin="sapphire"] .min-h-screen {
-  background-color: #040711 !important;
-  background-image:
-    radial-gradient(900px circle at 18% 8%, rgba(56, 189, 248, 0.16), transparent 60%),
-    radial-gradient(800px circle at 82% 18%, rgba(99, 102, 241, 0.16), transparent 62%),
-    radial-gradient(rgba(56, 189, 248, 0.14) 1px, transparent 1px) !important;
-  background-size: 100% 100%, 100% 100%, 28px 28px !important;
-  color: #f0f9ff !important;
-}
-
-html[data-skin="sapphire"] [data-bounce-card],
-html[data-skin="sapphire"] header {
-  border-color: rgba(56, 189, 248, 0.32) !important;
-  box-shadow: 0 20px 48px -15px rgba(14, 165, 233, 0.25),
-              inset 0 1px 0 0 rgba(125, 211, 252, 0.25) !important;
-}
-
-/* Obsidian Champagne Gold Luxury Skin */
-html[data-skin="obsidian"] body,
-html[data-skin="obsidian"] .min-h-screen {
-  background-color: #070709 !important;
-  background-image:
-    radial-gradient(900px circle at 16% 8%, rgba(245, 158, 11, 0.14), transparent 58%),
-    radial-gradient(750px circle at 85% 15%, rgba(16, 185, 129, 0.11), transparent 60%),
-    radial-gradient(rgba(245, 158, 11, 0.12) 1px, transparent 1px) !important;
-  background-size: 100% 100%, 100% 100%, 28px 28px !important;
-}
-
-html[data-skin="obsidian"] [data-bounce-card] {
-  border-color: rgba(245, 158, 11, 0.24) !important;
-  box-shadow: 0 20px 46px -16px rgba(245, 158, 11, 0.16),
-              inset 0 1px 0 0 rgba(254, 243, 199, 0.16) !important;
-}
-
-/* Luminous Headline Shimmer */
+/* Clean Editorial Accent Typography */
 .luxury-headline-gradient {
-  background: linear-gradient(
-    115deg,
-    #f59e0b 0%,
-    #fde047 28%,
-    #34d399 58%,
-    #38bdf8 82%,
-    #f59e0b 100%
-  );
-  background-size: 220% auto;
+  background: linear-gradient(135deg, #10b981 0%, #38bdf8 50%, #f59e0b 100%);
   -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent !important;
-  animation: causticTextFlow 6.5s ease-in-out infinite;
+  -webkit-text-fill-color: transparent;
 }
 
 /* ============================================================================

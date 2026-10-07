@@ -101,7 +101,7 @@ export const PrivacyPolicyModal: React.FC<LegalModalProps> = ({ isOpen, onClose 
               6. Contact Us
             </h3>
             <p>
-              If you have any questions about this Privacy Policy, please contact our data compliance officer at: <strong className="text-slate-100">support@adobemeta.pro</strong> or through the in-app Contact Modal.
+              If you have any questions about this Privacy Policy, please reach out through our official <strong>Contact Support</strong> modal in the footer.
             </p>
           </section>
         </div>
@@ -288,8 +288,15 @@ export const ContactSupportModal: React.FC<LegalModalProps> = ({ isOpen, onClose
   const [submitted, setSubmitted] = React.useState(false);
   const [email, setEmail] = React.useState('');
   const [message, setMessage] = React.useState('');
+  const [copiedType, setCopiedType] = React.useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleCopy = (val: string, label: string) => {
+    navigator.clipboard.writeText(val);
+    setCopiedType(label);
+    setTimeout(() => setCopiedType(null), 2000);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -313,81 +320,124 @@ export const ContactSupportModal: React.FC<LegalModalProps> = ({ isOpen, onClose
       >
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-400">
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
               <Mail className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-white">Contact & Support</h2>
-              <p className="text-xs text-slate-400">Reach the AdobeMeta Pro Engineering Team</p>
+              <h2 className="text-xl font-black text-white">Direct Contact &amp; WhatsApp</h2>
+              <p className="text-xs text-slate-400">Founder &amp; Lead Architect · Ratul Sorker</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition font-bold"
+            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition font-bold cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Direct Instant Contact Cards (Gmail & WhatsApp) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
+          <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold">
+              OFFICIAL GMAIL
+            </div>
+            <div className="text-xs font-bold text-white truncate">
+              ratulsorker266@gmail.com
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <a
+                href="mailto:ratulsorker266@gmail.com"
+                className="flex-1 text-center py-1.5 px-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition"
+              >
+                Send Email
+              </a>
+              <button
+                type="button"
+                onClick={() => handleCopy('ratulsorker266@gmail.com', 'gmail')}
+                className="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] transition cursor-pointer"
+              >
+                {copiedType === 'gmail' ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-2">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
+              DIRECT WHATSAPP
+            </div>
+            <div className="text-xs font-bold text-white">
+              01317103754
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <a
+                href="https://wa.me/8801317103754"
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 text-center py-1.5 px-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] transition"
+              >
+                Open WhatsApp
+              </a>
+              <button
+                type="button"
+                onClick={() => handleCopy('01317103754', 'wa')}
+                className="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] transition cursor-pointer"
+              >
+                {copiedType === 'wa' ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        </div>
+
         {submitted ? (
-          <div className="py-12 text-center space-y-3">
+          <div className="py-10 text-center space-y-3">
             <div className="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-bold text-white">Message Received!</h3>
             <p className="text-xs text-slate-300">
-              Thank you for contacting us. Our technical support specialist will review your inquiry within 24 business hours.
+              Thank you for reaching out. For instant response, message directly on WhatsApp at 01317103754.
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="py-5 space-y-4">
+          <form onSubmit={handleSubmit} className="pt-4 space-y-3.5">
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1.5">Your Email</label>
+              <label className="text-xs font-bold text-slate-300 block mb-1">Your Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="contributor@example.com"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1.5">Subject / Topic</label>
-              <select className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                <option value="csv">CSV Format / Agency Upload Assistance</option>
-                <option value="monetize">Google Monetization & Contributor Earnings</option>
-                <option value="feature">Feature Request or Partnership</option>
-                <option value="bug">Bug Report / Technical Support</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1.5">Message / Details</label>
+              <label className="text-xs font-bold text-slate-300 block mb-1">Message / Details</label>
               <textarea
                 required
-                rows={4}
+                rows={3}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Describe your question or issue in detail..."
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 resize-none"
+                placeholder="Write your message or click WhatsApp above for instant chat..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 resize-none"
               />
             </div>
 
-            <div className="pt-2 flex justify-end gap-3">
+            <div className="pt-1 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white cursor-pointer"
               >
-                Cancel
+                Close
               </button>
               <button
                 type="submit"
-                className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-2.5 rounded-xl transition text-sm shadow-md"
+                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-2 rounded-xl transition text-xs cursor-pointer shadow-md"
               >
-                Send Inquiry
+                Send Message
               </button>
             </div>
           </form>

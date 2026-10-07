@@ -1703,13 +1703,33 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
       // Enforce target marketplace specific keyword limits (e.g. 30 for Freepik, 49 for Adobe Stock, 50 for Shutterstock)
       parsed.keywords = sanitizedKeywords.slice(0, marketConfig.maxKeywords);
 
-      // Clean and sanitize Title (remove promotional fluff prohibited by Adobe Stock)
+      // Clean and sanitize Title (remove promotional fluff prohibited by Adobe Stock & enforce Subject-First Buyer Intent)
       let cleanTitle = String(parsed.recommendedTitle || "Commercial Stock Visual").trim();
       cleanTitle = cleanTitle
-        .replace(/\b(stunning|amazing|breathtaking|awesome|best|high quality|stock photo|stock image)\b/gi, '')
+        .replace(/\b(stunning|amazing|breathtaking|awesome|best|high quality|stock photo|stock image|beautiful|perfect|4k|8k|hd)\b/gi, '')
         .replace(/\.+$/, '')
         .replace(/\s+/g, ' ')
         .trim();
+
+      // Guarantee that the primary visual subject is present in the first 45 characters of the Title (Adobe Stock #1 Search Relevance Rule)
+      const primaryVisualNoun = String(
+        parsed.visualSubject ||
+        parsed.keywordTaxonomy?.primarySubject?.[0] ||
+        sanitizedKeywords[0] ||
+        ''
+      )
+        .replace(/[^\w\s-]/g, '')
+        .trim();
+
+      if (
+        primaryVisualNoun.length >= 3 &&
+        primaryVisualNoun.split(/\s+/).length <= 4 &&
+        !cleanTitle.toLowerCase().includes(primaryVisualNoun.toLowerCase().split(/\s+/)[0])
+      ) {
+        const capSubject = primaryVisualNoun.replace(/\b\w/g, (c) => c.toUpperCase());
+        cleanTitle = `${capSubject} ${cleanTitle}`.replace(/\s+/g, ' ').trim();
+      }
+
       if (cleanTitle.length > 0) {
         cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
       }
@@ -1722,10 +1742,10 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
           cleanTitle = `${cleanTitle} with ${extraWords}`;
         }
       } else if (marketConfig.id === 'adobe_stock') {
-        // Adobe Stock Official Rule (Aug 18, 2026): "Keep it short, ideally under 70 characters"
+        // Adobe Stock Official Rule: "Keep it short, ideally under 70 characters" (Sweet spot: 48–68 chars)
         if (cleanTitle.length > 70) {
           const firstClause = cleanTitle.split(/[,;-]/)[0]?.trim();
-          if (firstClause && firstClause.length >= 25 && firstClause.length <= 70) {
+          if (firstClause && firstClause.length >= 28 && firstClause.length <= 70) {
             cleanTitle = firstClause;
           } else {
             let cut = cleanTitle.substring(0, 68);

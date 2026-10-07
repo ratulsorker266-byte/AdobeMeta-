@@ -71,7 +71,7 @@ export const AboutModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               <span>Architected by Ratul Sorker</span>
               <button
                 onClick={onClose}
-                className="bg-neutral-900 hover:bg-black text-white text-xs font-medium px-5 py-2 rounded-full transition"
+                className="bg-neutral-900 hover:bg-black text-white text-xs font-medium px-5 py-2 rounded-full transition cursor-pointer"
               >
                 Close
               </button>

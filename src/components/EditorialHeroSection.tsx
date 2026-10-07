@@ -30,6 +30,7 @@ import store08MultiCsvHub from '../assets/images/store08_multi_csv_hub_179111898
 
 interface EditorialHeroProps {
   onStartGenerating: () => void;
+  onQuickDropFiles?: (files: File[]) => void;
   onWatchDemo: () => void;
   onOpenPricing?: () => void;
   onOpenResources?: () => void;
@@ -75,6 +76,8 @@ export interface BoutiqueStoreItem {
 
 export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   onStartGenerating,
+  onQuickDropFiles,
+  onWatchDemo,
   onOpenAbout,
   onToggleTheme,
   themeMode,
@@ -97,6 +100,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   const [previewStoreIdx, setPreviewStoreIdx] = useState<number>(0);
   const [isHoveringSpecimen, setIsHoveringSpecimen] = useState<boolean>(false);
   const [showHeaderControlsMenu, setShowHeaderControlsMenu] = useState<boolean>(false);
+  const [isHeroDragging, setIsHeroDragging] = useState<boolean>(false);
   const [activeSkin, setActiveSkin] = useState<'obsidian' | 'matrix' | 'sapphire' | 'ivory'>(() => {
     try {
       const saved = localStorage.getItem('adobemeta_luxury_skin') as any;
@@ -132,20 +136,20 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     }
   };
 
-  // 8 Specialized Creative Stores (Dokans) in the Coffy.net Market Grid
+  // 8 Specialized Creative Modules in the Enterprise Workspace Directory
   const marketStores: BoutiqueStoreItem[] = [
     {
       id: 'store-metadata',
-      storeNumber: '01 . STORE',
+      storeNumber: '01 · CORE ENGINE',
       title: 'Metadata & EPS Vector Studio',
       category: 'METADATA · GHOSTSCRIPT EPS · 49 WEIGHTED TAGS',
       department: 'metadata',
       image: store01MetadataEps,
-      badge: 'FLAGSHIP STUDIO',
-      statLabel: `${itemsCount > 0 ? `${itemsCount} Queued` : '49/49 SEO'}`,
-      description: '5-layer conversion metadata with 119ms Ghostscript EPS preview and 75% First-10 Slot Lock for maximum downloads.',
-      features: ['119ms EPS Preview', '49 Weighted Tags', 'Direct IPTC & XMP'],
-      ctaText: 'Enter Studio',
+      badge: 'CORE STUDIO',
+      statLabel: `${itemsCount > 0 ? `${itemsCount} Queued` : '49-Tag Compliance'}`,
+      description: 'Generate vision-verified titles and 49 rank-ordered keywords with native EPS vector rendering and direct IPTC/XMP embedding.',
+      features: ['EPS Vector Preview', '49 Weighted Tags', 'Direct IPTC & XMP'],
+      ctaText: 'Open Studio',
       actionType: 'view',
       targetView: 'upload',
       sampleTitle: 'Isometric Cloud Security Server Architecture Vector Illustration',
@@ -153,14 +157,14 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     },
     {
       id: 'store-calendar',
-      storeNumber: '02 . STORE',
+      storeNumber: '02 · PLANNING',
       title: 'Seasonal Demand Calendar',
       category: 'CALENDAR · 12-MONTH EVENTS · BUYER TIMELINE',
       department: 'creative',
       image: storeCalendarHub,
-      badge: 'SEASONAL RADAR',
-      statLabel: '365-Day Forecast',
-      description: 'Discover high-demand microstock events, global holidays, and commercial buying windows 60 days ahead of search spikes.',
+      badge: 'DEMAND FORECAST',
+      statLabel: '12-Month Lead Time',
+      description: 'Plan commercial production around global seasonal events and agency purchasing cycles 60 days ahead of peak buyer demand.',
       features: ['60-Day Lead Window', 'Holiday Niches', 'Prompt Sync'],
       ctaText: 'Open Calendar',
       actionType: 'view',
@@ -170,14 +174,14 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     },
     {
       id: 'store-prompts',
-      storeNumber: '03 . STORE',
-      title: 'AI Prompt Engineering Lab',
+      storeNumber: '03 · SYNTHESIS',
+      title: 'Commercial Prompt Lab',
       category: 'PROMPT MAKER · MIDJOURNEY V6 · FIREFLY 3',
       department: 'creative',
       image: storePromptStudio,
-      badge: 'PROMPT LAB',
-      statLabel: 'Commercial Ready',
-      description: 'Generate commercial stock photography, isolated 3D render, and clean flat vector prompts engineered for agency approval.',
+      badge: 'PROMPT STUDIO',
+      statLabel: 'Agency Compliant',
+      description: 'Build structured commercial stock photography, 3D render, and clean vector prompts formatted for Midjourney, Firefly, and Flux.',
       features: ['Zero-Artifact Formula', 'Copy-Space Framing', 'Midjourney & Firefly'],
       ctaText: 'Open Prompt Lab',
       actionType: 'view',
@@ -187,16 +191,16 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     },
     {
       id: 'store-monetize',
-      storeNumber: '04 . STORE',
-      title: 'Google Monetize & Earning Hub',
+      storeNumber: '04 · ANALYTICS',
+      title: 'Royalty & AdSense Analytics',
       category: 'MONETIZATION · ADSENSE HUB · ROYALTY SIMULATOR',
       department: 'monetize',
       image: storeMonetizeVault,
-      badge: '$38.50 CPC HUB',
-      statLabel: 'Passive ROI',
-      description: 'Calculate combined microstock download royalties and Google AdSense display revenue with 1-click ads.txt generator.',
+      badge: 'REVENUE MODEL',
+      statLabel: 'Portfolio Yield',
+      description: 'Forecast microstock download royalties alongside Google AdSense display revenue and generate compliant ads.txt configurations.',
       features: ['AdSense Simulator', 'Official ads.txt', 'High-CPC Keywords'],
-      ctaText: 'Open Earning Hub',
+      ctaText: 'Open Analytics',
       actionType: 'view',
       targetView: 'monetize',
       sampleTitle: 'Fintech Wealth Management Dashboard And Biometric Banking Security',
@@ -204,16 +208,16 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     },
     {
       id: 'store-seo-rank',
-      storeNumber: '05 . STORE',
-      title: 'Adobe Stock Search & Keyword Optimizer',
+      storeNumber: '05 · OPTIMIZATION',
+      title: 'Title & Top-10 Keyword Calibrator',
       category: 'SEARCH RELEVANCE · TOP 10 SLOTS · KEYWORD QUALITY',
       department: 'metadata',
       image: store05Rank1Seo,
-      badge: 'SEARCH OPTIMIZER',
-      statLabel: 'Keyword Quality Score',
-      description: 'Helps optimize titles and keywords for Adobe Stock search by aligning your primary visual subject with the first 10 keyword slots.',
+      badge: 'SEARCH CALIBRATOR',
+      statLabel: 'First-10 Weighting',
+      description: 'Align your primary visual subject with the first 4 title words and top 10 keyword slots for Adobe Stock and Shutterstock search.',
       features: ['Keyword Quality Score', '<70 Char Calibrator', 'Relevance Audit'],
-      ctaText: 'Open Search Optimizer',
+      ctaText: 'Open Calibrator',
       actionType: 'view',
       targetView: 'seo-rank',
       sampleTitle: 'Sustainable Alpine Forest With Golden Sunbeams And Morning Mist',
@@ -221,14 +225,14 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     },
     {
       id: 'store-trends',
-      storeNumber: '06 . STORE',
-      title: 'Live Market Trends Radar',
+      storeNumber: '06 · INTELLIGENCE',
+      title: 'Market Trends & Niche Research',
       category: 'TRENDS · RISING SEARCHES · BUYER DEMAND',
       department: 'creative',
       image: store06MarketTrends,
-      badge: 'LIVE PULSE',
-      statLabel: 'Real-Time Data',
-      description: 'Explore live surging search terms, low-competition visual niches, and trending commercial color palettes across agencies.',
+      badge: 'MARKET RESEARCH',
+      statLabel: 'Search Demand',
+      description: 'Research high-demand commercial topics, emerging enterprise concepts, and low-competition visual niches across major agencies.',
       features: ['Breakout Queries', 'Style Forecast', '1-Click Tag Copy'],
       ctaText: 'Explore Trends',
       actionType: 'view',
@@ -238,16 +242,16 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     },
     {
       id: 'store-competitor',
-      storeNumber: '07 . STORE',
-      title: 'Competitor Spy & Tag Extractor',
+      storeNumber: '07 · BENCHMARK',
+      title: 'Reverse Image & Tag Inspector',
       category: 'COMPETITOR SPY · REVERSE TAGS · GAP ANALYSIS',
       department: 'metadata',
       image: storeCompetitorSpy,
-      badge: 'SPY RADAR',
-      statLabel: 'Top 1% Benchmark',
-      description: 'Reverse-engineer top-selling stock assets in any niche. Extract hidden high-converting tags and uncover keyword gaps.',
+      badge: 'BENCHMARK TOOL',
+      statLabel: 'Metadata Extraction',
+      description: 'Inspect top-performing stock visuals in any category to analyze their subject framing, title structure, and keyword taxonomy.',
       features: ['Bestseller Tag Spy', 'Strategy Breakdown', 'Instant Copy'],
-      ctaText: 'Launch Spy Tool',
+      ctaText: 'Open Inspector',
       actionType: 'view',
       targetView: 'competitor',
       sampleTitle: 'Global Supply Chain Logistics And Automated Warehouse Robotics',
@@ -255,16 +259,16 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     },
     {
       id: 'store-csv-export',
-      storeNumber: '08 . STORE',
-      title: 'Multi-Agency CSV & Tools Hub',
+      storeNumber: '08 · DISTRIBUTION',
+      title: 'Multi-Agency CSV & Compliance Hub',
       category: 'EXPORT HUB · ADOBE · SHUTTERSTOCK · FREEPIK',
       department: 'monetize',
       image: store08MultiCsvHub,
-      badge: '12 PRO TOOLS',
+      badge: 'EXPORT SUITE',
       statLabel: '5 Agencies Ready',
-      description: 'One-click formatted CSV exports for Adobe Stock, Shutterstock, Freepik, Getty & Vecteezy plus IP Shield and Release Inspector.',
+      description: 'Export formatted metadata CSVs for Adobe Stock, Shutterstock, Freepik, Getty, and Vecteezy with built-in IP and release checks.',
       features: ['5-Agency CSV Hub', 'Trademark IP Shield', 'Release Inspector'],
-      ctaText: 'Open Tools Suite',
+      ctaText: 'Open Export Hub',
       actionType: 'modal_tools',
       sampleTitle: 'Luxury Embossed Gold Foil Stationery Mockup On Travertine Stone',
       sampleKeywords: ['luxury stationery mockup', 'embossed gold foil', 'travertine stone', 'corporate identity', 'minimalist branding', 'editorial presentation', 'brand guidelines', 'paper texture']
@@ -312,39 +316,39 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     <div className={`relative w-full overflow-hidden ${
       isLight 
         ? 'bg-[#fbfaf8] text-[#111215]' 
-        : 'bg-[#08090b] text-[#f2f2f0]'
+        : 'bg-[#050608] text-[#f4f4f6]'
     } font-sans transition-colors duration-300`}>
 
-      {/* Architectural Subtle Grid & Ambient Aurora Lighting Backdrop */}
+      {/* Subtle Architectural Grid Backdrop */}
       <div
         className={`pointer-events-none absolute inset-0 ${
           isLight
-            ? 'bg-[radial-gradient(#d6d3cd_1px,transparent_1px)] [background-size:28px_28px] opacity-45'
-            : 'bg-[radial-gradient(#23252c_1px,transparent_1px)] [background-size:28px_28px] opacity-40'
+            ? 'bg-[radial-gradient(#e5e3dc_1px,transparent_1px)] [background-size:24px_24px] opacity-60'
+            : 'bg-[radial-gradient(#1b202c_1px,transparent_1px)] [background-size:24px_24px] opacity-65'
         }`}
       />
-      <div
-        className={`pointer-events-none absolute -top-40 left-1/4 w-[620px] h-[420px] rounded-full blur-[130px] transition-all duration-700 ${
-          isLight
-            ? 'bg-amber-300/30'
-            : activeSkin === 'matrix'
-            ? 'bg-emerald-500/20'
-            : activeSkin === 'sapphire'
-            ? 'bg-sky-500/20'
-            : 'bg-amber-500/18'
-        }`}
-      />
-      <div
-        className={`pointer-events-none absolute top-24 right-10 w-[520px] h-[380px] rounded-full blur-[130px] transition-all duration-700 ${
-          isLight
-            ? 'bg-emerald-300/25'
-            : activeSkin === 'matrix'
-            ? 'bg-teal-500/18'
-            : activeSkin === 'sapphire'
-            ? 'bg-indigo-500/20'
-            : 'bg-emerald-500/14'
-        }`}
-      />
+
+      {/* PHANTOM GHOST SPECTRAL AURORA ORBS & COLOSSAL MONSTER GIANT WATERMARK */}
+      <div className="pointer-events-none select-none absolute inset-x-0 top-0 h-[780px] overflow-hidden z-0">
+        <div
+          className={`absolute -top-32 left-1/4 w-[540px] h-[540px] rounded-full blur-[130px] animate-ghost-drift ${
+            isLight ? 'bg-emerald-400/15' : 'bg-emerald-500/14'
+          }`}
+        />
+        <div
+          className={`absolute top-24 right-1/5 w-[480px] h-[480px] rounded-full blur-[140px] animate-aurora-2 ${
+            isLight ? 'bg-amber-400/15' : 'bg-cyan-500/12'
+          }`}
+        />
+        <div
+          aria-hidden="true"
+          className={`absolute top-20 left-1/2 -translate-x-1/2 text-[14vw] font-black tracking-[-0.06em] uppercase leading-none whitespace-nowrap animate-colossal-breath ${
+            isLight ? 'text-neutral-950/[0.03]' : 'text-white/[0.035]'
+          }`}
+        >
+          PHANTOM TITAN
+        </div>
+      </div>
 
       {/* ============================================================ */}
       {/* ULTRA-MINIMALIST COFFY.NET HEADER (Feather-light & Breathable) */}
@@ -673,87 +677,124 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-7 space-y-5 text-left"
           >
-            {/* Quiet Editorial Kicker (Zero-Pill Unboxed Metadata) */}
-            <div className="flex flex-wrap items-center gap-2 text-[10.5px] font-mono tracking-[0.14em] uppercase text-neutral-400">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className={isLight ? 'text-neutral-900 font-semibold' : 'text-neutral-200 font-semibold'}>
-                {isBn
-                  ? '🔒 ১০০% ব্রাউজার প্রসেসিং — আপনার ফাইল কখনো সার্ভারে যায় না'
-                  : '🔒 100% LOCAL IN-BROWSER — YOUR FILES NEVER LEAVE YOUR DEVICE'}
+            {/* Quiet Editorial Kicker */}
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em] text-emerald-400">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>
+                IFRIT AUTONOMOUS ENGINE · ZERO-CLICK DROP OR CTRL+V PASTE ANYWHERE
               </span>
             </div>
 
-            {/* Museum-Grade Editorial Headline */}
-            <h1 className={`text-[32px] sm:text-[48px] xl:text-[54px] font-bold tracking-[-0.035em] leading-[1.06] ${
+            {/* Colossal Monster-Scale Editorial Headline */}
+            <h1 className={`text-[36px] sm:text-[52px] xl:text-[62px] font-black tracking-[-0.04em] leading-[1.03] ${
               isLight ? 'text-neutral-950' : 'text-white'
             }`}>
-              {isBn ? (
-                <>
-                  Adobe Stock সার্চের জন্য{' '}
-                  <span className="font-editorial italic font-normal luxury-headline-gradient">
-                    টাইটেল ও কীওয়ার্ড
-                  </span>{' '}
-                  অপ্টিমাইজার।
-                </>
-              ) : (
-                <>
-                  Optimize Stock{' '}
-                  <span className="font-editorial italic font-normal luxury-headline-gradient">
-                    Metadata
-                  </span>{' '}
-                  &amp; Prevent Rejections.
-                </>
-              )}
+              Autonomous Stock{' '}
+              <span className="font-editorial italic font-normal luxury-headline-gradient">
+                Metadata
+              </span>{' '}
+              &amp; SEO Monolith.
             </h1>
 
-            <p className={`text-[14px] sm:text-[15px] font-normal max-w-xl leading-relaxed ${
+            <p className={`text-[14px] sm:text-[15.5px] font-normal max-w-xl leading-relaxed ${
               isLight ? 'text-neutral-600' : 'text-neutral-400'
             }`}>
-              {isBn ? (
-                <>
-                  Helps optimize titles and keywords for Adobe Stock search. আপনার ফাইল ড্রপ করুন—আপলোডের আগেই ≥4MP রেজোলিউশন, ট্রেডমার্ক, ডুপ্লিকেট কীওয়ার্ড ও AI ডিসক্লোজার চেক করে সরাসরি ফাইলে IPTC/XMP এম্বেড করুন।
-                </>
-              ) : (
-                <>
-                  Helps optimize titles and keywords for Adobe Stock search. Check ≥4MP resolution, trademark safety, and AI disclosure rules, then embed IPTC/XMP directly in your browser.
-                </>
-              )}
+              Drop any EPS vector, PSD, photo, or press <kbd className="px-1.5 py-0.5 text-[11px] font-mono rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">Ctrl+V</kbd> anywhere on screen. The engine renders vector previews, locks Top-10 Adobe Stock search weights (75% ranking power), and prepares your agency CSV automatically.
             </p>
 
-            {/* Primary Action Row + 1-Click Luxury Skin Switcher Pills */}
-            <div className="pt-1 flex flex-wrap items-center gap-3">
-              <button
-                onClick={onStartGenerating}
-                className={`px-6 py-3 rounded-full text-xs font-bold tracking-[0.14em] uppercase transition-all flex items-center gap-2 cursor-pointer ${
+            {/* Instant Ifrit Ghost Dropzone Bar right inside the Hero */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isHeroDragging) setIsHeroDragging(true);
+              }}
+              onDragLeave={() => setIsHeroDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsHeroDragging(false);
+                if (e.dataTransfer?.files && e.dataTransfer.files.length > 0 && onQuickDropFiles) {
+                  onQuickDropFiles(Array.from(e.dataTransfer.files));
+                } else {
+                  onStartGenerating();
+                }
+              }}
+              onClick={onStartGenerating}
+              className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                isHeroDragging
+                  ? 'border-emerald-400 bg-emerald-500/15 scale-[1.01]'
+                  : isLight
+                  ? 'bg-white hover:bg-neutral-50 border-neutral-300 shadow-sm'
+                  : 'bg-[#0b0e14]/90 hover:bg-[#10151f] border-emerald-500/30 hover:border-emerald-400/60 shadow-[0_12px_36px_-12px_rgba(16,185,129,0.2)]'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
                   isLight
-                    ? 'bg-neutral-950 hover:bg-black text-white shadow-[0_10px_28px_-6px_rgba(0,0,0,0.35)]'
-                    : 'bg-gradient-to-r from-amber-400 via-amber-300 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 text-neutral-950 shadow-[0_10px_32px_-6px_rgba(245,158,11,0.45)]'
-                }`}
-              >
-                <span>
-                  {isBn ? 'ফাইল আপলোড করুন' : 'Upload Files'}
-                </span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+                    ? 'bg-neutral-950 text-white border-neutral-950'
+                    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40'
+                }`}>
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className={`text-xs sm:text-sm font-bold flex items-center gap-2 ${
+                    isLight ? 'text-neutral-950' : 'text-white'
+                  }`}>
+                    <span>Drop EPS, AI, PSD, JPG or Press Ctrl+V</span>
+                    <span className="text-[9.5px] font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      Instant Autopilot
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-neutral-400 mt-0.5">
+                    Zero-click ghost execution · Automatically extracts artwork, 49 tags, title &amp; CSV
+                  </div>
+                </div>
+              </div>
 
-              {onOpenProToolkit && (
+              <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => onOpenProToolkit('presubmit')}
-                  className={`px-5 py-3 rounded-full text-xs font-semibold tracking-[0.1em] uppercase border transition cursor-pointer flex items-center gap-2 ${
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onWatchDemo();
+                  }}
+                  className={`px-3 py-2 rounded-xl text-[11px] font-semibold border transition cursor-pointer ${
                     isLight
-                      ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border-emerald-300'
-                      : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/45 shadow-[0_0_24px_-6px_rgba(16,185,129,0.35)]'
+                      ? 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border-neutral-200'
+                      : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800'
                   }`}
                 >
-                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                  <span>
-                    {isBn
-                      ? 'প্রি-সাবমিশন চেকার'
-                      : 'Pre-Submission Checker'}
-                  </span>
+                  1-Click Live Demo
                 </button>
-              )}
+                <span className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
+                  isLight
+                    ? 'bg-neutral-950 text-white'
+                    : 'bg-emerald-500 text-neutral-950'
+                }`}>
+                  <span>Select Files</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
             </div>
+
+            {/* Pre-Submission Audit Quick Action */}
+            {onOpenProToolkit && (
+              <div className="pt-1 flex flex-wrap items-center gap-2.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => onOpenProToolkit('presubmit')}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border font-semibold text-[11px] transition cursor-pointer ${
+                    isLight
+                      ? 'bg-white hover:bg-neutral-100 border-neutral-300 text-neutral-900'
+                      : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-200'
+                  }`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Pre-Submission Audit</span>
+                </button>
+              </div>
+            )}
           </motion.div>
 
           {/* Right 5 Columns: Live Interactive Store Telemetry & SEO Specimen Card */}
@@ -767,11 +808,16 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               data-bounce-card="true"
               onMouseEnter={() => setIsHoveringSpecimen(true)}
               onMouseLeave={() => setIsHoveringSpecimen(false)}
-              className={`rounded-2xl border p-5 transition-all duration-300 ${
+              className={`rounded-2xl border p-5 transition-all duration-300 relative overflow-hidden phantom-monolith-card ${
               isLight
                 ? 'bg-white border-neutral-200/90 shadow-[0_12px_40px_-15px_rgba(0,0,0,0.07)]'
-                : 'bg-[#0f1116] border-neutral-800/90 shadow-2xl'
+                : 'bg-[#0b0e14]/95 border-emerald-500/30 shadow-2xl'
             }`}>
+              {/* Subtle Ghost Laser Scan Line inside Specimen Card */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent animate-laser-scan"
+              />
               {/* Top Specimen Header */}
               <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-neutral-200/60 dark:border-neutral-800/80">
                 <div className="flex items-center gap-2 text-[10px] font-mono tracking-[0.16em] uppercase text-neutral-400">
@@ -790,19 +836,23 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 </button>
               </div>
 
-              {/* Specimen Visual & Title Preview */}
-              <div className="flex items-center gap-3.5 mb-4">
+              {/* Specimen Visual & Before/After Title Comparison */}
+              <div className="flex items-start gap-3.5 mb-4">
                 <img
                   src={activePreviewStore.image}
                   alt={activePreviewStore.title}
-                  className="w-18 h-14 rounded-xl object-cover border border-neutral-200/60 dark:border-neutral-800 shrink-0"
+                  className="w-18 h-16 rounded-xl object-cover border border-neutral-200/60 dark:border-neutral-800 shrink-0"
                 />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between text-[10px] font-mono text-emerald-600 dark:text-emerald-400 mb-0.5">
-                    <span>SUBJECT-FIRST TITLE ({activePreviewStore.sampleTitle.length}/70 CHARS)</span>
-                    <span>98% SCORE</span>
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] font-mono">
+                    <span className="text-neutral-400 line-through truncate max-w-[190px]">
+                      Raw: &quot;IMG_4092 vector graphic design.eps&quot;
+                    </span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                      {activePreviewStore.sampleTitle.length}/70 CHARS · 99% MATCH
+                    </span>
                   </div>
-                  <p className={`text-xs font-semibold leading-snug truncate ${
+                  <p className={`text-xs font-semibold leading-snug line-clamp-2 ${
                     isLight ? 'text-neutral-900' : 'text-neutral-100'
                   }`}>
                     {activePreviewStore.sampleTitle}
@@ -837,8 +887,6 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {activePreviewStore.sampleKeywords.slice(0, 6).map((kw, kIdx) => {
-                    const slotWeights = [99, 96, 94, 92, 90, 88];
-                    const weightPct = slotWeights[kIdx] || 85;
                     return (
                       <span
                         key={kw}
@@ -854,41 +902,30 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                       >
                         <span className="text-[9.5px] font-mono opacity-60">#{kIdx + 1}</span>
                         <span>{kw}</span>
-                        <span
-                          className={`text-[9px] font-mono px-1 rounded ${
-                            kIdx === 0
-                              ? 'bg-emerald-500/25 text-emerald-300 dark:bg-emerald-600 dark:text-white font-bold'
-                              : isLight
-                              ? 'bg-emerald-100 text-emerald-800 font-semibold'
-                              : 'bg-emerald-950 text-emerald-400 font-semibold'
-                          }`}
-                        >
-                          {weightPct}%
-                        </span>
                       </span>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Store Switcher Dots & Instant Black-Ops X-Ray Trigger inside Specimen */}
+              {/* Store Switcher Dots & Metadata Inspector Trigger */}
               <div className="mt-4 pt-3 border-t border-neutral-200/60 dark:border-neutral-800/80 flex items-center justify-between gap-2">
                 {onOpenBlackOps ? (
                   <button
                     type="button"
                     onClick={onOpenBlackOps}
-                    className={`text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition ${
+                    className={`text-[11px] font-medium flex items-center gap-1.5 cursor-pointer transition ${
                       isLight
-                        ? 'text-emerald-700 hover:text-black'
-                        : 'text-emerald-400 hover:text-emerald-300'
+                        ? 'text-neutral-600 hover:text-black'
+                        : 'text-neutral-400 hover:text-white'
                     }`}
                   >
-                    <Terminal className="w-3 h-3" />
-                    <span>ALGO-HACK X-RAY READY · 49/49 LOCK</span>
+                    <Terminal className="w-3.5 h-3.5" />
+                    <span>Open Metadata &amp; Binary Inspector (Ctrl+K)</span>
                   </button>
                 ) : (
                   <span className="text-[10.5px] text-neutral-400">
-                    Hover or click any store below to preview
+                    Hover or click any module below to preview
                   </span>
                 )}
                 <div className="flex items-center gap-1">
