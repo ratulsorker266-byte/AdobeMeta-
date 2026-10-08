@@ -330,16 +330,83 @@ html[data-skin="sapphire"] {
   animation: phantomPulseRing 6s ease-in-out infinite;
 }
 
-/* Prismatic Specular Card Surface */
+/* ============================================================================
+   LUMINA ARCHITECTURAL MATERIAL LANGUAGE (UNIVERSAL SPATIAL DESIGN SYSTEM)
+   Physical space · Layers · Weight · Light · Momentum · Surface · Atmosphere
+   ============================================================================ */
+
+/* Tactile Traveling-Light Button Surface */
+.lumina-tactile-button {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease,
+              border-color 0.2s ease;
+}
+
+.lumina-tactile-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    140px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    rgba(255, 255, 255, 0.24),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.24s ease;
+  pointer-events: none;
+}
+
+.lumina-tactile-button:hover::before {
+  opacity: 1;
+}
+
+.lumina-tactile-button:hover {
+  transform: translateY(-1.5px);
+}
+
+.lumina-tactile-button:active {
+  transform: translateY(0.5px) scale(0.985);
+}
+
+/* Directional Editorial Link with Fluid Underline */
+.lumina-directional-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lumina-directional-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lumina-directional-link:hover::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+/* Prismatic Specular Card Surface with Cursor-Tracked Light Refraction */
 .sovereign-prism-card {
   position: relative;
-  backdrop-filter: blur(28px) saturate(185%);
-  -webkit-backdrop-filter: blur(28px) saturate(185%);
-  box-shadow: inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.32),
-              inset 0 -1px 1px 0 rgba(255, 255, 255, 0.08),
-              0 18px 42px -12px rgba(0, 0, 0, 0.45);
-  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.26),
+              inset 0 -1px 0 0 rgba(255, 255, 255, 0.06),
+              0 16px 40px -14px rgba(0, 0, 0, 0.38);
+  transition: transform 0.36s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.36s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.25s ease;
 }
 
@@ -348,19 +415,19 @@ html[data-skin="sapphire"] {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1.25px;
-  background: linear-gradient(
-    135deg,
+  padding: 1px;
+  background: radial-gradient(
+    360px circle at var(--spot-x, 50%) var(--spot-y, 0%),
     rgba(255, 255, 255, 0.55) 0%,
-    rgba(16, 185, 129, 0.35) 38%,
-    rgba(212, 175, 55, 0.38) 72%,
-    rgba(56, 189, 248, 0.35) 100%
+    rgba(16, 185, 129, 0.28) 38%,
+    rgba(212, 175, 55, 0.22) 70%,
+    rgba(255, 255, 255, 0.08) 100%
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
-  opacity: 0.78;
+  opacity: 0.72;
   transition: opacity 0.3s ease;
 }
 
@@ -369,12 +436,10 @@ html[data-skin="sapphire"] {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(
-    125deg,
-    rgba(255, 255, 255, 0.14) 0%,
-    rgba(255, 255, 255, 0.03) 32%,
-    transparent 55%,
-    rgba(255, 255, 255, 0.05) 100%
+  background: radial-gradient(
+    420px circle at var(--spot-x, 20%) var(--spot-y, 20%),
+    rgba(255, 255, 255, 0.08) 0%,
+    transparent 60%
   );
   pointer-events: none;
 }
@@ -393,11 +458,11 @@ html[data-skin="sapphire"] {
     opacity: 0;
   }
   20% {
-    opacity: 0.85;
+    opacity: 0.65;
   }
   50% {
     transform: translateX(180%) skewX(-24deg);
-    opacity: 0.85;
+    opacity: 0.65;
   }
   65%, 100% {
     transform: translateX(220%) skewX(-24deg);
@@ -412,18 +477,18 @@ html[data-skin="sapphire"] {
   pointer-events: none;
   z-index: 80;
   box-shadow:
-    inset 0 0 0 1.5px rgba(255, 255, 255, 0.16),
-    inset 0 2px 3px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -2px 4px 0 rgba(56, 189, 248, 0.18),
-    inset 0 0 42px rgba(255, 255, 255, 0.035);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -1.5px 3px 0 rgba(56, 189, 248, 0.12),
+    inset 0 0 36px rgba(255, 255, 255, 0.025);
   background:
     linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.075) 0%,
-      rgba(255, 255, 255, 0.018) 22%,
-      transparent 48%,
-      rgba(16, 185, 129, 0.02) 78%,
-      rgba(255, 255, 255, 0.055) 100%
+      rgba(255, 255, 255, 0.045) 0%,
+      rgba(255, 255, 255, 0.01) 22%,
+      transparent 50%,
+      rgba(16, 185, 129, 0.015) 78%,
+      rgba(255, 255, 255, 0.035) 100%
     );
 }
 
@@ -433,18 +498,18 @@ html[data-skin="sapphire"] {
   pointer-events: none;
   z-index: 80;
   box-shadow:
-    inset 0 0 0 1.5px rgba(255, 255, 255, 0.9),
-    inset 0 2px 6px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -2px 5px 0 rgba(14, 165, 233, 0.14),
-    inset 0 0 48px rgba(255, 255, 255, 0.45);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.85),
+    inset 0 2px 4px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1.5px 4px 0 rgba(14, 165, 233, 0.09),
+    inset 0 0 40px rgba(255, 255, 255, 0.35);
   background:
     linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.42) 0%,
-      rgba(255, 255, 255, 0.12) 24%,
-      transparent 50%,
-      rgba(56, 189, 248, 0.04) 78%,
-      rgba(255, 255, 255, 0.32) 100%
+      rgba(255, 255, 255, 0.32) 0%,
+      rgba(255, 255, 255, 0.08) 24%,
+      transparent 52%,
+      rgba(56, 189, 248, 0.025) 78%,
+      rgba(255, 255, 255, 0.24) 100%
     );
 }
 
@@ -453,84 +518,93 @@ html[data-skin="sapphire"] {
   position: fixed;
   top: -20%;
   left: 0;
-  width: 38%;
+  width: 34%;
   height: 140%;
   pointer-events: none;
   z-index: 79;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.038) 45%,
-    rgba(255, 255, 255, 0.09) 50%,
-    rgba(255, 255, 255, 0.038) 55%,
+    rgba(255, 255, 255, 0.025) 45%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0.025) 55%,
     transparent 100%
   );
-  animation: glassCausticSweep 11s ease-in-out infinite;
+  animation: glassCausticSweep 14s ease-in-out infinite;
 }
 
-/* Master Architectural Glass Slab Container (Wraps main website sections in thick frosted glass) */
+/* Master Architectural Glass Slab Container (Ultra-Clean Minimal Space Professional Precision) */
 .crystal-architectural-slab-dark {
   background: linear-gradient(
     145deg,
-    rgba(18, 24, 38, 0.56) 0%,
-    rgba(10, 14, 24, 0.42) 55%,
-    rgba(16, 22, 35, 0.58) 100%
+    rgba(11, 15, 24, 0.84) 0%,
+    rgba(7, 10, 17, 0.78) 55%,
+    rgba(10, 14, 22, 0.86) 100%
   );
-  backdrop-filter: blur(32px) saturate(190%);
-  -webkit-backdrop-filter: blur(32px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow:
-    inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.34),
-    inset 0 -1px 1px 0 rgba(255, 255, 255, 0.07),
-    0 28px 70px -18px rgba(0, 0, 0, 0.72),
-    0 0 40px -12px rgba(16, 185, 129, 0.14);
+  backdrop-filter: blur(40px) saturate(190%);
+  -webkit-backdrop-filter: blur(40px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  animation: hyper5DCardRespiration 10s ease-in-out infinite;
 }
 
 .crystal-architectural-slab-light {
   background: linear-gradient(
     145deg,
-    rgba(255, 255, 255, 0.72) 0%,
-    rgba(255, 255, 255, 0.52) 55%,
-    rgba(255, 255, 255, 0.76) 100%
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.84) 55%,
+    rgba(255, 255, 255, 0.94) 100%
   );
-  backdrop-filter: blur(32px) saturate(190%);
-  -webkit-backdrop-filter: blur(32px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(40px) saturate(190%);
+  -webkit-backdrop-filter: blur(40px) saturate(190%);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow:
-    inset 0 2px 2px 0 rgba(255, 255, 255, 0.98),
-    inset 0 -1px 2px 0 rgba(14, 165, 233, 0.12),
-    0 24px 60px -15px rgba(15, 23, 42, 0.09),
-    0 0 0 1px rgba(15, 23, 42, 0.06);
+    inset 0 1px 0 0 rgba(255, 255, 255, 1),
+    0 20px 50px -20px rgba(15, 23, 42, 0.07);
 }
 
-/* Individual Crystal Glass Pill / Card (For nested cards, headers & controls) */
+/* Individual Crystal Glass Card (Refined Minimalist Hairline Precision) */
 .crystal-glass-panel-dark {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.09) 0%,
-    rgba(255, 255, 255, 0.03) 100%
+    rgba(255, 255, 255, 0.055) 0%,
+    rgba(255, 255, 255, 0.018) 100%
   );
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow:
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.3),
-    0 14px 34px -10px rgba(0, 0, 0, 0.55);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+    0 12px 28px -12px rgba(0, 0, 0, 0.48);
 }
 
 .crystal-glass-panel-light {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.78) 0%,
-    rgba(255, 255, 255, 0.54) 100%
+    rgba(255, 255, 255, 0.90) 0%,
+    rgba(255, 255, 255, 0.72) 100%
   );
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(15, 23, 42, 0.075);
   box-shadow:
-    inset 0 1.5px 1px 0 rgba(255, 255, 255, 1),
-    0 14px 32px -10px rgba(15, 23, 42, 0.08),
-    0 0 0 1px rgba(15, 23, 42, 0.06);
+    inset 0 1px 0 0 rgba(255, 255, 255, 1),
+    0 12px 26px -12px rgba(15, 23, 42, 0.055);
+}
+
+/* Accessible Focus States across the Design System */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .custom-spatial-cursor {
+    display: none !important;
+  }
 }
 
 html.futuristic-bounce-active button,
@@ -548,19 +622,205 @@ html.futuristic-bounce-active [data-bounce-card]:hover {
   transform: translateY(-4px) scale(1.008);
 }
 
-/* Liquid Gold, Bioluminescent Emerald & Cyan Horizon Headline Gradient */
+/* ============================================================================
+   5D HYPER-DIMENSIONAL SPATIAL THEME ANIMATION ENGINE
+   Dimension 1 & 2: X/Y Spatial Motion
+   Dimension 3: Z-Depth Perspective & Parallax Layering
+   Dimension 4: Temporal Living Respiration (Breathing Glass & Orbs)
+   Dimension 5: Chromatic Light-Field Refraction & Specular Caustics
+   ============================================================================ */
+@keyframes hyper5DOrbitalOne {
+  0%, 100% {
+    transform: translate3d(0px, 0px, 0px) scale(1) rotate(0deg);
+    filter: hue-rotate(0deg);
+  }
+  33% {
+    transform: translate3d(70px, -45px, 40px) scale(1.14) rotate(12deg);
+    filter: hue-rotate(15deg);
+  }
+  66% {
+    transform: translate3d(-55px, 35px, -20px) scale(0.94) rotate(-10deg);
+    filter: hue-rotate(-15deg);
+  }
+}
+
+@keyframes hyper5DOrbitalTwo {
+  0%, 100% {
+    transform: translate3d(0px, 0px, 0px) scale(1);
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    transform: translate3d(-65px, 50px, 50px) scale(1.16);
+    filter: hue-rotate(22deg);
+  }
+}
+
+@keyframes hyper5DGridPerspective {
+  0%, 100% {
+    transform: perspective(1100px) rotateX(1.5deg) translateY(0px) scale(1.01);
+  }
+  50% {
+    transform: perspective(1100px) rotateX(3.2deg) translateY(-12px) scale(1.025);
+  }
+}
+
+@keyframes hyper5DCardRespiration {
+  0%, 100% {
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.34),
+      inset 0 -1px 0 0 rgba(255, 255, 255, 0.08),
+      0 26px 65px -18px rgba(0, 0, 0, 0.72),
+      0 0 38px -12px rgba(16, 185, 129, 0.16);
+  }
+  50% {
+    box-shadow:
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.48),
+      inset 0 -1px 0 0 rgba(56, 189, 248, 0.16),
+      0 34px 75px -16px rgba(0, 0, 0, 0.8),
+      0 0 52px -8px rgba(212, 175, 55, 0.22);
+  }
+}
+
+.hyper-5d-orb-1 {
+  animation: hyper5DOrbitalOne 16s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform, filter;
+}
+
+.hyper-5d-orb-2 {
+  animation: hyper5DOrbitalTwo 20s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform, filter;
+}
+
+.hyper-5d-grid-plane {
+  animation: hyper5DGridPerspective 14s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Liquid Gold, Bioluminescent Emerald & Cyan Horizon Headline Gradient (Crisp 3D) */
 .luxury-headline-gradient {
   background: linear-gradient(
     120deg,
-    var(--prism-accent-primary) 0%,
-    #fef08a 32%,
-    var(--prism-accent-secondary) 58%,
-    var(--prism-accent-tertiary) 100%
+    #34d399 0%,
+    #fde047 34%,
+    #f59e0b 64%,
+    #38bdf8 100%
   );
   background-size: 200% 200%;
-  animation: prismHorizonSweep 8s ease infinite;
+  animation: prismHorizonSweep 7s ease infinite;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1.5px 0 rgba(0, 0, 0, 0.35))
+          drop-shadow(0 4px 10px rgba(16, 185, 129, 0.22));
+}
+
+/* ============================================================================
+   ULTRA-CRISP 3D SCULPTED TYPOGRAPHY ENGINE (100% READABLE + PERFECT COLOR GRADING)
+   Every text has razor-sharp contrast first, with a clean micro-3D physical
+   relief beneath it so letters never look blurry, double-vision, or muddy.
+   ============================================================================ */
+
+/* Night Mode (Dark Crystal) — Razor-Sharp High-Contrast 3D Relief */
+.spatial-3d-typography-dark p,
+.spatial-3d-typography-dark span,
+.spatial-3d-typography-dark li,
+.spatial-3d-typography-dark label,
+.spatial-3d-typography-dark a,
+.spatial-3d-typography-dark td,
+.spatial-3d-typography-dark th {
+  text-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.85),
+    0 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+/* Night Mode — Crisp 3D Architectural Extrusion for Main Display Headlines (h1) */
+.spatial-3d-typography-dark h1 {
+  text-shadow:
+    0 1px 0 rgba(148, 163, 184, 0.38),
+    0 2px 0 rgba(30, 41, 59, 0.95),
+    0 3px 0 rgba(2, 6, 23, 0.98),
+    0 6px 16px rgba(0, 0, 0, 0.78);
+}
+
+/* Night Mode — Clean 3D Depth for Section & Card Titles (h2 - h6) */
+.spatial-3d-typography-dark h2,
+.spatial-3d-typography-dark h3,
+.spatial-3d-typography-dark h4,
+.spatial-3d-typography-dark h5,
+.spatial-3d-typography-dark h6 {
+  text-shadow:
+    0 1px 0 rgba(71, 85, 105, 0.5),
+    0 2px 0 rgba(2, 6, 23, 0.95),
+    0 4px 10px rgba(0, 0, 0, 0.68);
+}
+
+/* Night Mode — Crisp 3D Tactile Text inside Buttons, Badges & Code */
+.spatial-3d-typography-dark button,
+.spatial-3d-typography-dark kbd,
+.spatial-3d-typography-dark code {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+}
+
+/* Day Mode (Light Crystal Porcelain) — Razor-Sharp High-Contrast 3D Relief */
+.spatial-3d-typography-light p,
+.spatial-3d-typography-light span,
+.spatial-3d-typography-light li,
+.spatial-3d-typography-light label,
+.spatial-3d-typography-light a,
+.spatial-3d-typography-light td,
+.spatial-3d-typography-light th {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1.5px 2px rgba(15, 23, 42, 0.08);
+}
+
+/* Day Mode — Crisp 3D Architectural Extrusion for Main Display Headlines (h1) */
+.spatial-3d-typography-light h1 {
+  text-shadow:
+    0 1px 0 #ffffff,
+    0 2px 0 #cbd5e1,
+    0 3px 0 rgba(148, 163, 184, 0.7),
+    0 5px 12px rgba(15, 23, 42, 0.14);
+}
+
+/* Day Mode — Clean 3D Depth for Section & Card Titles (h2 - h6) */
+.spatial-3d-typography-light h2,
+.spatial-3d-typography-light h3,
+.spatial-3d-typography-light h4,
+.spatial-3d-typography-light h5,
+.spatial-3d-typography-light h6 {
+  text-shadow:
+    0 1px 0 #ffffff,
+    0 1.5px 0 #cbd5e1,
+    0 3px 8px rgba(15, 23, 42, 0.11);
+}
+
+/* Day Mode — Crisp 3D Tactile Text inside Buttons, Badges & Code */
+.spatial-3d-typography-light button,
+.spatial-3d-typography-light kbd,
+.spatial-3d-typography-light code {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.14);
+}
+
+/* Protect dark-text-on-light-surface buttons & badges inside Night Mode so they stay 100% readable */
+.spatial-3d-typography-dark .text-black,
+.spatial-3d-typography-dark .text-neutral-950,
+.spatial-3d-typography-dark .text-neutral-900,
+.spatial-3d-typography-dark .text-black *,
+.spatial-3d-typography-dark .text-neutral-950 * {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* Protect white-text-on-dark-surface buttons & image overlays inside Day Mode so they stay 100% readable */
+.spatial-3d-typography-light .text-white,
+.spatial-3d-typography-light .text-white * {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+
+/* Interactive 3D Text Lift when hovering over Buttons, Links, or Cards */
+button:hover,
+a:hover,
+[data-bounce-card]:hover h3 {
+  transform: translateZ(6px);
 }
 
 /* ============================================================================

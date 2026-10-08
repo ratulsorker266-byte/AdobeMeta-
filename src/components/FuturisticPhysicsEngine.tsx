@@ -85,7 +85,12 @@ export const FuturisticPhysicsEngine: React.FC<FuturisticPhysicsEngineProps> = (
       window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (enabled && !prefersReducedMotion) {
+    const isTouchOrMobile =
+      typeof window !== 'undefined' &&
+      ((window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches) ||
+        window.innerWidth < 768);
+
+    if (enabled && !prefersReducedMotion && !isTouchOrMobile) {
       root.classList.add('futuristic-bounce-active', 'aquatic-water-world');
     } else {
       root.classList.remove('futuristic-bounce-active', 'aquatic-water-world');
@@ -671,13 +676,13 @@ export const FuturisticPhysicsEngine: React.FC<FuturisticPhysicsEngineProps> = (
       const stretchY = Math.max(0.68, 1 - speed * 0.011);
 
       if (cursorDropRef.current) {
-        cursorDropRef.current.style.transform = `translate3d(${dropX - 20}px, ${dropY - 20}px, 0) rotate(${angle.toFixed(
+        cursorDropRef.current.style.transform = `translate3d(${dropX - 12}px, ${dropY - 12}px, 0) rotate(${angle.toFixed(
           1
         )}deg) scale(${stretchX.toFixed(3)}, ${stretchY.toFixed(3)})`;
       }
 
       if (cursorTrailRef.current) {
-        cursorTrailRef.current.style.transform = `translate3d(${trailX - 10}px, ${trailY - 10}px, 0) scale(${Math.max(
+        cursorTrailRef.current.style.transform = `translate3d(${trailX - 6}px, ${trailY - 6}px, 0) scale(${Math.max(
           0.55,
           1 - speed * 0.015
         ).toFixed(2)})`;
@@ -739,27 +744,34 @@ export const FuturisticPhysicsEngine: React.FC<FuturisticPhysicsEngineProps> = (
           interactive.style.setProperty('--spot-x', `${localX.toFixed(0)}px`);
           interactive.style.setProperty('--spot-y', `${localY.toFixed(0)}px`);
 
-          // Water wave buoyancy tilt & bounce
+          // Controlled physical proximity response (subtle magnetic attraction & perspective depth)
           const relX = (e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
           const relY = (e.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
 
           const isSmall = rect.width < 290 && rect.height < 95;
           if (isSmall) {
-            const floatX = relX * 7.2;
-            const floatY = relY * 5.5 - 4.5;
+            const floatX = relX * 4.5;
+            const floatY = relY * 3.2 - 2.5;
             interactive.style.transform = `translate3d(${floatX.toFixed(1)}px, ${floatY.toFixed(
               1
-            )}px, 0) scale(1.068)`;
+            )}px, 8px) scale(1.032)`;
           } else {
-            const tiltX = -relY * 7.4;
-            const tiltY = relX * 7.4;
-            interactive.style.transform = `perspective(950px) translate3d(${(relX * 4.8).toFixed(
+            const tiltX = -relY * 4.2;
+            const tiltY = relX * 4.2;
+            interactive.style.transform = `perspective(1050px) translate3d(${(relX * 3.4).toFixed(
               1
-            )}px, -8.5px, 0) rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) scale(1.024)`;
+            )}px, -5px, 14px) rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) scale(1.012)`;
           }
+        }
+        if (cursorDropRef.current) {
+          cursorDropRef.current.dataset.cursorState =
+            interactive.tagName === 'BUTTON' || interactive.tagName === 'A' ? 'action' : 'card';
         }
       } else {
         lastHoveredEl = null;
+        if (cursorDropRef.current) {
+          cursorDropRef.current.dataset.cursorState = 'default';
+        }
         if (activeFloatingEl) {
           activeFloatingEl.style.transform = '';
           activeFloatingEl.style.removeProperty('--spot-x');
@@ -810,27 +822,27 @@ export const FuturisticPhysicsEngine: React.FC<FuturisticPhysicsEngineProps> = (
         className="fixed inset-0 w-full h-full pointer-events-none"
       />
 
-      {/* Trailing Secondary Micro Water Droplet */}
+      {/* Trailing Secondary Micro Water Droplet (Subtle 12px trailing aura) */}
       <div
         ref={cursorTrailRef}
-        className={`hidden sm:block w-5 h-5 rounded-full will-change-transform border ${
+        className={`custom-spatial-cursor hidden md:block w-3 h-3 rounded-full will-change-transform border ${
           isLight
-            ? 'border-sky-400/50 bg-sky-200/20 shadow-[inset_0_1px_3px_rgba(255,255,255,0.85)]'
-            : 'border-sky-400/40 bg-sky-400/15 shadow-[inset_0_1px_3px_rgba(255,255,255,0.45)]'
+            ? 'border-sky-500/40 bg-sky-300/15 shadow-[inset_0_1px_2px_rgba(255,255,255,0.85)]'
+            : 'border-sky-400/35 bg-sky-400/10 shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)]'
         }`}
       />
 
-      {/* Primary 3D Liquid Water Droplet Magnifier Lens Follower */}
+      {/* Primary Subtle Optical Cursor Follower (24px precision ring) */}
       <div
         ref={cursorDropRef}
-        className={`hidden sm:flex w-10 h-10 rounded-full will-change-transform items-center justify-center border transition-colors duration-200 backdrop-blur-[1.5px] ${
+        className={`custom-spatial-cursor hidden md:flex w-6 h-6 rounded-full will-change-transform items-center justify-center border transition-all duration-200 backdrop-blur-[1px] data-[cursor-state=action]:scale-125 data-[cursor-state=card]:scale-110 ${
           isLight
-            ? 'border-sky-400/90 bg-sky-300/15 shadow-[0_6px_24px_rgba(14,165,233,0.42),inset_0_2px_8px_rgba(255,255,255,0.95)]'
-            : 'border-sky-300/80 bg-sky-400/15 shadow-[0_6px_28px_rgba(56,189,248,0.55),inset_0_2px_8px_rgba(255,255,255,0.6)]'
+            ? 'border-neutral-900/35 bg-white/25 shadow-[0_4px_16px_rgba(15,23,42,0.12),inset_0_1px_4px_rgba(255,255,255,0.9)]'
+            : 'border-white/35 bg-white/10 shadow-[0_4px_18px_rgba(56,189,248,0.28),inset_0_1px_4px_rgba(255,255,255,0.5)]'
         }`}
       >
-        {/* Specular Water Lens Highlight */}
-        <div className="w-2.5 h-2 rounded-full bg-white/95 -translate-x-1.5 -translate-y-1.5 rotate-[-25deg]" />
+        {/* Specular Micro Lens Highlight */}
+        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/80" />
       </div>
     </div>
   );

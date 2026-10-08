@@ -102,6 +102,9 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   const [showHeaderControlsMenu, setShowHeaderControlsMenu] = useState<boolean>(false);
   const [isHeroDragging, setIsHeroDragging] = useState<boolean>(false);
   const [mouseSpotlight, setMouseSpotlight] = useState<{ x: number; y: number }>({ x: 650, y: 260 });
+  const [isScrolled, setIsScrolled] = useState<boolean>(false);
+  const [countedWeight, setCountedWeight] = useState<number>(0);
+  const [countedTags, setCountedTags] = useState<number>(0);
 
   const isLight = themeMode === 'light';
   const isBn = false;
@@ -110,6 +113,30 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     const root = document.documentElement;
     root.removeAttribute('data-skin');
   }, [isLight]);
+
+  // Intelligent Navigation State & Smooth Counting Magic Moment on Awakening
+  useEffect(() => {
+    const onScroll = () => {
+      setIsScrolled(window.scrollY > 24);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    let frame = 0;
+    const totalFrames = 36;
+    const counterTimer = setInterval(() => {
+      frame += 1;
+      const progress = Math.min(1, frame / totalFrames);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCountedWeight(Math.round(75 * eased));
+      setCountedTags(Math.round(49 * eased));
+      if (frame >= totalFrames) clearInterval(counterTimer);
+    }, 24);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      clearInterval(counterTimer);
+    };
+  }, []);
 
   // 8 Specialized Creative Modules in the Enterprise Workspace Directory
   const marketStores: BoutiqueStoreItem[] = [
@@ -334,8 +361,12 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       {/* ============================================================ */}
       {/* FLOATING 3D OPTICAL CRYSTAL GLASS HEADER (DAY & NIGHT MODE) */}
       {/* ============================================================ */}
-      <header className="sticky top-0 z-50 w-full px-3 sm:px-6 lg:px-10 pt-2.5 transition-all duration-300">
-        <div className={`max-w-[1400px] mx-auto px-5 sm:px-8 h-15 rounded-2xl flex items-center justify-between gap-4 transition-all duration-300 ${
+      <header className={`sticky top-0 z-50 w-full px-4 sm:px-8 lg:px-14 transition-all duration-300 ${
+        isScrolled ? 'pt-2' : 'pt-4'
+      }`}>
+        <div className={`max-w-[1440px] mx-auto px-6 sm:px-9 rounded-2xl flex items-center justify-between gap-6 transition-all duration-300 ${
+          isScrolled ? 'h-14 shadow-2xl' : 'h-16'
+        } ${
           isLight
             ? 'crystal-glass-panel-light'
             : 'crystal-glass-panel-dark'
@@ -356,27 +387,27 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           </div>
 
           {/* Zone 2: Clean Editorial Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-7 text-[11px] font-semibold tracking-[0.15em] uppercase">
+          <nav className="hidden lg:flex items-center gap-9 text-[12px] font-medium tracking-[0.05em]">
             <button
               onClick={() => {
                 setActiveDepartment('all');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={`transition cursor-pointer relative py-1 whitespace-nowrap ${
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap ${
                 activeDepartment === 'all'
-                  ? (isLight ? 'text-black font-bold' : 'text-white font-bold') 
+                  ? (isLight ? 'text-black font-semibold' : 'text-white font-semibold') 
                   : (isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white')
               }`}
             >
-              <span>{isBn ? 'মার্কেট' : 'Market'}</span>
+              <span>{isBn ? 'মার্কেট' : 'Workspace'}</span>
               {activeDepartment === 'all' && (
-                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-amber-400 to-sky-400 rounded-full" />
+                <span className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-emerald-400 via-amber-400 to-sky-400 rounded-full" />
               )}
             </button>
 
             <button
               onClick={() => onNavigateView('upload')}
-              className={`transition cursor-pointer relative py-1 whitespace-nowrap ${
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap ${
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
               }`}
             >
@@ -385,7 +416,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
             <button
               onClick={() => onNavigateView('seo-rank')}
-              className={`transition cursor-pointer relative py-1 whitespace-nowrap ${
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap ${
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
               }`}
             >
@@ -394,7 +425,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
             <button
               onClick={() => onNavigateView('calendar')}
-              className={`transition cursor-pointer relative py-1 whitespace-nowrap ${
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap ${
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
               }`}
             >
@@ -403,7 +434,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
             <button
               onClick={() => onNavigateView('monetize')}
-              className={`hidden xl:inline-block transition cursor-pointer relative py-1 whitespace-nowrap ${
+              className={`hidden xl:inline-flex lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap ${
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-neutral-400 hover:text-white'
               }`}
             >
@@ -412,41 +443,41 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           </nav>
 
           {/* Zone 3: Pre-Check + Controls + Day/Night Mode + Studio CTA */}
-          <div className="flex items-center gap-2 shrink-0 relative">
+          <div className="flex items-center gap-2.5 shrink-0 relative">
             {onOpenProToolkit && (
               <button
                 type="button"
                 onClick={() => onOpenProToolkit('presubmit')}
-                className={`px-3 py-1.5 rounded-full text-[10.5px] font-bold tracking-[0.06em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
+                className={`lumina-tactile-button px-3.5 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border cursor-pointer ${
                   isLight
-                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300'
-                    : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
+                    ? 'bg-emerald-50/90 hover:bg-emerald-100 text-emerald-900 border-emerald-300/80'
+                    : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/35'
                 }`}
                 title="Pre-Submission Checker, Rejection Helper, AI Disclosure & Earnings Tracker"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="hidden sm:inline">Pre-Check</span>
+                <span className="hidden sm:inline">Audit</span>
               </button>
             )}
 
-            {/* Consolidated Quick Controls & Modes Trigger (Eliminates Header Clutter) */}
+            {/* Consolidated Quick Controls & Modes Trigger */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowHeaderControlsMenu((prev) => !prev)}
-                className={`px-2.5 py-1.5 rounded-full text-[10.5px] font-semibold tracking-[0.08em] uppercase flex items-center gap-1.5 border transition cursor-pointer ${
+                className={`lumina-tactile-button px-3 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border cursor-pointer ${
                   showHeaderControlsMenu
                     ? isLight
                       ? 'bg-neutral-900 text-white border-neutral-900'
                       : 'bg-white text-black border-white'
                     : isLight
-                    ? 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200/90'
-                    : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800'
+                    ? 'bg-white/80 hover:bg-white text-neutral-700 border-neutral-200/90'
+                    : 'bg-white/5 hover:bg-white/10 text-neutral-300 border-white/15'
                 }`}
                 title="More Tools, Black-Ops Terminal, Lite Mode & Display Settings"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">{isBn ? 'কন্ট্রোল' : 'Controls'}</span>
+                <span className="hidden md:inline">{isBn ? 'কন্ট্রোল' : 'System'}</span>
               </button>
 
               <AnimatePresence>
@@ -598,14 +629,14 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
             <button
               onClick={() => onNavigateView('upload')}
-              className={`text-[10.5px] font-bold tracking-[0.14em] uppercase px-4 py-2 rounded-full transition-all duration-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-xs ${
+              className={`lumina-tactile-button text-[11px] font-semibold tracking-[0.06em] px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-xs group ${
                 isLight
                   ? 'bg-neutral-950 hover:bg-black text-white'
                   : 'bg-white hover:bg-neutral-200 text-black'
               }`}
             >
-              <span>{isBn ? 'স্টুডিও খুলুন' : 'Open Studio'}</span>
-              <ArrowRight className="w-3 h-3" />
+              <span className="transition-transform duration-200 group-hover:-translate-x-0.5">{isBn ? 'স্টুডিও খুলুন' : 'Open Studio'}</span>
+              <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
             </button>
           </div>
 
@@ -613,57 +644,64 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       </header>
 
       {/* ============================================================ */}
-      {/* BREATHABLE EDITORIAL HERO ENCASED IN 3D OPTICAL CRYSTAL GLASS */}
+      {/* ULTRA-MINIMAL EXECUTIVE ARCHITECTURAL HERO (MAXIMUM SPACE)   */}
       {/* ============================================================ */}
-      <div className="relative z-10 pt-6 sm:pt-8 pb-10 max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12">
-        <div className={`rounded-3xl p-6 sm:p-9 lg:p-11 relative overflow-hidden transition-all duration-500 ${
-          isLight ? 'crystal-architectural-slab-light' : 'crystal-architectural-slab-dark'
-        }`}>
+      <div className="relative z-10 pt-8 sm:pt-12 pb-16 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14">
+        <motion.div
+          initial={{ opacity: 0, y: 14, scale: 0.992 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          className={`rounded-[28px] p-8 sm:p-12 lg:p-16 relative overflow-hidden transition-all duration-500 ${
+            isLight ? 'crystal-architectural-slab-light' : 'crystal-architectural-slab-dark'
+          }`}
+        >
           {/* Top-Left Specular Glass Reflection Glint */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/15 blur-3xl"
+            className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/10 blur-3xl"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute top-0 inset-x-10 h-[1.5px] bg-gradient-to-r from-transparent via-white/60 to-transparent"
+            className="pointer-events-none absolute top-0 inset-x-12 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent"
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center relative z-10">
           
-          {/* Left 7 Columns: Editorial Headline, Department Switcher & Primary CTA */}
+          {/* Left 7 Columns: Progressive Hero Awakening Typography & Dropzone */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-7 space-y-5 text-left"
+            transition={{ duration: 0.55, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-7 space-y-7 text-left"
           >
-            {/* Quiet Editorial Kicker */}
-            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.16em] text-emerald-500 dark:text-emerald-400">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>
-                IFRIT AUTONOMOUS ENGINE · ZERO-CLICK DROP OR CTRL+V PASTE ANYWHERE
-              </span>
+            {/* Unboxed Editorial Kicker with Smooth Counting Metrics */}
+            <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-mono tracking-[0.08em] uppercase tabular-nums text-emerald-600 dark:text-emerald-400">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>Zero-Error Vision Engine</span>
+              <span aria-hidden="true" className="opacity-35">/</span>
+              <span>{countedTags}-Tag Precision</span>
+              <span aria-hidden="true" className="opacity-35">/</span>
+              <span>{countedWeight}% Top-10 Weight</span>
             </div>
 
-            {/* Colossal Monster-Scale Editorial Headline */}
-            <h1 className={`text-[36px] sm:text-[52px] xl:text-[62px] font-black tracking-[-0.04em] leading-[1.03] ${
+            {/* Editorial Display Headline */}
+            <h1 className={`text-[38px] sm:text-[52px] xl:text-[62px] font-bold tracking-[-0.04em] leading-[1.04] text-balance ${
               isLight ? 'text-neutral-950' : 'text-white'
             }`}>
-              Autonomous Stock{' '}
+              Precision Stock{' '}
               <span className="font-editorial italic font-normal luxury-headline-gradient">
                 Metadata
               </span>{' '}
-              &amp; SEO Monolith.
+              Architecture.
             </h1>
 
-            <p className={`text-[14px] sm:text-[15.5px] font-normal max-w-xl leading-relaxed ${
+            <p className={`text-[15px] sm:text-[16px] font-normal max-w-xl leading-[1.65] ${
               isLight ? 'text-neutral-600' : 'text-neutral-300'
             }`}>
-              Drop any EPS vector, PSD, photo, or press <kbd className="px-1.5 py-0.5 text-[11px] font-mono rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 dark:text-emerald-400">Ctrl+V</kbd> anywhere on screen. The engine renders vector previews, locks Top-10 Adobe Stock search weights (75% ranking power), and prepares your agency CSV automatically.
+              Drop any EPS vector, PSD, or high-res photo, or press <kbd className="px-1.5 py-0.5 text-[11px] font-mono rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Ctrl+V</kbd>. Generates 100% visually verified titles, zero-duplicate keywords, and ready-to-submit agency CSVs.
             </p>
 
-            {/* Instant Ifrit Ghost Dropzone Bar right inside the Hero */}
+            {/* Instant Minimalist Executive Dropzone Bar */}
             <div
               onDragOver={(e) => {
                 e.preventDefault();
@@ -682,7 +720,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 }
               }}
               onClick={onStartGenerating}
-              className={`p-4 rounded-2xl transition-all duration-300 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 sovereign-prism-card ${
+              className={`p-5 sm:p-6 rounded-2xl transition-all duration-300 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 sovereign-prism-card group ${
                 isHeroDragging
                   ? 'border-emerald-400 bg-emerald-500/15 scale-[1.01]'
                   : isLight
@@ -690,105 +728,79 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   : 'crystal-glass-panel-dark hover:border-amber-400/50'
               }`}
             >
-              <div className="flex items-center gap-3 relative z-10">
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border backdrop-blur-xl ${
+              <div className="flex items-center gap-4 relative z-10">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border backdrop-blur-xl transition-transform duration-300 group-hover:scale-105 ${
                   isLight
-                    ? 'bg-neutral-950/90 text-amber-300 border-white/40 shadow-md'
-                    : 'bg-white/10 text-amber-300 border-white/25 shadow-inner'
+                    ? 'bg-neutral-950 text-amber-300 border-neutral-800 shadow-sm'
+                    : 'bg-white/10 text-amber-300 border-white/20'
                 }`}>
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className={`text-xs sm:text-sm font-bold flex flex-wrap items-center gap-2 ${
+                  <div className={`text-xs sm:text-sm font-semibold flex flex-wrap items-center gap-2 ${
                     isLight ? 'text-neutral-950' : 'text-white'
                   }`}>
-                    <span>Drop EPS, AI, PSD, JPG or Press Ctrl+V</span>
-                    <span className={`text-[9.5px] font-mono uppercase px-2 py-0.5 rounded border backdrop-blur-md ${skinPalette.accentBadge}`}>
-                      Instant Autopilot
-                    </span>
+                    <span>Drop EPS, AI, PSD, JPG or Paste (Ctrl+V)</span>
                   </div>
-                  <div className={`text-[11px] mt-0.5 ${isLight ? 'text-neutral-600' : 'text-neutral-300'}`}>
-                    Zero-click ghost execution · Automatically extracts artwork, 49 tags, title &amp; CSV
+                  <div className={`text-[11.5px] mt-0.5 ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
+                    100% Ground-Truth Vision · {countedTags} Pure Keywords · Instant CSV &amp; XMP
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0 relative z-10">
+              <div className="flex items-center gap-2.5 shrink-0 relative z-10">
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onWatchDemo();
                   }}
-                  className={`px-3 py-2 rounded-xl text-[11px] font-semibold border transition cursor-pointer backdrop-blur-md ${
+                  className={`lumina-tactile-button px-3.5 py-2.5 rounded-xl text-[11.5px] font-semibold border cursor-pointer backdrop-blur-md ${
                     isLight
-                      ? 'bg-white/70 hover:bg-white text-neutral-800 border-white/90 shadow-xs'
-                      : 'bg-white/10 hover:bg-white/15 text-neutral-100 border-white/20'
+                      ? 'bg-white/80 hover:bg-white text-neutral-800 border-neutral-200/90'
+                      : 'bg-white/5 hover:bg-white/10 text-neutral-200 border-white/15'
                   }`}
                 >
-                  1-Click Live Demo
+                  Live Demo
                 </button>
-                <span className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md ${
+                <span className={`lumina-tactile-button px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm ${
                   isLight
                     ? 'bg-neutral-950 text-white'
-                    : 'bg-gradient-to-r from-emerald-400 via-amber-300 to-emerald-400 text-neutral-950'
+                    : 'bg-white text-neutral-950'
                 }`}>
                   <span>Select Files</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </span>
               </div>
             </div>
-
-            {/* Pre-Submission Audit Quick Action */}
-            {onOpenProToolkit && (
-              <div className="pt-1 flex flex-wrap items-center gap-2.5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => onOpenProToolkit('presubmit')}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold text-[11px] transition cursor-pointer ${
-                    isLight
-                      ? 'crystal-glass-panel-light text-neutral-900 hover:bg-white/90'
-                      : 'crystal-glass-panel-dark text-neutral-100 hover:bg-white/15'
-                  }`}
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Pre-Submission Audit</span>
-                </button>
-              </div>
-            )}
           </motion.div>
 
           {/* Right 5 Columns: Live Interactive Store Telemetry & SEO Specimen Card */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-5"
           >
             <div
               data-bounce-card="true"
               onMouseEnter={() => setIsHoveringSpecimen(true)}
               onMouseLeave={() => setIsHoveringSpecimen(false)}
-              className={`rounded-2xl p-5 transition-all duration-300 relative overflow-hidden phantom-monolith-card sovereign-prism-card ${
+              className={`rounded-2xl p-6 sm:p-7 transition-all duration-300 relative overflow-hidden phantom-monolith-card sovereign-prism-card ${
               isLight
                 ? 'crystal-glass-panel-light'
                 : 'crystal-glass-panel-dark'
             }`}>
-              {/* Subtle Ghost Laser Scan Line inside Specimen Card */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent animate-laser-scan"
-              />
               {/* Top Specimen Header */}
-              <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-neutral-200/60 dark:border-neutral-800/80">
-                <div className="flex items-center gap-2 text-[10px] font-mono tracking-[0.16em] uppercase text-neutral-400">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>LIVE SEO SPECIMEN · {activePreviewStore.storeNumber}</span>
+              <div className="flex items-center justify-between pb-4 mb-4 border-b border-neutral-200/60 dark:border-white/10">
+                <div className="flex items-center gap-2 text-[10.5px] font-mono tracking-[0.06em] uppercase tabular-nums text-neutral-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span>Specimen · {activePreviewStore.storeNumber}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleOpenStore(activePreviewStore)}
-                  className={`text-[10.5px] font-bold tracking-[0.1em] uppercase flex items-center gap-1 cursor-pointer ${
+                  className={`lumina-directional-link text-[11px] font-semibold flex items-center gap-1 cursor-pointer ${
                     isLight ? 'text-neutral-900 hover:text-amber-600' : 'text-white hover:text-amber-400'
                   }`}
                 >
@@ -798,19 +810,19 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               </div>
 
               {/* Specimen Visual & Before/After Title Comparison */}
-              <div className="flex items-start gap-3.5 mb-4">
+              <div className="flex items-start gap-4 mb-5">
                 <img
                   src={activePreviewStore.image}
                   alt={activePreviewStore.title}
-                  className="w-18 h-16 rounded-xl object-cover border border-neutral-200/60 dark:border-neutral-800 shrink-0"
+                  className="w-20 h-16 rounded-xl object-cover border border-neutral-200/60 dark:border-white/10 shrink-0 transition-transform duration-500 hover:scale-105"
                 />
                 <div className="min-w-0 flex-1 space-y-1.5">
-                  <div className="flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-neutral-400 line-through truncate max-w-[190px]">
-                      Raw: &quot;IMG_4092 vector graphic design.eps&quot;
+                  <div className="flex items-center justify-between text-[10.5px] font-mono tabular-nums">
+                    <span className="text-neutral-400">
+                      Adobe Stock Title
                     </span>
                     <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                      {activePreviewStore.sampleTitle.length}/70 CHARS · 99% MATCH
+                      {activePreviewStore.sampleTitle.length}/70 chars · 100% Pure
                     </span>
                   </div>
                   <p className={`text-xs font-semibold leading-snug line-clamp-2 ${
@@ -822,13 +834,13 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               </div>
 
               {/* First-10 Slot Lock Preview */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.12em] text-neutral-400">
-                  <span>TOP-10 WEIGHTED KEYWORDS (75% SEARCH POWER)</span>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between text-[10.5px] font-mono tabular-nums text-neutral-400">
+                  <span>Top-10 Priority Keywords ({countedWeight}% Weight)</span>
                   <button
                     type="button"
                     onClick={(e) => handleQuickCopyTags(activePreviewStore, e)}
-                    className={`font-sans font-semibold text-[10.5px] flex items-center gap-1 cursor-pointer ${
+                    className={`font-sans font-semibold text-[11px] flex items-center gap-1 cursor-pointer ${
                       isLight ? 'text-neutral-800 hover:text-black' : 'text-neutral-200 hover:text-white'
                     }`}
                   >
@@ -840,7 +852,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                     ) : (
                       <>
                         <Copy className="w-3 h-3" />
-                        <span>Copy Sample</span>
+                        <span>Copy</span>
                       </>
                     )}
                   </button>
@@ -857,11 +869,11 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                               ? 'bg-neutral-950 text-white border-neutral-950 font-semibold'
                               : 'bg-white text-neutral-950 border-white font-semibold'
                             : isLight
-                            ? 'bg-[#f7f6f2] text-neutral-700 border-neutral-200/80'
-                            : 'bg-neutral-900 text-neutral-300 border-neutral-800'
+                            ? 'bg-white/70 text-neutral-700 border-neutral-200/80'
+                            : 'bg-white/[0.04] text-neutral-300 border-white/10'
                         }`}
                       >
-                        <span className="text-[9.5px] font-mono opacity-60">#{kIdx + 1}</span>
+                        <span className="text-[9.5px] font-mono tabular-nums opacity-55">0{kIdx + 1}</span>
                         <span>{kw}</span>
                       </span>
                     );
@@ -870,23 +882,23 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               </div>
 
               {/* Store Switcher Dots & Metadata Inspector Trigger */}
-              <div className="mt-4 pt-3 border-t border-neutral-200/60 dark:border-neutral-800/80 flex items-center justify-between gap-2">
+              <div className="mt-5 pt-3.5 border-t border-neutral-200/60 dark:border-white/10 flex items-center justify-between gap-2">
                 {onOpenBlackOps ? (
                   <button
                     type="button"
                     onClick={onOpenBlackOps}
-                    className={`text-[11px] font-medium flex items-center gap-1.5 cursor-pointer transition ${
+                    className={`lumina-directional-link text-[11px] font-medium flex items-center gap-1.5 cursor-pointer transition ${
                       isLight
                         ? 'text-neutral-600 hover:text-black'
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
                     <Terminal className="w-3.5 h-3.5" />
-                    <span>Open Metadata &amp; Binary Inspector (Ctrl+K)</span>
+                    <span>Binary &amp; Competitor Inspector (Ctrl+K)</span>
                   </button>
                 ) : (
                   <span className="text-[10.5px] text-neutral-400">
-                    Hover or click any module below to preview
+                    Select any module below to launch
                   </span>
                 )}
                 <div className="flex items-center gap-1">
@@ -909,70 +921,35 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           </motion.div>
 
           </div>
-        </div>
 
-        {/* ============================================================ */}
-        {/* CONTRIBUTOR PRE-SUBMISSION, AI DISCLOSURE & TRACKER SUITE    */}
-        {/* ============================================================ */}
-        <div
-          data-bounce-card="true"
-          className={`mt-8 rounded-3xl p-5 sm:p-7 transition-all relative overflow-hidden ${
-            isLight
-              ? 'crystal-architectural-slab-light'
-              : 'crystal-architectural-slab-dark'
-          }`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 mb-4 border-b border-black/10 dark:border-white/10">
-            <h3
-              className={`text-sm sm:text-base font-bold tracking-tight flex items-center gap-2 ${
-                isLight ? 'text-neutral-950' : 'text-white'
-              }`}
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>
-                {isBn
-                  ? 'কন্ট্রিবিউটর টুলকিট (যেকোনো কার্ডে ক্লিক করে ওপেন করুন)'
-                  : 'Contributor Protection & Optimization Suite (Click any card to launch)'}
-              </span>
-            </h3>
-            <span className="text-[10.5px] font-mono text-emerald-600 dark:text-emerald-400">
-              {isBn ? '১০০% ব্রাউজার ভিত্তিক · কোনো সার্ভার আপলোড নেই' : '100% LOCAL IN-BROWSER'}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* ============================================================ */}
+          {/* INTEGRATED ARCHITECTURAL HAIRLINE SUITE (MINIMALIST RIBBON)  */}
+          {/* ============================================================ */}
+          <div className="mt-12 pt-8 border-t border-neutral-200/70 dark:border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
             {[
               {
                 tab: 'presubmit' as const,
-                stage: '01 · PRE-CHECK',
-                title: isBn ? 'ফাইল ও ট্রেডমার্ক প্রি-চেক' : '4MP, EPS & Trademark Check',
-                desc: isBn
-                  ? 'আপলোডের আগে 4MP রেজোলিউশন, EPS ভার্সন, ডুপ্লিকেট ট্যাগ ও ট্রেডমার্ক চেক।'
-                  : 'Verify ≥4MP resolution, EPS version, duplicate tags, and restricted trademarks.',
+                stage: '01 / PRE-CHECK',
+                title: '4MP, EPS & Trademark Audit',
+                desc: 'Verify resolution, vector compatibility & zero trademark risk.',
               },
               {
                 tab: 'rejection' as const,
-                stage: '02 · REJECTION & AI',
-                title: isBn ? 'রিজেকশন সমাধান ও AI গাইড' : 'Rejection Fix & AI Policy',
-                desc: isBn
-                  ? 'Similar content বা Noise রিজেকশন সমাধান ও জেনারেটিভ AI ফ্ল্যাগ গাইড।'
-                  : 'Fix Similar Content or Noise rejections and validate Generative AI flags.',
+                stage: '02 / COMPLIANCE',
+                title: 'Rejection Fix & AI Disclosure',
+                desc: 'Resolve moderation flags & validate generative AI compliance.',
               },
               {
                 tab: 'kwscore' as const,
-                stage: '03 · IPTC & SCORE',
-                title: isBn ? 'কীওয়ার্ড স্কোর ও ফাইলে এম্বেড' : 'Keyword Score & IPTC Embed',
-                desc: isBn
-                  ? 'কীওয়ার্ড প্রাসঙ্গিকতা স্কোর এবং সরাসরি JPG/EPS ও .xmp ফাইলে এম্বেড।'
-                  : 'Score keyword relevance and embed IPTC/XMP directly into JPG/EPS or .xmp.',
+                stage: '03 / EMBEDDING',
+                title: 'IPTC & XMP Direct Writer',
+                desc: 'Embed verified Title & 49 Keywords directly into JPG & EPS.',
               },
               {
                 tab: 'tracker' as const,
-                stage: '04 · CSV TRACKER',
-                title: isBn ? 'আপলোড ও আর্নিং CSV ট্র্যাকার' : 'Submission & Earnings Tracker',
-                desc: isBn
-                  ? 'ফাইল স্ট্যাটাস ও আর্নিং CSV ইমপোর্ট করে টপ-সেলিং টপিক বিশ্লেষণ।'
-                  : 'Track submission status and analyze Adobe Stock earnings CSV locally.',
+                stage: '04 / TELEMETRY',
+                title: 'Submission & Royalty Tracker',
+                desc: 'Monitor portfolio approval rates & high-earning stock niches.',
               },
             ].map((item, idx) => (
               <div
@@ -980,26 +957,26 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 onClick={() =>
                   onOpenProToolkit ? onOpenProToolkit(item.tab) : onNavigateView('upload')
                 }
-                className={`p-3.5 rounded-2xl transition cursor-pointer group sovereign-prism-card ${
+                className={`p-4 rounded-2xl transition cursor-pointer group sovereign-prism-card ${
                   isLight
-                    ? 'crystal-glass-panel-light hover:border-neutral-900'
-                    : 'crystal-glass-panel-dark hover:border-emerald-400/50'
+                    ? 'bg-white/55 hover:bg-white/90 border border-neutral-200/70 hover:border-neutral-900'
+                    : 'bg-white/[0.025] hover:bg-white/[0.06] border border-white/10 hover:border-white/25'
                 }`}
               >
-                <div className="flex items-center justify-between text-[9.5px] font-mono font-bold tracking-wider uppercase mb-1 text-emerald-600 dark:text-emerald-400 relative z-10">
+                <div className="flex items-center justify-between text-[10px] font-mono tracking-[0.12em] uppercase mb-1.5 text-emerald-600 dark:text-emerald-400">
                   <span>{item.stage}</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                  <ArrowUpRight className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                 </div>
                 <div
-                  className={`text-xs font-bold mb-1 relative z-10 ${
+                  className={`text-xs font-semibold mb-1 ${
                     isLight ? 'text-neutral-950' : 'text-white'
                   }`}
                 >
                   {item.title}
                 </div>
                 <p
-                  className={`text-[11px] leading-snug line-clamp-2 relative z-10 ${
-                    isLight ? 'text-neutral-600' : 'text-neutral-300'
+                  className={`text-[11px] leading-relaxed line-clamp-1 ${
+                    isLight ? 'text-neutral-500' : 'text-neutral-400'
                   }`}
                 >
                   {item.desc}
@@ -1007,45 +984,49 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* ============================================================ */}
-        {/* DEPARTMENT FILTER BAR & DIRECTORY HEADER */}
+        {/* MINIMALIST ARCHITECTURAL DIRECTORY HEADER & FILTER BAR       */}
         {/* ============================================================ */}
-        <div className={`mt-10 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-          isLight ? 'crystal-glass-panel-light' : 'crystal-glass-panel-dark'
-        }`}>
-          <div>
-            <h2 className={`text-sm font-bold uppercase tracking-[0.16em] ${
-              isLight ? 'text-neutral-900' : 'text-white'
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-16 pt-2 flex flex-col sm:flex-row sm:items-end justify-between gap-6"
+        >
+          <div className="space-y-1">
+            <div className="text-[10.5px] font-mono tracking-[0.16em] uppercase text-emerald-600 dark:text-emerald-400">
+              01 / ENTERPRISE MODULES
+            </div>
+            <h2 className={`text-xl sm:text-2xl font-bold tracking-[-0.025em] ${
+              isLight ? 'text-neutral-950' : 'text-white'
             }`}>
-              Specialized Creative Stores Directory (08)
+              Specialized Creative Workspaces
             </h2>
-            <p className={`text-xs mt-0.5 ${isLight ? 'text-neutral-600' : 'text-neutral-300'}`}>
-              Select a specialized store below to launch its dedicated workspace
-            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {[
-              { id: 'all', label: 'All Stores (08)' },
+              { id: 'all', label: 'All Modules (08)' },
               { id: 'metadata', label: 'Metadata & SEO (03)' },
               { id: 'creative', label: 'Calendar & Prompts (03)' },
-              { id: 'monetize', label: 'Earning & CSV (02)' },
+              { id: 'monetize', label: 'Royalty & CSV (02)' },
             ].map((tab) => {
               const isActive = activeDepartment === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveDepartment(tab.id as any)}
-                  className={`text-[10.5px] font-semibold tracking-[0.12em] uppercase px-3.5 py-1.5 rounded-full border transition cursor-pointer whitespace-nowrap backdrop-blur-md ${
+                  className={`lumina-tactile-button text-[11px] font-semibold px-4 py-2 rounded-xl border transition cursor-pointer whitespace-nowrap backdrop-blur-md ${
                     isActive
                       ? isLight
-                        ? 'bg-neutral-950 text-white border-neutral-950 shadow-2xs'
+                        ? 'bg-neutral-950 text-white border-neutral-950 shadow-xs'
                         : 'bg-white text-black border-white'
                       : isLight
-                      ? 'bg-white/70 text-neutral-700 border-white/90 hover:border-neutral-900 hover:text-black'
-                      : 'bg-white/5 text-neutral-300 border-white/15 hover:border-white/40 hover:text-white'
+                      ? 'crystal-glass-panel-light text-neutral-700 hover:border-neutral-900 hover:text-black'
+                      : 'crystal-glass-panel-dark text-neutral-300 hover:border-white/40 hover:text-white'
                   }`}
                 >
                   {tab.label}
@@ -1053,15 +1034,15 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               );
             })}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* ============================================================ */}
-      {/* COFFY.NET BOUTIQUE STOREFRONT GALLERY GRID (8 DOKANS) */}
+      {/* ARCHITECTURAL BOUTIQUE GALLERY GRID (GENEROUS BREATHING ROOM) */}
       {/* ============================================================ */}
-      <section className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 pb-20">
+      <section className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14 pb-28">
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
           <AnimatePresence mode="popLayout">
             {filteredStores.map((store, idx) => (
               <motion.div
@@ -1077,22 +1058,22 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   if (foundIdx !== -1) setPreviewStoreIdx(foundIdx);
                 }}
                 onClick={() => handleOpenStore(store)}
-                className={`group cursor-pointer rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 sovereign-prism-card ${
+                className={`group cursor-pointer rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 sovereign-prism-card ${
                   isLight
                     ? 'crystal-glass-panel-light hover:border-neutral-900'
                     : 'crystal-glass-panel-dark hover:border-amber-400/50'
                 }`}
               >
-                <div className="space-y-3.5">
+                <div className="space-y-4">
                   {/* Top Store Number & Live Status Line (Zero-Pill Unboxed Metadata) */}
-                  <div className="flex items-center justify-between text-[10px] font-mono tabular-nums tracking-[0.16em] uppercase text-neutral-400">
+                  <div className="flex items-center justify-between text-[10px] font-mono tabular-nums tracking-[0.14em] uppercase text-neutral-400">
                     <span>{store.storeNumber}</span>
                     <span className={isLight ? 'text-neutral-700 font-semibold' : 'text-neutral-300 font-semibold'}>
                       {store.statLabel}
                     </span>
                   </div>
 
-                  {/* Coffy Signature Cover Image Card */}
+                  {/* Signature Architectural Cover Image Card */}
                   <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-neutral-900">
                     <img
                       src={store.image}
@@ -1102,10 +1083,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                     />
 
                     {/* Subtle Contrast Scrim */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-70 group-hover:opacity-85 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent opacity-65 group-hover:opacity-80 transition-opacity duration-300" />
 
                     {/* Subtle Top-Left Store Kicker */}
-                    <div className="absolute top-2.5 left-3 text-[9px] font-mono font-semibold tracking-[0.16em] uppercase text-white/95">
+                    <div className="absolute top-3 left-3.5 text-[9px] font-mono font-semibold tracking-[0.16em] uppercase text-white/95">
                       {store.badge}
                     </div>
 
@@ -1114,7 +1095,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleQuickCopyTags(store, e)}
-                        className="absolute top-2 right-2 px-2 py-0.5 rounded-md text-[9.5px] font-semibold bg-white/95 hover:bg-white text-black flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-xs cursor-pointer whitespace-nowrap"
+                        className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg text-[9.5px] font-semibold bg-white/95 hover:bg-white text-black flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-xs cursor-pointer whitespace-nowrap"
                         title="Copy store sample SEO keywords"
                       >
                         {copiedId === store.id ? (
@@ -1132,8 +1113,8 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                     )}
 
                     {/* Bottom Hover Enter Store Bar */}
-                    <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-white">
-                      <span className="text-[10.5px] font-semibold tracking-[0.14em] uppercase">
+                    <div className="absolute bottom-3 left-3.5 right-3.5 flex items-center justify-between text-white">
+                      <span className="text-[10.5px] font-semibold tracking-[0.12em] uppercase">
                         {store.ctaText}
                       </span>
                       <span className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center transform group-hover:translate-x-0.5 transition-transform shadow-xs">
@@ -1142,7 +1123,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                     </div>
                   </div>
 
-                  {/* Coffy Details Typography Block */}
+                  {/* Details Typography Block */}
                   <div className="space-y-1.5 pt-1">
                     <h3 className={`text-[15.5px] font-bold tracking-tight leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors ${
                       isLight ? 'text-neutral-950' : 'text-white'

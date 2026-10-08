@@ -56,89 +56,89 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
           />
 
           {/* Center: Navigation Links & Contact Support Modal Trigger */}
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10.5px] font-bold tracking-[0.18em] uppercase">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] font-medium tracking-[0.04em]">
             <button
               type="button"
               onClick={onOpenMultiCsv}
-              className={`transition cursor-pointer ${
+              className={`lumina-directional-link cursor-pointer ${
                 isLight ? 'hover:text-black' : 'hover:text-white'
               }`}
             >
-              CSV HUB
+              CSV Hub
             </button>
             <button
               type="button"
               onClick={onOpenEarnings}
-              className={`transition cursor-pointer ${
+              className={`lumina-directional-link cursor-pointer ${
                 isLight ? 'hover:text-black' : 'hover:text-white'
               }`}
             >
-              ROI CALCULATOR
+              ROI Calculator
             </button>
             <button
               type="button"
               onClick={onOpenNicheRadar}
-              className={`transition cursor-pointer ${
+              className={`lumina-directional-link cursor-pointer ${
                 isLight ? 'hover:text-black' : 'hover:text-white'
               }`}
             >
-              NICHE RADAR
+              Niche Radar
             </button>
             <button
               type="button"
               onClick={onOpenGuideHub}
-              className={`transition cursor-pointer ${
+              className={`lumina-directional-link cursor-pointer ${
                 isLight ? 'hover:text-black' : 'hover:text-white'
               }`}
             >
-              MASTERCLASS
+              Masterclass
             </button>
             <button
               type="button"
               onClick={onOpenPrivacy}
-              className={`transition cursor-pointer ${
+              className={`lumina-directional-link cursor-pointer ${
                 isLight ? 'hover:text-black' : 'hover:text-white'
               }`}
             >
-              PRIVACY
+              Privacy
             </button>
             <button
               type="button"
               onClick={onOpenTerms}
-              className={`transition cursor-pointer ${
+              className={`lumina-directional-link cursor-pointer ${
                 isLight ? 'hover:text-black' : 'hover:text-white'
               }`}
             >
-              TERMS
+              Terms
             </button>
             <button
               type="button"
               onClick={onOpenDisclaimer}
-              className={`transition cursor-pointer ${
+              className={`lumina-directional-link cursor-pointer ${
                 isLight ? 'hover:text-black' : 'hover:text-white'
               }`}
             >
-              DISCLAIMER
+              Disclaimer
             </button>
             <button
               type="button"
               onClick={onOpenContact}
-              className={`transition cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-full border backdrop-blur-md ${
+              className={`lumina-tactile-button cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border backdrop-blur-md font-semibold ${
                 isLight
-                  ? 'bg-white/70 hover:bg-white text-neutral-900 border-white/90 shadow-2xs'
+                  ? 'bg-white/80 hover:bg-white text-neutral-900 border-white/90 shadow-2xs'
                   : 'bg-white/10 hover:bg-white/15 text-white border-white/20'
               }`}
             >
               <Mail className="w-3 h-3 text-emerald-500" />
-              <span>CONTACT SUPPORT</span>
+              <span>Contact Support</span>
             </button>
           </div>
 
           {/* Right: Copyright */}
-          <div className={`text-[10.5px] font-medium tracking-[0.14em] uppercase ${
+          <div className={`text-[11px] font-medium ${
             isLight ? 'text-neutral-500' : 'text-neutral-400'
           }`}>
-            © {new Date().getFullYear()} ADOBEMETA PRO
+            © {new Date().getFullYear()} AdobeMeta Pro
           </div>
         </div>
       </div>
