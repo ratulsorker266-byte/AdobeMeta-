@@ -44,6 +44,20 @@ export type MetadataVersion = {
 
 export type MetadataResult = {
   recommendedTitle: string;
+  alternativeTitles?: {
+    b2bCommercial: string;
+    highVolumeSeo: string;
+    editorialStory: string;
+  };
+  agencyTitles?: {
+    adobeStock: string;
+    shutterstock: string;
+    freepik: string;
+    getty: string;
+    vecteezy: string;
+  };
+  searchWeightIndex?: number;
+  estimatedCpcUSD?: string;
   shortDescription: string;
   keywords: string[];
   priorityKeywords: string[];

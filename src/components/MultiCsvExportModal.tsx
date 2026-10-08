@@ -230,8 +230,55 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
     return csv;
   };
 
+  // 6. 123RF CSV format: oldfilename,123rf_filename,description,keywords,country
+  const get123RfCsv = (forceRenamed?: boolean) => {
+    let csv = '\uFEFFoldfilename,123rf_filename,description,keywords,country\n';
+    completedItems.forEach((item) => {
+      if (!item.result) return;
+      const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
+      const desc = (item.result.agencyTitles?.shutterstock || item.result.alternativeTitles?.editorialStory || item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+      const keywords = (item.result.keywords || []).slice(0, 45).map((k) => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+      csv += `"${filename}","${filename}","${desc}","${keywords}",""\n`;
+    });
+    return csv;
+  };
+
+  // 7. Dreamstime CSV format: Filename,Image Name,Description,Category 1,Category 2,Category 3,keywords,Free,W-EL,P-EL,SR-EL,SR-Price,Editorial,MR doc Ids,Pr Docs
+  const getDreamstimeCsv = (forceRenamed?: boolean) => {
+    let csv = '\uFEFFFilename,Image Name,Description,Category 1,Category 2,Category 3,keywords,Free,W-EL,P-EL,SR-EL,SR-Price,Editorial,MR doc Ids,Pr Docs\n';
+    completedItems.forEach((item) => {
+      if (!item.result) return;
+      const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
+      const title = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""').slice(0, 68);
+      const desc = (item.result.alternativeTitles?.editorialStory || item.result.shortDescription || title).replace(/\r?\n/g, ' ').replace(/"/g, '""');
+      const keywords = (item.result.keywords || []).slice(0, 45).map((k) => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+      csv += `"${filename}","${title}","${desc}","112","145","161","${keywords}","0","1","1","0","","0","",""\n`;
+    });
+    return csv;
+  };
+
+  // 8. Master JSON API & Cloud Backup Payload
+  const getMasterJsonPayload = (forceRenamed?: boolean) => {
+    const payload = completedItems.map((item) => ({
+      filename: getEffectiveFilename(item, forceRenamed),
+      originalFilename: item.file.name,
+      adobeStockTitle: item.result?.recommendedTitle || '',
+      b2bCommercialTitle: item.result?.alternativeTitles?.b2bCommercial || item.result?.recommendedTitle || '',
+      highVolumeSeoTitle: item.result?.alternativeTitles?.highVolumeSeo || item.result?.recommendedTitle || '',
+      shutterstockDescription: item.result?.alternativeTitles?.editorialStory || item.result?.shortDescription || '',
+      category: item.result?.category || 'Graphic Resources',
+      shutterstockCategory: detectShutterstockCategory(item.result?.keywords || [], item.result?.recommendedTitle || ''),
+      top10PriorityKeywords: (item.result?.keywords || []).slice(0, 10),
+      all49Keywords: (item.result?.keywords || []).slice(0, 49),
+      searchWeightIndex: item.result?.searchWeightIndex || 99,
+      estimatedCpcUSD: item.result?.estimatedCpcUSD || '$3.40',
+    }));
+    return JSON.stringify(payload, null, 2);
+  };
+
   const downloadCsv = (content: string, filename: string) => {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const isJson = filename.endsWith('.json');
+    const blob = new Blob([content], { type: isJson ? 'application/json;charset=utf-8;' : 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -250,7 +297,7 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
     setTimeout(() => setCopiedFormat(null), 2000);
   };
 
-  // 6. Download All CSVs in 1 ZIP
+  // 9. Download All 7 Agency CSVs + Master JSON in 1 ZIP
   const downloadAllCsvsZip = async () => {
     try {
       const zip = new JSZip();
@@ -259,18 +306,21 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
       zip.file(`${prefix}Shutterstock_Metadata.csv`, getShutterstockCsv());
       zip.file(`${prefix}Freepik_Metadata.csv`, getFreepikCsv());
       zip.file(`${prefix}Getty_iStock_Metadata.csv`, getGettyCsv());
-      zip.file(`${prefix}Universal_Vecteezy_Metadata.csv`, getUniversalCsv());
+      zip.file(`${prefix}Vecteezy_Universal_Metadata.csv`, getUniversalCsv());
+      zip.file(`${prefix}123RF_Metadata.csv`, get123RfCsv());
+      zip.file(`${prefix}Dreamstime_Metadata.csv`, getDreamstimeCsv());
+      zip.file(`${prefix}Master_Portfolio_Metadata.json`, getMasterJsonPayload());
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Stock_All_Marketplaces_CSVs_${Date.now()}.zip`;
+      a.download = `Stock_All_7_Agencies_CSVs_${Date.now()}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast('✓ Downloaded All Marketplace CSVs ZIP!');
+      showToast('✓ Downloaded All 7 Agencies CSVs + Master JSON ZIP!');
     } catch (e) {
       console.error(e);
       showToast('Failed to bundle CSVs.');
@@ -389,12 +439,39 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
     },
     {
       id: 'universal',
-      name: 'Universal / Vecteezy',
-      badge: 'Full Meta',
+      name: 'Vecteezy / Universal',
+      badge: '35-49 KW',
       color: 'purple',
-      desc: 'Universal format with full description, titles, and unlimited keywords',
+      desc: 'Universal format with full description, titles, and commercial license column',
       getFile: getUniversalCsv,
-      filename: `universal_stock_${Date.now()}.csv`,
+      filename: `vecteezy_universal_${Date.now()}.csv`,
+    },
+    {
+      id: '123rf',
+      name: '123RF Contributor',
+      badge: '45 KW Max',
+      color: 'cyan',
+      desc: 'Official 123RF CSV schema (oldfilename, 123rf_filename, description, keywords, country)',
+      getFile: get123RfCsv,
+      filename: `123rf_${Date.now()}.csv`,
+    },
+    {
+      id: 'dreamstime',
+      name: 'Dreamstime',
+      badge: '45 KW Max',
+      color: 'emerald',
+      desc: 'Official Dreamstime batch CSV schema with Image Name, Description, Categories & Keywords',
+      getFile: getDreamstimeCsv,
+      filename: `dreamstime_${Date.now()}.csv`,
+    },
+    {
+      id: 'json_master',
+      name: 'Master Portfolio JSON (API / Backup)',
+      badge: '4-Angle + 49 KW',
+      color: 'amber',
+      desc: 'Complete structured JSON containing all 4 title variations, Top-10 weights, CPC & 49 keywords',
+      getFile: getMasterJsonPayload,
+      filename: `master_portfolio_metadata_${Date.now()}.json`,
     },
   ];
 

@@ -200,8 +200,8 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
             { id: 'calculator', label: 'Earning Simulator', icon: Calculator },
             { id: 'niches', label: 'High-CPC Niches', icon: Flame },
             { id: 'adsense', label: 'Google AdSense & ads.txt', icon: Globe },
-            { id: 'strategy', label: 'Rank #1 Strategy', icon: Award },
-            { id: 'partners', label: 'Agency Royalties', icon: FileSpreadsheet },
+            { id: 'strategy', label: '30-Day $1k Blueprint', icon: Award },
+            { id: 'partners', label: '7-Agency Royalties', icon: FileSpreadsheet },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -549,37 +549,58 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
         </div>
       )}
 
-      {/* TAB CONTENT 4: STRATEGY */}
+      {/* TAB CONTENT 4: STRATEGY & 30-DAY $1,000/MO BLUEPRINT */}
       {activeTab === 'strategy' && (
         <div className={`p-6 rounded-2xl border ${
           isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
         } space-y-5`}>
-          <h3 className={`text-base sm:text-lg font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
-            <Award className="w-5 h-5 text-emerald-500" />
-            <span>The 100% Rank #1 Microstock Earning Strategy</span>
-          </h3>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className={`text-base sm:text-lg font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                <Award className="w-5 h-5 text-emerald-500" />
+                <span>The 30-Day $1,000/Month Microstock &amp; Google AdSense Blueprint</span>
+              </h3>
+              <p className={`text-xs mt-0.5 ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
+                Follow this exact 4-week production &amp; SEO distribution schedule to build compounding passive royalties.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const planText = `ADOBEMETA PRO — 30-DAY $1,000/MO CONTRIBUTOR BLUEPRINT\n\nWeek 1 (Foundation & Niche Lock): Upload 150 EPS Vectors / AI Photos in Renewable Energy & Fintech Security using <70 char Subject-First Titles.\nWeek 2 (75% Top-10 Weight Mastery): Lock compound buyer phrases in Keyword Slots #1-#10 and syndicate across Adobe Stock, Shutterstock & Freepik.\nWeek 3 (60-Day Seasonal Lead Window): Produce 150 holiday & Q4/Q1 commercial backgrounds with generous negative copy space.\nWeek 4 (7-Agency Distribution & AdSense): Export 7-Agency CSVs in 1 click and monetize organic web traffic with verified ads.txt.`;
+                navigator.clipboard.writeText(planText);
+                showToast('✓ Copied 30-Day $1,000/mo Contributor Blueprint!');
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer ${
+                isLight ? 'bg-neutral-950 text-white' : 'bg-emerald-500 text-slate-950'
+              }`}
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copy 30-Day Action Plan</span>
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               {
-                num: '01',
-                title: 'Command the Crucial First 10 Keywords',
-                desc: 'Adobe Stock and Shutterstock allocate over 75% of total search ranking weight to positions 1 through 10. AdobeMeta Pro strictly places your exact subject, action, and commercial purpose into slots 1–10.'
+                num: 'WEEK 01 · FOUNDATION',
+                title: 'Command the Crucial First 10 Keywords (75% Weight)',
+                desc: 'Adobe Stock and Shutterstock allocate over 75% of total search ranking weight to positions 1 through 10. Upload 15 files/day with exact visual subject nouns locked into Slots #1–#10.'
               },
               {
-                num: '02',
-                title: 'Under-70-Character Natural Titles',
-                desc: 'Stock search engines penalize titles over 70 characters or titles with comma-separated keyword stuffing. Keep titles concise and specific to the artwork.'
+                num: 'WEEK 02 · MULTI-ANGLE SEO',
+                title: 'Under-70-Character Subject-First Titles + B2B Angles',
+                desc: 'Use the Quantum 4-Title Engine: submit <70 char Subject-First titles to Adobe Stock and 12-word narrative descriptions to Shutterstock & Getty to capture B2B enterprise buyers.'
               },
               {
-                num: '03',
-                title: '6-Stage Real EPS Vector Visual Inspection',
-                desc: 'Our rendering engine extracts true JPEG previews from your EPS files so vision AI recognizes actual vector subjects and generates authentic buyer terms.'
+                num: 'WEEK 03 · 60-DAY SEASONAL LEAD',
+                title: 'Pre-Empt Seasonal & High-CPC Commercial Spikes',
+                desc: 'Agencies buy seasonal campaigns 45–60 days early. Dedicate 50% of your weekly batch to upcoming seasonal events with clean negative copy space for ad designers.'
               },
               {
-                num: '04',
-                title: 'Multi-Agency Simultaneous Distribution',
-                desc: 'Distributing your portfolio to Adobe Stock, Shutterstock, Freepik, and Vecteezy triples your monthly downloads with zero extra creation time.'
+                num: 'WEEK 04 · 7-AGENCY MULTIPLIER',
+                title: 'Simultaneous 7-Agency CSV Syndication + AdSense',
+                desc: 'Distributing the exact same portfolio to Adobe Stock, Shutterstock, Freepik, Getty, Vecteezy, 123RF, and Dreamstime multiplies monthly revenue by 3.4x with zero extra creation time.'
               }
             ].map((st) => (
               <div
@@ -589,7 +610,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
                 }`}
               >
                 <div className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                  STRATEGY {st.num}
+                  {st.num}
                 </div>
                 <h4 className={`text-sm font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>
                   {st.title}
@@ -611,7 +632,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
           <div className="flex items-center justify-between">
             <h3 className={`text-base sm:text-lg font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
               <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
-              <span>Global Stock Agencies Royalty Comparison</span>
+              <span>Global 7 Stock Agencies Royalty &amp; Metadata Spec Comparison</span>
             </h3>
             <button
               onClick={onOpenMultiCsv}
@@ -620,7 +641,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
               }`}
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Open Multi-CSV Exporter</span>
+              <span>Open 7-Agency CSV Exporter</span>
             </button>
           </div>
 
@@ -640,31 +661,52 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
               <tbody className={`divide-y ${isLight ? 'divide-neutral-200/70' : 'divide-neutral-800'}`}>
                 <tr>
                   <td className={`py-3 px-4 font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>Adobe Stock</td>
-                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">33% (Photos/Vectors)</td>
-                  <td className="py-3 px-4 font-mono">49 (Rank 1-10 critical)</td>
-                  <td className="py-3 px-4 font-mono">&lt; 70 chars</td>
+                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">33% (Photos/Vectors) / 35% (Video)</td>
+                  <td className="py-3 px-4 font-mono">49 (Rank 1-10 = 75% weight)</td>
+                  <td className="py-3 px-4 font-mono">&lt; 70 chars (Sweet spot)</td>
                   <td className="py-3 px-4 font-mono">$25.00</td>
                 </tr>
                 <tr>
                   <td className={`py-3 px-4 font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>Shutterstock</td>
-                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">15% - 40% (Tiered)</td>
-                  <td className="py-3 px-4 font-mono">50</td>
-                  <td className="py-3 px-4 font-mono">&gt; 5 words</td>
+                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">15% - 40% (Level 1-6 Tiered)</td>
+                  <td className="py-3 px-4 font-mono">50 max (Min 7)</td>
+                  <td className="py-3 px-4 font-mono">&gt; 5 words narrative</td>
                   <td className="py-3 px-4 font-mono">$35.00</td>
                 </tr>
                 <tr>
                   <td className={`py-3 px-4 font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>Freepik</td>
-                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">Pay per Download</td>
+                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">50% Net Subscriber Pool</td>
                   <td className="py-3 px-4 font-mono">30 max</td>
                   <td className="py-3 px-4 font-mono">&lt; 100 chars</td>
                   <td className="py-3 px-4 font-mono">$50.00</td>
                 </tr>
                 <tr>
+                  <td className={`py-3 px-4 font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>Getty Images / iStock</td>
+                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">15% - 45% (Exclusive/Non-Excl)</td>
+                  <td className="py-3 px-4 font-mono">35 max</td>
+                  <td className="py-3 px-4 font-mono">&lt; 100 chars B2B</td>
+                  <td className="py-3 px-4 font-mono">$100.00</td>
+                </tr>
+                <tr>
                   <td className={`py-3 px-4 font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>Vecteezy</td>
-                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">50% Subscriber Share</td>
+                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">50% Pro Subscriber Share</td>
                   <td className="py-3 px-4 font-mono">35 max</td>
                   <td className="py-3 px-4 font-mono">&lt; 80 chars</td>
                   <td className="py-3 px-4 font-mono">$25.00</td>
+                </tr>
+                <tr>
+                  <td className={`py-3 px-4 font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>123RF</td>
+                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">30% - 60% Tiered</td>
+                  <td className="py-3 px-4 font-mono">45 max</td>
+                  <td className="py-3 px-4 font-mono">&lt; 120 chars</td>
+                  <td className="py-3 px-4 font-mono">$50.00</td>
+                </tr>
+                <tr>
+                  <td className={`py-3 px-4 font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>Dreamstime</td>
+                  <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-bold font-mono">25% - 60% Revenue Share</td>
+                  <td className="py-3 px-4 font-mono">45 max</td>
+                  <td className="py-3 px-4 font-mono">&lt; 70 chars</td>
+                  <td className="py-3 px-4 font-mono">$100.00</td>
                 </tr>
               </tbody>
             </table>

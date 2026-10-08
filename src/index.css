@@ -470,26 +470,17 @@ html[data-skin="sapphire"] {
   }
 }
 
-/* Fixed 3D Beveled Glass Viewport Frame (Front-facing curved crystal screen) */
+/* Fixed 3D Beveled Glass Viewport Frame (Front-facing crystal frame without milky haze over text) */
 .crystal-viewport-enclosure-dark {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 80;
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
-    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.24),
-    inset 0 -1.5px 3px 0 rgba(56, 189, 248, 0.12),
-    inset 0 0 36px rgba(255, 255, 255, 0.025);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.045) 0%,
-      rgba(255, 255, 255, 0.01) 22%,
-      transparent 50%,
-      rgba(16, 185, 129, 0.015) 78%,
-      rgba(255, 255, 255, 0.035) 100%
-    );
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -1.5px 3px 0 rgba(56, 189, 248, 0.12);
+  background: transparent;
 }
 
 .crystal-viewport-enclosure-light {
@@ -498,97 +489,87 @@ html[data-skin="sapphire"] {
   pointer-events: none;
   z-index: 80;
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.85),
-    inset 0 2px 4px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -1.5px 4px 0 rgba(14, 165, 233, 0.09),
-    inset 0 0 40px rgba(255, 255, 255, 0.35);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.32) 0%,
-      rgba(255, 255, 255, 0.08) 24%,
-      transparent 52%,
-      rgba(56, 189, 248, 0.025) 78%,
-      rgba(255, 255, 255, 0.24) 100%
-    );
+    inset 0 0 0 1px rgba(15, 23, 42, 0.08),
+    inset 0 2px 4px 0 rgba(255, 255, 255, 0.95);
+  background: transparent;
 }
 
-/* Subtle diagonal glass sheen sweeping across the front crystal screen */
+/* Subtle diagonal glass sheen sweeping behind foreground text */
 .crystal-viewport-sheen {
   position: fixed;
   top: -20%;
   left: 0;
-  width: 34%;
+  width: 32%;
   height: 140%;
   pointer-events: none;
-  z-index: 79;
+  z-index: 1;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.025) 45%,
-    rgba(255, 255, 255, 0.06) 50%,
-    rgba(255, 255, 255, 0.025) 55%,
+    rgba(255, 255, 255, 0.015) 45%,
+    rgba(255, 255, 255, 0.035) 50%,
+    rgba(255, 255, 255, 0.015) 55%,
     transparent 100%
   );
-  animation: glassCausticSweep 14s ease-in-out infinite;
+  animation: glassCausticSweep 16s ease-in-out infinite;
 }
 
-/* Master Architectural Glass Slab Container (Ultra-Clean Minimal Space Professional Precision) */
+/* Master Architectural Glass Slab Container (High-Contrast Solid-Backed Crystal for 100% Text Legibility) */
 .crystal-architectural-slab-dark {
   background: linear-gradient(
     145deg,
-    rgba(11, 15, 24, 0.84) 0%,
-    rgba(7, 10, 17, 0.78) 55%,
-    rgba(10, 14, 22, 0.86) 100%
+    rgba(10, 14, 22, 0.94) 0%,
+    rgba(6, 9, 15, 0.92) 55%,
+    rgba(9, 13, 20, 0.95) 100%
   );
-  backdrop-filter: blur(40px) saturate(190%);
-  -webkit-backdrop-filter: blur(40px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   animation: hyper5DCardRespiration 10s ease-in-out infinite;
 }
 
 .crystal-architectural-slab-light {
   background: linear-gradient(
     145deg,
-    rgba(255, 255, 255, 0.92) 0%,
-    rgba(255, 255, 255, 0.84) 55%,
-    rgba(255, 255, 255, 0.94) 100%
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(252, 251, 249, 0.96) 55%,
+    rgba(255, 255, 255, 0.99) 100%
   );
-  backdrop-filter: blur(40px) saturate(190%);
-  -webkit-backdrop-filter: blur(40px) saturate(190%);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(15, 23, 42, 0.11);
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 1),
-    0 20px 50px -20px rgba(15, 23, 42, 0.07);
+    0 20px 50px -20px rgba(15, 23, 42, 0.08);
 }
 
-/* Individual Crystal Glass Card (Refined Minimalist Hairline Precision) */
+/* Individual Crystal Glass Card (High-Clarity Surface for Crisp Text Reading) */
 .crystal-glass-panel-dark {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.055) 0%,
-    rgba(255, 255, 255, 0.018) 100%
+    rgba(15, 20, 30, 0.92) 0%,
+    rgba(9, 13, 21, 0.88) 100%
   );
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px) saturate(175%);
+  -webkit-backdrop-filter: blur(24px) saturate(175%);
+  border: 1px solid rgba(255, 255, 255, 0.13);
   box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
-    0 12px 28px -12px rgba(0, 0, 0, 0.48);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
+    0 12px 28px -12px rgba(0, 0, 0, 0.55);
 }
 
 .crystal-glass-panel-light {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.90) 0%,
-    rgba(255, 255, 255, 0.72) 100%
+    rgba(255, 255, 255, 0.97) 0%,
+    rgba(251, 250, 247, 0.94) 100%
   );
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(15, 23, 42, 0.075);
+  backdrop-filter: blur(24px) saturate(175%);
+  -webkit-backdrop-filter: blur(24px) saturate(175%);
+  border: 1px solid rgba(15, 23, 42, 0.1);
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 1),
-    0 12px 26px -12px rgba(15, 23, 42, 0.055);
+    0 12px 26px -12px rgba(15, 23, 42, 0.065);
 }
 
 /* Accessible Focus States across the Design System */
@@ -700,127 +681,132 @@ html.futuristic-bounce-active [data-bounce-card]:hover {
 .luxury-headline-gradient {
   background: linear-gradient(
     120deg,
-    #34d399 0%,
-    #fde047 34%,
-    #f59e0b 64%,
-    #38bdf8 100%
+    #10b981 0%,
+    #f59e0b 48%,
+    #0ea5e9 100%
   );
   background-size: 200% 200%;
   animation: prismHorizonSweep 7s ease infinite;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 1.5px 0 rgba(0, 0, 0, 0.35))
-          drop-shadow(0 4px 10px rgba(16, 185, 129, 0.22));
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.25));
 }
 
 /* ============================================================================
-   ULTRA-CRISP 3D SCULPTED TYPOGRAPHY ENGINE (100% READABLE + PERFECT COLOR GRADING)
-   Every text has razor-sharp contrast first, with a clean micro-3D physical
-   relief beneath it so letters never look blurry, double-vision, or muddy.
+   ULTRA-CRISP 3D SCULPTED TYPOGRAPHY ENGINE (100% RAZOR-SHARP CLARITY)
+   - Display & Section Headings (h1-h4): Clean 1px architectural 3D relief
+   - Body, Labels, Buttons & Metadata: Zero blur, 100% crisp subpixel clarity,
+     upgraded contrast so every single word is effortless to read.
    ============================================================================ */
 
-/* Night Mode (Dark Crystal) — Razor-Sharp High-Contrast 3D Relief */
+/* Boost muted slate/neutral utility classes globally so secondary text is never washed out */
+.spatial-3d-typography-dark {
+  color: #f8fafc;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.spatial-3d-typography-light {
+  color: #090a0f;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Upgrade faint neutral/slate text in Dark Mode to crisp, readable silver-white */
+.spatial-3d-typography-dark .text-neutral-400,
+.spatial-3d-typography-dark .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+.spatial-3d-typography-dark .text-neutral-500,
+.spatial-3d-typography-dark .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+.spatial-3d-typography-dark .text-neutral-300,
+.spatial-3d-typography-dark .text-slate-300 {
+  color: #e2e8f0 !important;
+}
+
+/* Upgrade faint neutral/slate text in Light Mode to crisp, deep editorial charcoal */
+.spatial-3d-typography-light .text-neutral-400,
+.spatial-3d-typography-light .text-slate-400 {
+  color: #475569 !important;
+}
+
+.spatial-3d-typography-light .text-neutral-500,
+.spatial-3d-typography-light .text-slate-500 {
+  color: #334155 !important;
+}
+
+.spatial-3d-typography-light .text-neutral-600,
+.spatial-3d-typography-light .text-slate-600 {
+  color: #1e293b !important;
+}
+
+/* Night Mode — Crisp 3D Architectural Relief on Display Headlines (h1) — ZERO BLUR */
+.spatial-3d-typography-dark h1 {
+  text-shadow:
+    0 1px 0 rgba(15, 23, 42, 0.95),
+    0 2px 0 rgba(2, 6, 23, 1),
+    0 4px 10px rgba(0, 0, 0, 0.45);
+}
+
+/* Night Mode — Clean Micro-3D Depth for Section & Card Titles (h2 - h4) */
+.spatial-3d-typography-dark h2,
+.spatial-3d-typography-dark h3,
+.spatial-3d-typography-dark h4 {
+  text-shadow:
+    0 1px 0 rgba(2, 6, 23, 0.95),
+    0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* Night Mode — Body, Spans, Labels & Buttons: Pure Crisp Precision (No double shadow or blur) */
 .spatial-3d-typography-dark p,
 .spatial-3d-typography-dark span,
 .spatial-3d-typography-dark li,
 .spatial-3d-typography-dark label,
 .spatial-3d-typography-dark a,
+.spatial-3d-typography-dark button,
 .spatial-3d-typography-dark td,
 .spatial-3d-typography-dark th {
+  text-shadow: none;
+}
+
+/* Day Mode — Crisp 3D Architectural Relief on Display Headlines (h1) — ZERO BLUR */
+.spatial-3d-typography-light h1 {
   text-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.85),
-    0 2px 4px rgba(0, 0, 0, 0.45);
+    0 1px 0 #ffffff,
+    0 2px 0 #cbd5e1,
+    0 3px 6px rgba(15, 23, 42, 0.08);
 }
 
-/* Night Mode — Crisp 3D Architectural Extrusion for Main Display Headlines (h1) */
-.spatial-3d-typography-dark h1 {
+/* Day Mode — Clean Micro-3D Depth for Section & Card Titles (h2 - h4) */
+.spatial-3d-typography-light h2,
+.spatial-3d-typography-light h3,
+.spatial-3d-typography-light h4 {
   text-shadow:
-    0 1px 0 rgba(148, 163, 184, 0.38),
-    0 2px 0 rgba(30, 41, 59, 0.95),
-    0 3px 0 rgba(2, 6, 23, 0.98),
-    0 6px 16px rgba(0, 0, 0, 0.78);
+    0 1px 0 #ffffff,
+    0 1.5px 0 #e2e8f0;
 }
 
-/* Night Mode — Clean 3D Depth for Section & Card Titles (h2 - h6) */
-.spatial-3d-typography-dark h2,
-.spatial-3d-typography-dark h3,
-.spatial-3d-typography-dark h4,
-.spatial-3d-typography-dark h5,
-.spatial-3d-typography-dark h6 {
-  text-shadow:
-    0 1px 0 rgba(71, 85, 105, 0.5),
-    0 2px 0 rgba(2, 6, 23, 0.95),
-    0 4px 10px rgba(0, 0, 0, 0.68);
-}
-
-/* Night Mode — Crisp 3D Tactile Text inside Buttons, Badges & Code */
-.spatial-3d-typography-dark button,
-.spatial-3d-typography-dark kbd,
-.spatial-3d-typography-dark code {
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
-}
-
-/* Day Mode (Light Crystal Porcelain) — Razor-Sharp High-Contrast 3D Relief */
+/* Day Mode — Body, Spans, Labels & Buttons: Pure Crisp Precision (No halo or blur) */
 .spatial-3d-typography-light p,
 .spatial-3d-typography-light span,
 .spatial-3d-typography-light li,
 .spatial-3d-typography-light label,
 .spatial-3d-typography-light a,
+.spatial-3d-typography-light button,
 .spatial-3d-typography-light td,
 .spatial-3d-typography-light th {
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95),
-    0 1.5px 2px rgba(15, 23, 42, 0.08);
+  text-shadow: none;
 }
 
-/* Day Mode — Crisp 3D Architectural Extrusion for Main Display Headlines (h1) */
-.spatial-3d-typography-light h1 {
-  text-shadow:
-    0 1px 0 #ffffff,
-    0 2px 0 #cbd5e1,
-    0 3px 0 rgba(148, 163, 184, 0.7),
-    0 5px 12px rgba(15, 23, 42, 0.14);
-}
-
-/* Day Mode — Clean 3D Depth for Section & Card Titles (h2 - h6) */
-.spatial-3d-typography-light h2,
-.spatial-3d-typography-light h3,
-.spatial-3d-typography-light h4,
-.spatial-3d-typography-light h5,
-.spatial-3d-typography-light h6 {
-  text-shadow:
-    0 1px 0 #ffffff,
-    0 1.5px 0 #cbd5e1,
-    0 3px 8px rgba(15, 23, 42, 0.11);
-}
-
-/* Day Mode — Crisp 3D Tactile Text inside Buttons, Badges & Code */
-.spatial-3d-typography-light button,
-.spatial-3d-typography-light kbd,
-.spatial-3d-typography-light code {
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.14);
-}
-
-/* Protect dark-text-on-light-surface buttons & badges inside Night Mode so they stay 100% readable */
-.spatial-3d-typography-dark .text-black,
-.spatial-3d-typography-dark .text-neutral-950,
-.spatial-3d-typography-dark .text-neutral-900,
-.spatial-3d-typography-dark .text-black *,
-.spatial-3d-typography-dark .text-neutral-950 * {
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
-}
-
-/* Protect white-text-on-dark-surface buttons & image overlays inside Day Mode so they stay 100% readable */
-.spatial-3d-typography-light .text-white,
-.spatial-3d-typography-light .text-white * {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
-}
-
-/* Interactive 3D Text Lift when hovering over Buttons, Links, or Cards */
+/* Keep hover transitions 100% sharp without 3D subpixel blur */
 button:hover,
 a:hover,
 [data-bounce-card]:hover h3 {
-  transform: translateZ(6px);
+  transform: none;
 }
 
 /* ============================================================================

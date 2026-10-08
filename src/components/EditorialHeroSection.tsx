@@ -16,7 +16,10 @@ import {
   Terminal,
   ShieldCheck,
   Globe,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Settings,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
 import { AdobeMetaProLogo } from './AdobeMetaProLogo';
 import store01MetadataEps from '../assets/images/store01_metadata_eps_1791118931620.jpg';
@@ -37,6 +40,8 @@ interface EditorialHeroProps {
   onOpenAbout?: () => void;
   onOpenFeatures?: () => void;
   onOpenLogin: () => void;
+  onLogout?: () => void;
+  onOpenSettings?: () => void;
   onToggleTheme: () => void;
   themeMode: 'light' | 'dark';
   user: any;
@@ -79,8 +84,12 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   onQuickDropFiles,
   onWatchDemo,
   onOpenAbout,
+  onOpenLogin,
+  onLogout,
+  onOpenSettings,
   onToggleTheme,
   themeMode,
+  user,
   onNavigateView,
   onOpenMultiCsv,
   onOpenToolsHub,
@@ -364,7 +373,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       <header className={`sticky top-0 z-50 w-full px-4 sm:px-8 lg:px-14 transition-all duration-300 ${
         isScrolled ? 'pt-2' : 'pt-4'
       }`}>
-        <div className={`max-w-[1440px] mx-auto px-6 sm:px-9 rounded-2xl flex items-center justify-between gap-6 transition-all duration-300 ${
+        <div className={`max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-7 rounded-2xl flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300 ${
           isScrolled ? 'h-14 shadow-2xl' : 'h-16'
         } ${
           isLight
@@ -373,7 +382,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
         }`}>
           
           {/* Zone 1: Brand Identity */}
-          <div className="flex items-center shrink-0">
+          <div className="flex items-center shrink-0 min-w-0">
             <AdobeMetaProLogo
               size="sm"
               showText={true}
@@ -387,7 +396,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           </div>
 
           {/* Zone 2: Clean Editorial Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-9 text-[12px] font-medium tracking-[0.05em]">
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6 text-[12px] font-medium tracking-[0.04em] min-w-0">
             <button
               onClick={() => {
                 setActiveDepartment('all');
@@ -443,12 +452,28 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           </nav>
 
           {/* Zone 3: Pre-Check + Controls + Day/Night Mode + Studio CTA */}
-          <div className="flex items-center gap-2.5 shrink-0 relative">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 relative">
+            {onOpenChat && (
+              <button
+                type="button"
+                onClick={onOpenChat}
+                className={`lumina-tactile-button px-2.5 py-1.5 rounded-xl text-[11px] font-bold hidden xl:flex items-center gap-1.5 border cursor-pointer ${
+                  isLight
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300/90'
+                    : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/35'
+                }`}
+                title="Open Sovereign AI Co-Pilot 6.0 (8 Intelligence Modes, Vision SEO, Image Synth & Multi-Agency CSV)"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>AI Co-Pilot</span>
+              </button>
+            )}
+
             {onOpenProToolkit && (
               <button
                 type="button"
                 onClick={() => onOpenProToolkit('presubmit')}
-                className={`lumina-tactile-button px-3.5 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border cursor-pointer ${
+                className={`lumina-tactile-button px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border cursor-pointer ${
                   isLight
                     ? 'bg-emerald-50/90 hover:bg-emerald-100 text-emerald-900 border-emerald-300/80'
                     : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/35'
@@ -465,7 +490,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               <button
                 type="button"
                 onClick={() => setShowHeaderControlsMenu((prev) => !prev)}
-                className={`lumina-tactile-button px-3 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border cursor-pointer ${
+                className={`lumina-tactile-button px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border cursor-pointer ${
                   showHeaderControlsMenu
                     ? isLight
                       ? 'bg-neutral-900 text-white border-neutral-900'
@@ -627,9 +652,28 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               {isLight ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
             </button>
 
+            {onOpenSettings && (
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                aria-label="Settings, Account & API Key"
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer relative ${
+                  isLight 
+                    ? 'text-neutral-600 hover:text-black hover:bg-neutral-200/50' 
+                    : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
+                }`}
+                title="Settings, Account Login/Logout & API Key"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                {user && (
+                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                )}
+              </button>
+            )}
+
             <button
               onClick={() => onNavigateView('upload')}
-              className={`lumina-tactile-button text-[11px] font-semibold tracking-[0.06em] px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-xs group ${
+              className={`lumina-tactile-button text-[11px] font-semibold tracking-[0.04em] px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-xs group shrink-0 ${
                 isLight
                   ? 'bg-neutral-950 hover:bg-black text-white'
                   : 'bg-white hover:bg-neutral-200 text-black'
@@ -773,6 +817,62 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 </span>
               </div>
             </div>
+
+            {/* Quantum Metadata & Multi-Agency Executive Quick-Launch Strip */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => onNavigateView('upload')}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
+                  isLight
+                    ? 'bg-white/90 hover:bg-neutral-950 hover:text-white text-neutral-800 border-neutral-200/90'
+                    : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Quantum 49-Tag Studio</span>
+              </button>
+              {onOpenMultiCsv && (
+                <button
+                  type="button"
+                  onClick={onOpenMultiCsv}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
+                    isLight
+                      ? 'bg-white/90 hover:bg-neutral-950 hover:text-white text-neutral-800 border-neutral-200/90'
+                      : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5 text-sky-500" />
+                  <span>5-Agency Universal CSV</span>
+                </button>
+              )}
+              {onOpenChat && (
+                <button
+                  type="button"
+                  onClick={onOpenChat}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
+                    isLight
+                      ? 'bg-amber-50/90 hover:bg-amber-100 text-amber-900 border-amber-300/80'
+                      : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>8-Mode AI Co-Pilot 6.0</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => onNavigateView('monetize')}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
+                  isLight
+                    ? 'bg-white/90 hover:bg-neutral-950 hover:text-white text-neutral-800 border-neutral-200/90'
+                    : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Royalty &amp; AdSense Vault</span>
+              </button>
+            </div>
           </motion.div>
 
           {/* Right 5 Columns: Live Interactive Store Telemetry & SEO Specimen Card */}
@@ -915,6 +1015,67 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                       title={`Preview ${st.title}`}
                     />
                   ))}
+                </div>
+              </div>
+
+              {/* 1-Click Multi-Agency Format Copy Strip inside Hero Specimen */}
+              <div className="mt-3 pt-3 border-t border-neutral-200/60 dark:border-white/10 flex flex-wrap items-center justify-between gap-1.5">
+                <span className="text-[9.5px] font-mono uppercase tracking-wider text-emerald-500 font-bold">
+                  1-Click Copy Specimen:
+                </span>
+                <div className="flex flex-wrap items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${activePreviewStore.sampleTitle}\n\n${activePreviewStore.sampleKeywords.join(', ')}`);
+                      setCopiedId(`${activePreviewStore.id}_adobe`);
+                      setTimeout(() => setCopiedId(null), 1800);
+                    }}
+                    className={`px-2 py-0.5 rounded text-[9.5px] font-semibold border transition cursor-pointer ${
+                      copiedId === `${activePreviewStore.id}_adobe`
+                        ? 'bg-emerald-500 text-black border-emerald-500 font-bold'
+                        : isLight
+                        ? 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-200'
+                        : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
+                    }`}
+                  >
+                    {copiedId === `${activePreviewStore.id}_adobe` ? '✓ Copied Adobe' : 'Adobe (<70c)'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const shutterDesc = `${activePreviewStore.sampleTitle} featuring ${activePreviewStore.sampleKeywords.slice(0, 4).join(', ')} for commercial design`;
+                      navigator.clipboard.writeText(`${shutterDesc}\n\n${activePreviewStore.sampleKeywords.join(', ')}`);
+                      setCopiedId(`${activePreviewStore.id}_shutter`);
+                      setTimeout(() => setCopiedId(null), 1800);
+                    }}
+                    className={`px-2 py-0.5 rounded text-[9.5px] font-semibold border transition cursor-pointer ${
+                      copiedId === `${activePreviewStore.id}_shutter`
+                        ? 'bg-emerald-500 text-black border-emerald-500 font-bold'
+                        : isLight
+                        ? 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-200'
+                        : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
+                    }`}
+                  >
+                    {copiedId === `${activePreviewStore.id}_shutter` ? '✓ Copied Shutter' : 'Shutterstock'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(activePreviewStore.sampleKeywords.slice(0, 30).join(', '));
+                      setCopiedId(`${activePreviewStore.id}_freepik`);
+                      setTimeout(() => setCopiedId(null), 1800);
+                    }}
+                    className={`px-2 py-0.5 rounded text-[9.5px] font-semibold border transition cursor-pointer ${
+                      copiedId === `${activePreviewStore.id}_freepik`
+                        ? 'bg-emerald-500 text-black border-emerald-500 font-bold'
+                        : isLight
+                        ? 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-200'
+                        : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
+                    }`}
+                  >
+                    {copiedId === `${activePreviewStore.id}_freepik` ? '✓ Copied Freepik' : 'Freepik'}
+                  </button>
                 </div>
               </div>
             </div>

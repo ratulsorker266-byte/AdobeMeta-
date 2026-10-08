@@ -1,0 +1,76 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Contributor profile, subscription tier, and usage counters",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Contributor email address",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Contributor display name",
+          "maxLength": 128
+        },
+        "credits": {
+          "type": "number",
+          "description": "Remaining metadata generation credits"
+        },
+        "dailyUsage": {
+          "type": "number",
+          "description": "Daily asset analysis count"
+        },
+        "chatUsage": {
+          "type": "number",
+          "description": "Daily AI assistant chat count"
+        },
+        "trendsUsage": {
+          "type": "number",
+          "description": "Daily trends query count"
+        },
+        "planType": {
+          "type": "string",
+          "enum": ["free", "premium"],
+          "description": "Subscription tier"
+        },
+        "isPro": {
+          "type": "boolean",
+          "description": "Whether Pro tier is active"
+        }
+      },
+      "required": ["email", "planType"]
+    },
+    "AssetHistory": {
+      "title": "AssetHistory",
+      "description": "Generated stock metadata record for an uploaded contributor asset",
+      "type": "object",
+      "properties": {
+        "fileName": {
+          "type": "string",
+          "description": "Original file name",
+          "maxLength": 512
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "Asset MIME type",
+          "maxLength": 128
+        }
+      },
+      "required": ["fileName"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores contributor profile and quota state"
+    },
+    "/users/{userId}/assets/{assetId}": {
+      "schema": { "$ref": "#/entities/AssetHistory" },
+      "description": "Stores contributor generated metadata history"
+    }
+  }
+}
