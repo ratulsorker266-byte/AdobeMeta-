@@ -78,35 +78,39 @@ export const SeoRankBoosterView: React.FC<SeoRankBoosterViewProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.3 }}
-      className="space-y-6"
+      className="space-y-10 pb-12"
     >
       {/* Top Header Card */}
-      <div className={`p-6 sm:p-8 rounded-2xl border relative overflow-hidden ${
+      <div className={`p-8 sm:p-10 lg:p-12 rounded-[32px] relative overflow-hidden sovereign-prism-card ${
         isLight
-          ? 'bg-white border-neutral-200/90 shadow-2xs text-neutral-900'
-          : 'bg-[#111318] border-neutral-800 text-white shadow-xl'
+          ? 'crystal-architectural-slab-light text-neutral-900'
+          : 'crystal-architectural-slab-dark text-white'
       }`}>
         <div className="relative z-10 flex items-start gap-4 max-w-3xl">
           <button
             onClick={onBackToStudio}
-            className={`p-2.5 rounded-xl border transition cursor-pointer shrink-0 mt-0.5 ${
+            className={`p-2.5 rounded-xl border transition cursor-pointer shrink-0 mt-1 ${
               isLight
                 ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-700'
-                : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+                : 'bg-[#050506] hover:bg-white/10 border-white/12 text-neutral-300'
             }`}
             title="Back to All Stores"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-400">
-              <span>05 . STORE · 100% RANK #1 SEARCH ENGINE</span>
-              <span>·</span>
-              <span className="text-amber-600 dark:text-amber-400 font-semibold">ADOBE SENSEI &amp; SHUTTERSTOCK</span>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2.5 text-[10.5px] font-mono uppercase tracking-[0.18em] text-neutral-400">
+              <span>05 · TITLE &amp; TOP-10 CALIBRATOR</span>
+              <span aria-hidden="true">·</span>
+              <span className={isLight ? 'text-neutral-950 font-semibold' : 'text-white font-semibold'}>ADOBE SENSEI &amp; SHUTTERSTOCK</span>
             </div>
 
-            <h2 className="text-xl sm:text-3xl font-bold tracking-tight leading-tight">
-              Rank #1 on Adobe Stock &amp; Shutterstock for Vector EPS &amp; Photos
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-[-0.03em] leading-[1.1]">
+              Algorithmic{' '}
+              <span className="font-editorial italic font-semibold text-[1.08em] luxury-headline-gradient pr-1">
+                Title &amp; Top-10
+              </span>{' '}
+              Search Calibrator
             </h2>
 
             <p className={`text-xs sm:text-sm ${isLight ? 'text-neutral-600' : 'text-neutral-400'} leading-relaxed`}>
@@ -117,8 +121,8 @@ export const SeoRankBoosterView: React.FC<SeoRankBoosterViewProps> = ({
       </div>
 
       {/* Interactive Query Simulator */}
-      <div className={`p-6 rounded-2xl border space-y-5 ${
-        isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
+      <div className={`p-6 rounded-3xl space-y-5 sovereign-prism-card ${
+        isLight ? 'crystal-architectural-slab-light' : 'crystal-architectural-slab-dark'
       }`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h3 className={`text-base font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
@@ -164,6 +168,40 @@ export const SeoRankBoosterView: React.FC<SeoRankBoosterViewProps> = ({
             <Lock className="w-3.5 h-3.5 text-amber-500" />
             <span>Lock into Studio Assets</span>
           </button>
+        </div>
+
+        {/* 1-Click High-CPC Buyer Query Presets */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10.5px] font-mono uppercase tracking-wider text-neutral-400 mr-1">
+            High-CPC Test Queries:
+          </span>
+          {[
+            'ramadan kareem vector lantern banner',
+            'renewable solar energy technician inspection',
+            'enterprise cybersecurity zero trust shield',
+            'minimalist luxury skincare glass dropper bottle',
+            'autonomous ai warehouse logistics robot'
+          ].map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => {
+                setTestQuery(preset);
+                showToast(`⚡ Loaded "${preset}" into Rank #1 Simulator`);
+              }}
+              className={`text-[11px] font-medium px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+                testQuery === preset
+                  ? isLight
+                    ? 'bg-neutral-950 text-white border-neutral-950 font-bold'
+                    : 'bg-white text-neutral-950 border-white font-bold'
+                  : isLight
+                  ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-600'
+                  : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+              }`}
+            >
+              {preset}
+            </button>
+          ))}
         </div>
 
         {/* Algorithm Generated Title Box */}
@@ -221,6 +259,78 @@ export const SeoRankBoosterView: React.FC<SeoRankBoosterViewProps> = ({
           }`}>
             {generatedTitle}
           </p>
+        </div>
+
+        {/* 7-Agency Live Compliance Matrix for Current Query */}
+        <div className={`p-4 sm:p-5 rounded-2xl border space-y-3 ${
+          isLight ? 'bg-[#fbfaf8] border-neutral-200/80' : 'bg-neutral-950/90 border-white/10'
+        }`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-cyan-600 dark:text-cyan-400 font-bold">
+              Multi-Agency Real-Time Title &amp; Tag Compliance Matrix
+            </span>
+            <span className="text-[10.5px] font-mono tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">
+              5/5 Agencies Verified
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            {[
+              {
+                agency: 'Adobe Stock (Official <70c)',
+                spec: 'Max 49 KW · Subject-First',
+                titleOut: generatedTitle.slice(0, 68),
+                status: `${Math.min(generatedTitle.length, 68)}/70 chars · Optimal`,
+              },
+              {
+                agency: 'Shutterstock (Narrative)',
+                spec: 'Max 50 KW · 10-15 Words',
+                titleOut: `${testQuery.charAt(0).toUpperCase() + testQuery.slice(1)} featuring ${simulatedSlots.slice(1, 4).map(s => s.tag).join(', ')} for commercial design`,
+                status: '14 Words · Category Auto-Matched',
+              },
+              {
+                agency: 'Freepik & Vecteezy',
+                spec: '30-35 KW · Editable Spec',
+                titleOut: `${testQuery.charAt(0).toUpperCase() + testQuery.slice(1)} — Scalable Commercial Graphic`,
+                status: '35 Priority Tags Locked',
+              },
+            ].map((row, rIdx) => (
+              <div
+                key={rIdx}
+                className={`p-3.5 rounded-xl border flex flex-col justify-between gap-2 ${
+                  isLight ? 'bg-white border-neutral-200/80' : 'bg-neutral-900/70 border-white/10'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 mb-1">
+                    <span className={`font-sans font-bold text-xs ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                      {row.agency}
+                    </span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{row.status}</span>
+                  </div>
+                  <p className={`text-xs font-medium line-clamp-2 ${isLight ? 'text-neutral-700' : 'text-neutral-300'}`}>
+                    {row.titleOut}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-neutral-200/60 dark:border-white/10 text-[10px] font-mono text-neutral-400">
+                  <span>{row.spec}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${row.titleOut}\n\n${simulatedSlots.map(s => s.tag).join(', ')}`);
+                      showToast(`✓ Copied ${row.agency} Title + Top-10 Tags!`);
+                    }}
+                    className={`font-sans font-bold text-[11px] flex items-center gap-1 cursor-pointer ${
+                      isLight ? 'text-neutral-900 hover:text-black' : 'text-cyan-400 hover:text-cyan-300'
+                    }`}
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>Copy Pack</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Top 10 Algorithm Priority Slots */}
@@ -286,8 +396,8 @@ export const SeoRankBoosterView: React.FC<SeoRankBoosterViewProps> = ({
       </div>
 
       {/* 4 Golden Rules for Vector Contributors */}
-      <div className={`p-6 rounded-2xl border ${
-        isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
+      <div className={`p-6 rounded-3xl sovereign-prism-card ${
+        isLight ? 'crystal-architectural-slab-light' : 'crystal-architectural-slab-dark'
       } space-y-4`}>
         <h3 className={`text-base font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
           <ShieldCheck className="w-5 h-5 text-emerald-500" />

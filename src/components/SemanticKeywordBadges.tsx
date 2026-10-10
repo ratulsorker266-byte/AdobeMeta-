@@ -87,7 +87,68 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
   const [activeFilter, setActiveFilter] = useState<TaxonomyFilter>('all');
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const [xrayMode, setXrayMode] = useState<boolean>(false);
+  const [isExpandedAll, setIsExpandedAll] = useState<boolean>(false);
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [quickAddInput, setQuickAddInput] = useState<string>('');
+  const [showQuickAdd, setShowQuickAdd] = useState<boolean>(false);
   const isLight = themeMode === 'light';
+
+  const handleDragDropReorder = (fromIndex0: number, toIndex0: number) => {
+    if (!onReorderKeywords || fromIndex0 === toIndex0) return;
+    if (fromIndex0 < 0 || toIndex0 < 0 || fromIndex0 >= keywords.length || toIndex0 >= keywords.length) return;
+    const next = [...keywords];
+    const [moved] = next.splice(fromIndex0, 1);
+    next.splice(toIndex0, 0, moved);
+    onReorderKeywords(next);
+    playTickSound();
+    showToast(`⚡ Moved "${moved}" to Slot #${toIndex0 + 1}${toIndex0 < 10 ? ' (75% Priority Weight)' : ''}!`);
+  };
+
+  const handleDeleteSingleTag = (tagToDelete: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onReorderKeywords) return;
+    const norm = tagToDelete.toLowerCase().trim();
+    const next = (keywords || []).filter((k) => k.toLowerCase().trim() !== norm);
+    onReorderKeywords(next);
+    playTickSound();
+    showToast(`Removed keyword "${tagToDelete}" (${next.length}/49 remaining)`);
+  };
+
+  const handleQuickAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!onReorderKeywords) return;
+    const rawParts = quickAddInput
+      .split(/[,;]+/)
+      .map((s) =>
+        s
+          .toLowerCase()
+          .replace(/["]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+      )
+      .filter((s) => s.length >= 2);
+    if (rawParts.length === 0) return;
+
+    const existingSet = new Set((keywords || []).map((k) => k.toLowerCase().trim()));
+    const newUnique = rawParts.filter((p) => !existingSet.has(p));
+
+    if (newUnique.length === 0) {
+      showToast('⚠️ Tag(s) already exist in your keyword list');
+      return;
+    }
+
+    const next = Array.from(new Set([...newUnique, ...(keywords || [])])).slice(0, 49);
+    onReorderKeywords(next);
+    setQuickAddInput('');
+    setShowQuickAdd(false);
+    playChimeSound();
+    showToast(
+      newUnique.length === 1
+        ? `✓ Locked "${newUnique[0]}" into Slot #1 (${next.length}/49)!`
+        : `✓ Locked ${newUnique.length} new tags into Top Priority Slots (${next.length}/49)!`
+    );
+  };
 
   const effectiveLongTail =
     buyerSearchPhrases && buyerSearchPhrases.length > 0
@@ -105,11 +166,11 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
       const rest = (keywords || []).filter((k) => k.toLowerCase().trim() !== norm);
       onReorderKeywords([kwToPromote, ...rest]);
       playChimeSound();
-      showToast(`⚡ [ALGO-HACK] Locked "${kwToPromote}" into Slot #1 (99% Apex Search Weight)!`);
+      showToast(`✓ Promoted "${kwToPromote}" to Slot #1 (Primary Search Anchor)`);
     }
   };
 
-  // 1-Click Algorithmic Rank-Hack: Reorders all 49 tags so compound B2B & title-matched nouns lock into Slots #1-#10
+  // 1-Click Priority Sort: Orders 49 tags so compound B2B & title-matched nouns lock into Slots #1-#10
   const handleOneClickAlgorithmicHack = () => {
     if (!onReorderKeywords) return;
     playTickSound();
@@ -156,7 +217,7 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
     }
 
     playChimeSound();
-    showToast('⚡ [RANK-HACK COMPLETE] 100% Title-to-Slot #1–#10 Algorithmic Weight Locked!');
+    showToast('✓ Prioritized Top-10 Keywords to match Subject Title');
   };
 
   // Build classified keywords combining backend taxonomy & algorithmic weight telemetry
@@ -254,19 +315,19 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
 
   return (
     <div className="space-y-2.5 pt-1">
-      {/* Unified Category Filter & Quick Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* Unified Minimalist Filter & Quick Action Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div
           className={`flex flex-wrap items-center gap-1 ${
             isLight
-              ? 'bg-neutral-100 border-neutral-200'
-              : 'bg-neutral-900 border-neutral-800'
+              ? 'bg-neutral-100/90 border-neutral-200/80'
+              : 'bg-[#050506] border-white/10'
           } p-1 rounded-xl border text-xs`}
         >
           <button
             type="button"
             onClick={() => setActiveFilter('all')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
               activeFilter === 'all'
                 ? isLight
                   ? 'bg-black text-white shadow-xs'
@@ -282,149 +343,99 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
           <button
             type="button"
             onClick={() => setActiveFilter('top10')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
               activeFilter === 'top10'
-                ? 'bg-amber-500 text-black shadow-xs font-bold'
+                ? isLight
+                  ? 'bg-neutral-950 text-white shadow-xs font-bold'
+                  : 'bg-white text-black shadow-xs font-bold'
                 : isLight
-                ? 'text-amber-700 hover:text-amber-900'
-                : 'text-amber-400 hover:text-amber-300'
+                ? 'text-neutral-600 hover:text-black'
+                : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <Zap className="w-3 h-3" />
-            <span>Top 10 (75% Weight)</span>
+            <span>Top 10 Priority</span>
           </button>
 
           {effectiveLongTail.length > 0 && (
             <button
               type="button"
               onClick={() => setActiveFilter('longtail')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
                 activeFilter === 'longtail'
-                  ? 'bg-emerald-600 text-white shadow-xs'
+                  ? isLight
+                    ? 'bg-neutral-950 text-white shadow-xs'
+                    : 'bg-white text-black shadow-xs'
                   : isLight
-                  ? 'text-emerald-700 hover:text-emerald-900'
-                  : 'text-emerald-400 hover:text-emerald-300'
+                  ? 'text-neutral-600 hover:text-black'
+                  : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <Target className="w-3 h-3" />
               <span>Buyer Phrases ({effectiveLongTail.length})</span>
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={() => setActiveFilter('subject')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
-              activeFilter === 'subject'
-                ? isLight
-                  ? 'bg-black text-white'
-                  : 'bg-white text-black'
-                : isLight
-                ? 'text-neutral-600 hover:text-black'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            Subject
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveFilter('concept')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
-              activeFilter === 'concept'
-                ? isLight
-                  ? 'bg-black text-white'
-                  : 'bg-white text-black'
-                : isLight
-                ? 'text-neutral-600 hover:text-black'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            Commercial
-          </button>
         </div>
 
-        {/* 1-Click Actions & Copy Controls */}
-        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              playTickSound();
-              setXrayMode((prev) => !prev);
-            }}
-            className={`px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-bold border transition cursor-pointer flex items-center gap-1 ${
-              xrayMode
-                ? isLight
-                  ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
-                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                : isLight
-                ? 'bg-white text-neutral-500 border-neutral-200'
-                : 'bg-neutral-900 text-neutral-400 border-neutral-800'
-            }`}
-            title="Show/Hide Per-Keyword Algorithmic Weight%"
-          >
-            <TrendingUp className="w-3 h-3 text-emerald-500" />
-            <span>{xrayMode ? 'Weights: ON' : 'Weights'}</span>
-          </button>
+        {/* Minimalist High-Utility Actions & Copy Controls */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {onReorderKeywords && (
+            <button
+              type="button"
+              onClick={() => setShowQuickAdd((prev) => !prev)}
+              className={`px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition cursor-pointer flex items-center gap-1 ${
+                showQuickAdd
+                  ? isLight
+                    ? 'bg-neutral-950 text-white border-neutral-950 font-bold'
+                    : 'bg-white text-black border-white font-bold'
+                  : isLight
+                  ? 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200'
+                  : 'bg-white/[0.03] hover:bg-white/[0.08] text-neutral-300 border-white/10'
+              }`}
+              title="Add single or comma-separated keywords directly into Top Priority Slots"
+            >
+              <span>+ Add Tag</span>
+            </button>
+          )}
 
           {onReorderKeywords && (
             <button
               type="button"
               onClick={handleOneClickAlgorithmicHack}
-              className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition cursor-pointer flex items-center gap-1 ${
                 isLight
-                  ? 'bg-neutral-950 hover:bg-black text-amber-300 border-neutral-950'
-                  : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40'
+                  ? 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-200'
+                  : 'bg-white/[0.03] hover:bg-white/[0.08] text-neutral-300 border-white/10'
               }`}
-              title="1-Click Algorithmic Rank-Hack: Lock highest-converting compound nouns into Slots #1-#10"
+              title="Align Top-10 Priority Keywords with your Subject Title"
             >
-              <Zap className="w-3 h-3 text-amber-400" />
-              <span>Rank Hack ({algoDominanceScore}%)</span>
+              <span>Align Top 10</span>
             </button>
           )}
 
           <button
             type="button"
-            onClick={() => copyTags(top10, 'Top 10 Heavyweight Keywords')}
-            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
-              isLight
-                ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
-                : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/40'
-            }`}
-            title="Adobe Stock weights first 10 keywords with 75% search ranking power"
-          >
-            {copiedType === 'Top 10 Heavyweight Keywords' ? (
-              <Check className="w-3 h-3 text-emerald-500" />
-            ) : (
-              <Sparkles className="w-3 h-3 text-amber-500" />
-            )}
-            <span>
-              {copiedType === 'Top 10 Heavyweight Keywords'
-                ? 'Copied Top 10'
-                : 'Copy Top 10'}
-            </span>
-          </button>
-
-          <button
-            type="button"
             onClick={() =>
-              copyTags(keywords, `All ${keywords.length} SEO Keywords`)
+              copyTags(
+                activeFilter === 'top10' ? top10 : keywords,
+                activeFilter === 'top10' ? 'Top 10 Priority Keywords' : `All ${keywords.length} SEO Keywords`
+              )
             }
-            className={`text-[11px] font-bold px-3 py-1 rounded-lg border transition flex items-center gap-1 cursor-pointer whitespace-nowrap ${
+            className={`text-[11px] font-semibold px-3 py-1 rounded-lg border transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               isLight
-                ? 'bg-black hover:bg-neutral-800 text-white border-black'
-                : 'bg-white hover:bg-neutral-200 text-black border-white'
+                ? 'bg-neutral-950 hover:bg-black text-white border-neutral-950'
+                : 'bg-white hover:bg-neutral-200 text-neutral-950 border-white'
             }`}
           >
-            {copiedType?.startsWith('All') ? (
-              <Check className="w-3 h-3 text-emerald-500" />
+            {copiedType ? (
+              <Check className="w-3 h-3" />
             ) : (
               <Copy className="w-3 h-3" />
             )}
             <span>
-              {copiedType?.startsWith('All')
-                ? 'Copied All!'
-                : `Copy All (${keywords.length})`}
+              {copiedType
+                ? 'Copied'
+                : activeFilter === 'top10'
+                ? 'Copy Top 10'
+                : `Copy Tags (${keywords.length})`}
             </span>
           </button>
         </div>
@@ -474,12 +485,41 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
         </div>
       )}
 
-      {/* Semantic Keyword Badges Grid with Live Algorithmic Weight Telemetry */}
+      {/* Inline Quick-Add Custom Keyword Bar (Locks new tag into Slot #1) */}
+      {showQuickAdd && onReorderKeywords && (
+        <form
+          onSubmit={handleQuickAddSubmit}
+          className={`p-2.5 rounded-xl border flex items-center gap-2 ${
+            isLight ? 'bg-white border-neutral-200' : 'bg-neutral-900 border-neutral-800'
+          }`}
+        >
+          <input
+            type="text"
+            value={quickAddInput}
+            onChange={(e) => setQuickAddInput(e.target.value)}
+            placeholder="Type a keyword or paste comma-separated tags to lock into Top Priority Slots..."
+            className={`flex-1 text-xs px-3 py-1.5 rounded-lg border focus:outline-none ${
+              isLight
+                ? 'bg-[#faf9f6] border-neutral-200 text-neutral-900 focus:border-neutral-900'
+                : 'bg-neutral-950 border-neutral-800 text-white focus:border-emerald-500'
+            }`}
+            autoFocus
+          />
+          <button
+            type="submit"
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-neutral-950 transition cursor-pointer shrink-0"
+          >
+            Lock at #1
+          </button>
+        </form>
+      )}
+
+      {/* Semantic Keyword Badges Grid with 10th-Gen Drag-and-Drop Reordering */}
       <div
-        className={`flex flex-wrap gap-1.5 max-h-60 overflow-y-auto p-3 rounded-xl border ${
+        className={`flex flex-wrap items-center gap-2 p-4 rounded-2xl border transition-all duration-300 ${
           isLight
-            ? 'bg-[#faf9f6] border-neutral-200/90'
-            : 'bg-[#0b0c0f] border-neutral-800/90'
+            ? 'bg-[#faf9f6] border-neutral-200/80'
+            : 'bg-[#040405] border-white/10'
         }`}
       >
         {filtered.length === 0 ? (
@@ -487,30 +527,53 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
             No keywords found under this taxonomy category.
           </div>
         ) : (
-          filtered.map((item, idx) => {
+          (activeFilter === 'all' && !isExpandedAll ? filtered.slice(0, 10) : filtered).map((item, idx) => {
+            const actualIndex0 = item.index - 1;
+            const isBeingDragged = draggedIdx === actualIndex0;
+            const isDragTarget = dragOverIdx === actualIndex0 && draggedIdx !== actualIndex0;
+
             let badgeClasses = '';
-            if (item.index === 1) {
+            if (isDragTarget) {
+              badgeClasses = 'border-white bg-white/20 scale-105 ring-2 ring-white/40';
+            } else if (item.index === 1) {
               badgeClasses = isLight
-                ? 'bg-neutral-950 text-white border-neutral-950 font-bold shadow-xs'
-                : 'bg-emerald-500/20 text-emerald-200 border-emerald-400 font-bold shadow-[0_0_15px_rgba(16,185,129,0.2)]';
+                ? 'bg-neutral-950 text-white border-neutral-950 font-semibold shadow-xs'
+                : 'bg-white text-black border-white font-semibold shadow-xs';
             } else if (item.isTop10) {
               badgeClasses = isLight
-                ? 'bg-amber-50/95 text-neutral-900 border-amber-300/90 font-semibold hover:bg-amber-100'
-                : 'bg-amber-500/10 text-amber-200 border-amber-500/40 font-semibold hover:bg-amber-500/20';
-            } else if (item.isLongTail) {
-              badgeClasses = isLight
-                ? 'bg-emerald-50/80 text-emerald-900 border-emerald-200/90 hover:bg-emerald-100'
-                : 'bg-emerald-950/40 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900/50';
+                ? 'bg-neutral-100 text-neutral-950 border-neutral-300 font-medium hover:bg-neutral-200'
+                : 'bg-white/[0.08] text-white border-white/25 font-medium hover:bg-white/[0.14]';
             } else {
               badgeClasses = isLight
-                ? 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-400 hover:text-black'
-                : 'bg-neutral-900/90 text-neutral-300 border-neutral-800 hover:border-neutral-600 hover:text-white';
+                ? 'bg-white text-neutral-700 border-neutral-200/80 hover:border-neutral-400 hover:text-black'
+                : 'bg-[#070709] text-neutral-300 border-white/10 hover:border-white/30 hover:text-white';
             }
 
             return (
-              <button
+              <div
                 key={`${item.tag}-${idx}`}
-                type="button"
+                draggable={Boolean(onReorderKeywords)}
+                onDragStart={() => setDraggedIdx(actualIndex0)}
+                onDragOver={(e) => {
+                  if (!onReorderKeywords) return;
+                  e.preventDefault();
+                  if (dragOverIdx !== actualIndex0) setDragOverIdx(actualIndex0);
+                }}
+                onDragLeave={() => {
+                  if (dragOverIdx === actualIndex0) setDragOverIdx(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggedIdx !== null && draggedIdx !== actualIndex0) {
+                    handleDragDropReorder(draggedIdx, actualIndex0);
+                  }
+                  setDraggedIdx(null);
+                  setDragOverIdx(null);
+                }}
+                onDragEnd={() => {
+                  setDraggedIdx(null);
+                  setDragOverIdx(null);
+                }}
                 onClick={() => {
                   if ((onPromoteToSlot1 || onReorderKeywords) && item.index > 1) {
                     handlePromoteKeyword(item.tag);
@@ -518,54 +581,52 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
                     copyTags([item.tag], `"${item.tag}"`);
                   }
                 }}
-                title={`${item.tierLabel} · Search Weight: ${item.weightPct}% · Est. RPD: ${item.rpdEstimate} — ${
+                title={`${item.tierLabel} · Search Weight: ${item.weightPct}% — ${
                   item.index === 1
-                    ? 'Locked at Slot #1 Apex Anchor'
-                    : 'Click to lock into Slot #1 (99% Weight)'
+                    ? 'Locked at Slot #1 Apex Anchor (Drag to reorder)'
+                    : 'Click to lock into Slot #1 or Drag to reorder'
                 }`}
-                className={`group/kw text-xs px-2.5 py-1 rounded-lg border transition cursor-pointer flex items-center gap-1.5 ${badgeClasses}`}
+                className={`group/kw text-[11.5px] px-2.5 py-1 rounded-lg border transition cursor-pointer flex items-center gap-1.5 select-none ${
+                  isBeingDragged ? 'opacity-40 scale-95' : ''
+                } ${badgeClasses}`}
               >
-                <span
-                  className={`text-[9.5px] font-mono tabular-nums font-bold px-1 rounded flex items-center gap-0.5 ${
-                    item.index === 1
-                      ? 'bg-amber-400 text-black'
-                      : item.isTop10
-                      ? isLight
-                        ? 'bg-amber-200/80 text-amber-950'
-                        : 'bg-amber-500/30 text-amber-200'
-                      : isLight
-                      ? 'bg-neutral-100 text-neutral-500'
-                      : 'bg-neutral-800 text-neutral-400'
-                  }`}
-                >
-                  {item.index === 1 && <Lock className="w-2.5 h-2.5" />}
-                  <span>#{item.index}</span>
+                <span className="text-[9.5px] font-mono tabular-nums opacity-55">
+                  {String(item.index).padStart(2, '0')}
                 </span>
 
                 <span>{item.tag}</span>
 
-                {xrayMode && (
-                  <span
-                    className={`text-[9px] font-mono tabular-nums px-1 py-0.2 rounded ${
-                      item.index === 1
-                        ? 'bg-emerald-500/30 text-emerald-300 font-bold'
-                        : item.isTop10
-                        ? isLight
-                          ? 'bg-emerald-100/90 text-emerald-800 font-bold'
-                          : 'bg-emerald-950/80 text-emerald-400 font-bold'
-                        : 'opacity-55'
-                    }`}
+                {onReorderKeywords && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteSingleTag(item.tag, e)}
+                    className="opacity-0 group-hover/kw:opacity-100 hover:text-rose-500 text-[11px] font-bold leading-none pl-0.5 transition-opacity cursor-pointer"
+                    title={`Remove "${item.tag}"`}
                   >
-                    {item.weightPct}%
-                  </span>
+                    ×
+                  </button>
                 )}
-
-                {(onPromoteToSlot1 || onReorderKeywords) && item.index > 1 && (
-                  <ArrowUp className="w-2.5 h-2.5 opacity-0 group-hover/kw:opacity-100 text-amber-500 transition-opacity" />
-                )}
-              </button>
+              </div>
             );
           })
+        )}
+
+        {activeFilter === 'all' && filtered.length > 10 && (
+          <button
+            type="button"
+            onClick={() => setIsExpandedAll((prev) => !prev)}
+            className={`px-3 py-1 rounded-lg text-[11px] font-semibold border transition cursor-pointer flex items-center gap-1 ${
+              isLight
+                ? 'bg-neutral-900 hover:bg-black text-white border-neutral-900'
+                : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
+            }`}
+          >
+            <span>
+              {isExpandedAll
+                ? 'Show Top 10 Only'
+                : `+${filtered.length - 10} More Tags (View All ${filtered.length})`}
+            </span>
+          </button>
         )}
       </div>
     </div>

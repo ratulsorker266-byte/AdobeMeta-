@@ -1,0 +1,18 @@
+{
+  "name": "AdobeMeta Pro – Stock Metadata & Earning Platform",
+  "short_name": "AdobeMeta Pro",
+  "description": "Commercial stock metadata generator, SEO ranking booster, EPS vector visual renderer, and microstock earning platform for Adobe Stock, Shutterstock, and Freepik contributors.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050507",
+  "theme_color": "#050507",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

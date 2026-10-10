@@ -46,6 +46,75 @@ export const EpsArtworkViewerModal: React.FC<EpsArtworkViewerModalProps> = ({
   const [backdrop, setBackdrop] = useState<'white' | 'grid' | 'dark'>('white');
   const [isReRendering, setIsReRendering] = useState<boolean>(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [extractedPalette, setExtractedPalette] = useState<string[]>([]);
+  const [decodedDimensions, setDecodedDimensions] = useState<{ w: number; h: number; mp: string } | null>(null);
+
+  React.useEffect(() => {
+    if (!item?.previewUrl) {
+      setExtractedPalette([]);
+      setDecodedDimensions(null);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const w = img.naturalWidth || img.width || 0;
+      const h = img.naturalHeight || img.height || 0;
+      if (w > 0 && h > 0) {
+        const mp = ((w * h) / 1_000_000).toFixed(2);
+        setDecodedDimensions({ w, h, mp });
+      }
+      try {
+        const canvas = document.createElement('canvas');
+        const sampleSize = 48;
+        canvas.width = sampleSize;
+        canvas.height = sampleSize;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, sampleSize, sampleSize);
+        const data = ctx.getImageData(0, 0, sampleSize, sampleSize).data;
+        const buckets = new Map<string, { r: number; g: number; b: number; count: number }>();
+        for (let i = 0; i < data.length; i += 16) {
+          const a = data[i + 3];
+          if (a < 128) continue;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          // Quantize into 32-step buckets to group dominant swatches
+          const qr = Math.round(r / 32) * 32;
+          const qg = Math.round(g / 32) * 32;
+          const qb = Math.round(b / 32) * 32;
+          const key = `${qr},${qg},${qb}`;
+          const existing = buckets.get(key);
+          if (existing) {
+            existing.r += r;
+            existing.g += g;
+            existing.b += b;
+            existing.count += 1;
+          } else {
+            buckets.set(key, { r, g, b, count: 1 });
+          }
+        }
+        const sorted = Array.from(buckets.values())
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 6)
+          .map((c) => {
+            const avgR = Math.min(255, Math.round(c.r / c.count));
+            const avgG = Math.min(255, Math.round(c.g / c.count));
+            const avgB = Math.min(255, Math.round(c.b / c.count));
+            return (
+              '#' +
+              [avgR, avgG, avgB]
+                .map((x) => x.toString(16).padStart(2, '0'))
+                .join('')
+                .toUpperCase()
+            );
+          });
+        setExtractedPalette(sorted);
+      } catch {}
+    };
+    img.src = item.previewUrl;
+  }, [item?.previewUrl]);
 
   if (!item) return null;
 
@@ -101,10 +170,10 @@ export const EpsArtworkViewerModal: React.FC<EpsArtworkViewerModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 12 }}
           transition={{ duration: 0.2 }}
-          className={`w-full max-w-6xl max-h-[92vh] rounded-3xl border overflow-hidden flex flex-col shadow-2xl ${
+          className={`w-full max-w-6xl max-h-[92vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl sovereign-prism-card ${
             isLight
-              ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-900'
-              : 'bg-[#111318] border-neutral-800 text-white'
+              ? 'crystal-architectural-slab-light text-neutral-900'
+              : 'crystal-architectural-slab-dark text-white'
           }`}
         >
           {/* Top Header Bar */}
@@ -306,40 +375,81 @@ export const EpsArtworkViewerModal: React.FC<EpsArtworkViewerModalProps> = ({
                 )}
               </div>
 
-              {/* Bottom Artboard Specs & Custom Companion Upload */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`px-2.5 py-1 rounded-lg border font-mono text-[11px] ${
-                    isLight ? 'bg-white border-neutral-200 text-neutral-700' : 'bg-neutral-900 border-neutral-800 text-neutral-300'
-                  }`}>
-                    Format: {item.file.name.split('.').pop()?.toUpperCase() || 'EPS'}
-                  </span>
-                  {bbox && (
+              {/* Bottom Artboard Specs, Extracted RGB Color Palette & Companion Upload */}
+              <div className="space-y-3 pt-1 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className={`px-2.5 py-1 rounded-lg border font-mono text-[11px] ${
                       isLight ? 'bg-white border-neutral-200 text-neutral-700' : 'bg-neutral-900 border-neutral-800 text-neutral-300'
                     }`}>
-                      BoundingBox: {bbox.width} × {bbox.height} pt
+                      Format: {item.file.name.split('.').pop()?.toUpperCase() || 'EPS'}
                     </span>
-                  )}
+                    {bbox && (
+                      <span className={`px-2.5 py-1 rounded-lg border font-mono text-[11px] ${
+                        isLight ? 'bg-white border-neutral-200 text-neutral-700' : 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                      }`}>
+                        BoundingBox: {bbox.width} × {bbox.height} pt
+                      </span>
+                    )}
+                    {decodedDimensions && (
+                      <span className={`px-2.5 py-1 rounded-lg border font-mono text-[11px] ${
+                        isLight ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
+                      }`}>
+                        {decodedDimensions.w} × {decodedDimensions.h} px ({decodedDimensions.mp} MP)
+                      </span>
+                    )}
+                  </div>
+
+                  <label className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                    isLight
+                      ? 'bg-white hover:bg-stone-100 border-neutral-200 text-neutral-700'
+                      : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+                  }`}>
+                    <Camera className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Attach Companion JPG</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) onAttachScreenshot(item.id, f);
+                      }}
+                    />
+                  </label>
                 </div>
 
-                <label className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
-                  isLight
-                    ? 'bg-white hover:bg-stone-100 border-neutral-200 text-neutral-700'
-                    : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
-                }`}>
-                  <Camera className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Attach Companion JPG</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) onAttachScreenshot(item.id, f);
-                    }}
-                  />
-                </label>
+                {/* Live Extracted Dominant Color Swatches (Click to Copy Hex) */}
+                {extractedPalette.length > 0 && (
+                  <div className={`p-2.5 rounded-xl border flex flex-wrap items-center justify-between gap-2 ${
+                    isLight ? 'bg-white/90 border-neutral-200/80' : 'bg-neutral-900/80 border-neutral-800'
+                  }`}>
+                    <span className="text-[10px] font-mono uppercase tracking-wider opacity-70 font-bold">
+                      Dominant Palette (1-Click Copy Hex):
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {extractedPalette.map((hex) => (
+                        <button
+                          key={hex}
+                          type="button"
+                          onClick={() => handleCopy(hex, `Color ${hex}`)}
+                          className={`px-2 py-1 rounded-lg border text-[10px] font-mono font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                            isLight
+                              ? 'bg-[#faf9f6] hover:bg-neutral-100 border-neutral-200 text-neutral-800'
+                              : 'bg-neutral-950 hover:bg-neutral-800 border-neutral-800 text-neutral-200'
+                          }`}
+                          title={`Click to copy ${hex}`}
+                        >
+                          <span
+                            className="w-3 h-3 rounded-full border border-black/20 shrink-0"
+                            style={{ backgroundColor: hex }}
+                          />
+                          <span>{hex}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

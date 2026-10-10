@@ -11,13 +11,11 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
   if (!isOpen) return null;
 
   const shortcuts = [
-    { key: '?', desc: 'Toggle keyboard shortcuts reference' },
-    { key: 'Space', desc: 'Quick enlarge image preview for inspecting quality' },
-    { key: 'M', desc: 'Open Live Marketplace Buyer Mockup' },
-    { key: 'E', desc: 'Open metadata & keyword order editor' },
-    { key: 'C', desc: 'Copy all 40+ keywords to clipboard' },
-    { key: 'J', desc: 'Directly download in-browser EXIF-embedded JPEG' },
-    { key: 'Esc', desc: 'Close any active modal or return to gallery' },
+    { key: 'Ctrl + K', desc: 'Open Global Command Palette & Quick Search' },
+    { key: 'Ctrl + B', desc: 'Toggle Black-Ops Forensic Metadata Terminal' },
+    { key: 'Ctrl + V', desc: 'Auto-Paste Screenshot or Query to Generate 49 Tags' },
+    { key: '?', desc: 'Toggle Keyboard Shortcuts Reference' },
+    { key: 'Esc', desc: 'Close any active modal or drawer' },
   ];
 
   return (
@@ -26,7 +24,7 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4"
+        className="crystal-architectural-slab-dark sovereign-prism-card rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4"
       >
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2 text-white font-bold text-sm">

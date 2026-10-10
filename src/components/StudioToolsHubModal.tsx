@@ -49,13 +49,13 @@ export const StudioToolsHubModal: React.FC<StudioToolsHubModalProps> = ({
 
   const tools: ToolCard[] = [
     {
-      id: 'contributor_arcade',
-      name: 'Contributor Arcade (Mini-Games)',
-      category: 'Vector & AI',
-      description: 'Play Flappy Stock Drone, Retro Snake, and Keyword Speed Blitz while AI generates metadata in the background.',
-      icon: Gamepad2,
-      color: 'from-amber-500/20 via-pink-500/20 to-purple-500/20 border-pink-500/30 text-pink-400',
-      badge: '🎮 Mini-Games'
+      id: 'keyword_mixer',
+      name: 'Live Visual Similar Image Keyword Mixer',
+      category: 'SEO & Discovery',
+      description: 'ImStocker-style visual keyword mixer: select 3–12 similar bestselling images and automatically blend & rank 49 keywords by consensus frequency.',
+      icon: Sparkles,
+      color: 'from-amber-500/20 to-emerald-500/20 border-amber-500/40 text-amber-300',
+      badge: 'ImStocker Mixer'
     },
     {
       id: 'vector_studio',
@@ -194,42 +194,48 @@ export const StudioToolsHubModal: React.FC<StudioToolsHubModalProps> = ({
     : tools.filter(t => t.category === activeCategory);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-xl overflow-y-auto">
       <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.96 }}
-        className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[90vh]"
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        className="w-full max-w-5xl bg-[#050507] border border-white/[0.1] rounded-[32px] shadow-[0_32px_90px_rgba(0,0,0,0.92)] overflow-hidden flex flex-col my-auto max-h-[88vh]"
       >
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/60 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-              <Sparkles className="w-5 h-5" />
+        <div className="p-7 sm:p-9 border-b border-white/[0.08] flex items-center justify-between bg-black/60 shrink-0">
+          <div className="space-y-1.5">
+            <div className="text-[10.5px] font-mono uppercase tracking-[0.22em] text-neutral-500">
+              EXECUTIVE CONTRIBUTOR SUITE · 15 SPECIALIZED ENGINES
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">Professional Contributor Suite</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Specialized microstock SEO, compliance, and vector engineering tools</p>
-            </div>
+            <h2 className="text-xl sm:text-3xl font-bold text-white tracking-[-0.025em]">
+              Studio{' '}
+              <span className="font-editorial italic font-semibold text-[1.08em] luxury-headline-gradient pr-1">
+                Specialist
+              </span>{' '}
+              Directory
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-400">
+              Precision microstock SEO, vector XMP engineering, and agency compliance modules.
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+            className="p-2.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/[0.08] text-neutral-400 hover:text-white transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Category Pills */}
-        <div className="px-6 py-3 border-b border-slate-800/80 bg-slate-900/50 flex items-center gap-2 overflow-x-auto scrollbar-none shrink-0">
+        {/* Category Filter Tabs */}
+        <div className="px-7 sm:px-9 py-4 border-b border-white/[0.07] bg-[#08080b] flex items-center gap-2 overflow-x-auto scrollbar-none shrink-0">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-[0.04em] whitespace-nowrap transition cursor-pointer ${
                 activeCategory === cat
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                  ? 'bg-white text-neutral-950 shadow-sm'
+                  : 'bg-white/[0.03] hover:bg-white/[0.08] text-neutral-400 hover:text-white border border-white/[0.06]'
               }`}
             >
               {cat}
@@ -237,8 +243,8 @@ export const StudioToolsHubModal: React.FC<StudioToolsHubModalProps> = ({
           ))}
         </div>
 
-        {/* Tools Grid */}
-        <div className="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Tools Grid — Spacious Architectural Cards */}
+        <div className="p-7 sm:p-9 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-5">
           {filteredTools.map((tool) => {
             const Icon = tool.icon;
             return (
@@ -249,31 +255,36 @@ export const StudioToolsHubModal: React.FC<StudioToolsHubModalProps> = ({
                   onClose();
                   onOpenTool(tool.id);
                 }}
-                className={`p-4 rounded-xl border bg-gradient-to-br ${tool.color} cursor-pointer transition flex flex-col justify-between group hover:border-indigo-400/50 hover:shadow-lg`}
+                className="p-6 rounded-2xl border border-white/[0.08] bg-[#0a0a0e] hover:bg-[#101016] hover:border-white/[0.22] cursor-pointer transition-all flex flex-col justify-between group"
               >
                 <div>
-                  <div className="flex items-start justify-between gap-2 mb-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-700/50">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#f3e5ab] group-hover:bg-white group-hover:text-neutral-950 transition-colors">
                         <Icon className="w-4 h-4" />
                       </div>
-                      <h3 className="text-sm font-bold text-slate-100 group-hover:text-indigo-300 transition">
-                        {tool.name}
-                      </h3>
+                      <div>
+                        <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-neutral-500">
+                          {tool.category}
+                        </div>
+                        <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#f3e5ab] transition-colors mt-0.5">
+                          {tool.name}
+                        </h3>
+                      </div>
                     </div>
                     {tool.badge && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-950/70 border border-slate-700/60 text-slate-300">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 shrink-0">
                         {tool.badge}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
+                  <p className="text-xs text-neutral-400 leading-relaxed pl-[52px]">
                     {tool.description}
                   </p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-800/50 flex items-center justify-between text-xs font-semibold text-slate-300 group-hover:text-white">
-                  <span>Open Tool</span>
+                <div className="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono uppercase tracking-[0.14em] text-neutral-400 group-hover:text-white">
+                  <span>Launch Specialist Module</span>
                   <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </motion.div>
@@ -282,14 +293,14 @@ export const StudioToolsHubModal: React.FC<StudioToolsHubModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between text-xs text-slate-400 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>All modules verified for Adobe Stock, Shutterstock, and Freepik</span>
+        <div className="px-7 sm:px-9 py-4 border-t border-white/[0.08] bg-black/80 flex items-center justify-between text-xs text-neutral-400 shrink-0">
+          <div className="flex items-center gap-2 font-mono text-[11px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span>Verified for Adobe Stock · Shutterstock · Freepik · Getty</span>
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium transition"
+            className="px-5 py-2 bg-white/[0.06] hover:bg-white/[0.12] text-white rounded-xl text-xs font-semibold transition cursor-pointer"
           >
             Close
           </button>

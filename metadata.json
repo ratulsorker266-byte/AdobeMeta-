@@ -1,6 +1,6 @@
 {
   "name": "AdobeMeta Pro",
   "description": "Commercial stock metadata generator, SEO ranking booster, and microstock earning platform for Adobe Stock, Shutterstock, and Freepik contributors.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

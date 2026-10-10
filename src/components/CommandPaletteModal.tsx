@@ -40,7 +40,7 @@ interface CommandItem {
 interface CommandPaletteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onNavigateView: (view: 'upload' | 'trends' | 'competitor' | 'prompts' | 'calendar') => void;
+  onNavigateView: (view: 'home' | 'upload' | 'monetize' | 'seo-rank' | 'trends' | 'competitor' | 'prompts' | 'calendar') => void;
   onToggleMode: (mode: 'spatial' | 'classic') => void;
   workspaceMode: 'spatial' | 'classic';
   onStartProcessing: () => void;
@@ -52,8 +52,22 @@ interface CommandPaletteModalProps {
   onOpenEarning: () => void;
   onOpenTool: (toolId: string) => void;
   onClearQueue: () => void;
+  onOpenSettings?: () => void;
+  onOpenAuth?: () => void;
+  onLogout?: () => void;
   itemsCount: number;
   completedCount: number;
+  items?: Array<{
+    id: string;
+    fileName: string;
+    title?: string;
+    keywords?: string[];
+    category?: string;
+    hasResult: boolean;
+  }>;
+  onInspectAsset?: (id: string) => void;
+  onCopyAssetMetadata?: (id: string) => void;
+  onCycleTheme?: () => void;
 }
 
 export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
@@ -71,8 +85,15 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onOpenEarning,
   onOpenTool,
   onClearQueue,
+  onOpenSettings,
+  onOpenAuth,
+  onLogout,
   itemsCount,
   completedCount,
+  items = [],
+  onInspectAsset,
+  onCopyAssetMetadata,
+  onCycleTheme,
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -86,8 +107,48 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     }
   }, [isOpen]);
 
+  // Dynamic Ghost Search commands for live queued assets
+  const assetSearchCommands: CommandItem[] = items.slice(0, 30).map((asset) => ({
+    id: `asset_${asset.id}`,
+    title: asset.title ? `${asset.fileName} — "${asset.title.slice(0, 48)}"` : `Asset: ${asset.fileName} (Staged)`,
+    category: 'Workspace',
+    description: asset.hasResult
+      ? `${(asset.keywords || []).length} tags · ${asset.category || 'Business'} · Click to copy metadata`
+      : 'Staged in Manual Workbench · Click to inspect HD preview',
+    icon: FileCode,
+    shortcut: asset.hasResult ? 'Copy Meta' : 'Inspect',
+    keywords: [
+      asset.fileName.toLowerCase(),
+      (asset.title || '').toLowerCase(),
+      (asset.category || '').toLowerCase(),
+      ...(asset.keywords || []).map((k) => k.toLowerCase()),
+      'asset',
+      'file',
+      'queue',
+      'ghost',
+    ],
+    action: () => {
+      onNavigateView('upload');
+      if (asset.hasResult && onCopyAssetMetadata) {
+        onCopyAssetMetadata(asset.id);
+      } else if (onInspectAsset) {
+        onInspectAsset(asset.id);
+      }
+    },
+  }));
+
   const allCommands: CommandItem[] = [
     // Workspace Actions
+    {
+      id: 'home_view',
+      title: 'Go to Main Storefront Directory',
+      category: 'Workspace',
+      description: 'Return to the 8-module architectural home hub',
+      icon: Compass,
+      shortcut: 'G H',
+      keywords: ['home', 'storefront', 'market', 'directory', 'hub'],
+      action: () => onNavigateView('home'),
+    },
     {
       id: 'studio_view',
       title: 'Go to Metadata Studio',
@@ -95,9 +156,62 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       description: 'Primary workspace for photo, vector, and video metadata',
       icon: Layers,
       shortcut: 'G S',
-      keywords: ['home', 'upload', 'studio', 'main'],
+      keywords: ['home', 'upload', 'studio', 'main', 'workbench'],
       action: () => onNavigateView('upload'),
     },
+    {
+      id: 'seo_rank_view',
+      title: 'Open Rank #1 Search Calibrator',
+      category: 'Intelligence & Tools',
+      description: 'Calibrate <70 char titles and Top-10 weighted keyword slots',
+      icon: Target,
+      shortcut: 'G R',
+      keywords: ['seo', 'rank', 'calibrator', 'hijack', 'top 10', 'ghost search'],
+      action: () => onNavigateView('seo-rank'),
+    },
+    {
+      id: 'competitor_spy_view',
+      title: 'Open Competitor Spy & Tag Gap Analyzer',
+      category: 'Intelligence & Tools',
+      description: 'Inspect top-selling Adobe Stock & Shutterstock competitor metadata',
+      icon: Search,
+      shortcut: 'G C',
+      keywords: ['competitor', 'spy', 'gap', 'analyze', 'ghost', 'search', 'reverse'],
+      action: () => onNavigateView('competitor'),
+    },
+    {
+      id: 'prompt_studio_view',
+      title: 'Open Generative AI Stock Prompt Studio',
+      category: 'Intelligence & Tools',
+      description: 'Craft Midjourney v6.1, Firefly Image 3 & Flux commercial stock prompts',
+      icon: Wand2,
+      shortcut: 'G P',
+      keywords: ['prompt', 'midjourney', 'firefly', 'flux', 'ai', 'generate'],
+      action: () => onNavigateView('prompts'),
+    },
+    {
+      id: 'monetize_hub_view',
+      title: 'Open Royalty & Google AdSense Hub',
+      category: 'Monetization',
+      description: 'Interactive royalty simulator, High-CPC niches & ads.txt verification',
+      icon: DollarSign,
+      shortcut: 'G M',
+      keywords: ['monetize', 'adsense', 'royalty', 'cpc', 'ads.txt'],
+      action: () => onNavigateView('monetize'),
+    },
+    ...(onCycleTheme
+      ? [
+          {
+            id: 'cycle_luxury_theme',
+            title: 'Cycle Signature Theme (Champagne Velvet / Sunlight / Pure Black)',
+            category: 'System' as const,
+            description: 'Switch between Sovereign Champagne Velvet, Warm Sunlight & Pure Obsidian Black',
+            icon: Sparkles,
+            keywords: ['theme', 'color', 'dark', 'light', 'black', 'sunlight', 'velvet', 'marjito'],
+            action: onCycleTheme,
+          },
+        ]
+      : []),
     {
       id: 'toggle_spatial',
       title: workspaceMode === 'spatial' ? 'Switch to Classic Batch Grid' : 'Enter Architectural Digital Space',
@@ -110,12 +224,12 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'start_keywording',
-      title: 'Start Dual-Agent Keywording',
+      title: 'Generate All Metadata (Batch Process)',
       category: 'Workspace',
       description: `Analyze all ${itemsCount} assets in queue with visual AI`,
       icon: Sparkles,
       shortcut: '↵',
-      keywords: ['process', 'generate', 'analyze', 'start', 'run'],
+      keywords: ['process', 'generate', 'analyze', 'start', 'run', 'all', 'bulk'],
       action: onStartProcessing,
     },
     {
@@ -160,15 +274,25 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     },
     {
       id: 'open_multi_csv',
-      title: 'Open All-Agencies Multi-CSV Hub',
+      title: 'Open 7-Agency Multi-CSV Hub',
       category: 'Export',
-      description: 'Export for Freepik, Getty Images, Vecteezy, and Dreamstime',
+      description: 'Export for Adobe, Shutterstock, Freepik, Getty, Vecteezy, 123RF & Dreamstime',
       icon: FileSpreadsheet,
-      keywords: ['freepik', 'getty', 'vecteezy', 'multi', 'agencies'],
+      keywords: ['freepik', 'getty', 'vecteezy', 'multi', 'agencies', '123rf', 'dreamstime', 'json'],
       action: onOpenMultiCsv,
     },
 
     // Intelligence & Tools
+    {
+      id: 'keyword_mixer',
+      title: 'Open Live Visual Similar Image Keyword Mixer (ImStocker Style)',
+      category: 'Intelligence & Tools',
+      description: 'Select 3–12 similar bestseller images and blend 49 keywords by consensus frequency',
+      icon: Layers,
+      shortcut: '⌘ M',
+      keywords: ['mixer', 'imstocker', 'similar', 'blend', 'combine', 'frequency', 'keywords'],
+      action: () => onOpenTool('keyword_mixer'),
+    },
     {
       id: 'tools_hub',
       title: 'Open Contributor Tools Suite (12 Tools)',
@@ -196,6 +320,24 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       icon: ShieldAlert,
       keywords: ['ip', 'copyright', 'trademark', 'brand', 'rejection'],
       action: () => onOpenTool('trademark_shield'),
+    },
+    {
+      id: 'keyword_cleaner',
+      title: 'Keyword Cleaner & Spam Eliminator',
+      category: 'Intelligence & Tools',
+      description: 'Deduplicate singular/plural stems, strip trademarks & format up to 49 tags',
+      icon: Sparkles,
+      keywords: ['clean', 'deduplicate', 'spam', 'stem', 'plural', 'cleaner'],
+      action: () => onOpenTool('keyword_cleaner'),
+    },
+    {
+      id: 'search_simulator',
+      title: 'Dual Agency Search Engine Simulator',
+      category: 'Intelligence & Tools',
+      description: 'Preview live buyer search cards on Adobe Stock vs Shutterstock side-by-side',
+      icon: Search,
+      keywords: ['simulator', 'preview', 'buyer', 'search', 'adobe', 'shutterstock'],
+      action: () => onOpenTool('search_simulator'),
     },
     {
       id: 'rank_predictor',
@@ -251,15 +393,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       keywords: ['calendar', 'season', 'holidays', 'dates'],
       action: () => onNavigateView('calendar'),
     },
-    {
-      id: 'arcade_games',
-      title: 'Play Contributor Mini-Games',
-      category: 'Intelligence & Tools',
-      description: 'Retro Snake, Flappy Stock Drone & Keyword Blitz while AI runs',
-      icon: Gamepad2,
-      keywords: ['games', 'arcade', 'snake', 'flappy', 'fun'],
-      action: () => onOpenTool('contributor_arcade'),
-    },
 
     // Monetization
     {
@@ -272,6 +405,46 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       keywords: ['earn', 'money', 'adsense', 'google', 'revenue', 'royalty', 'calculator'],
       action: onOpenEarning,
     },
+    ...assetSearchCommands,
+    ...(onOpenSettings
+      ? [
+          {
+            id: 'system_settings',
+            title: 'Open Settings & Custom API Key',
+            category: 'System' as const,
+            description: 'Configure Gemini API key, excluded keywords, background & account session',
+            icon: Settings,
+            keywords: ['settings', 'api', 'key', 'account', 'config'],
+            action: onOpenSettings,
+          },
+        ]
+      : []),
+    ...(onOpenAuth
+      ? [
+          {
+            id: 'system_auth',
+            title: 'Sign In / Contributor Account Profile',
+            category: 'System' as const,
+            description: 'Sign in with Google or Email to sync your metadata history across devices',
+            icon: UserCheck,
+            keywords: ['login', 'signin', 'signup', 'account', 'profile', 'google'],
+            action: onOpenAuth,
+          },
+        ]
+      : []),
+    ...(onLogout
+      ? [
+          {
+            id: 'system_logout',
+            title: 'Log Out / Reset Active Session',
+            category: 'System' as const,
+            description: 'Sign out of your contributor account and clear active session',
+            icon: X,
+            keywords: ['logout', 'signout', 'exit', 'session', 'clear'],
+            action: onLogout,
+          },
+        ]
+      : []),
   ];
 
   const filteredCommands = allCommands.filter((cmd) => {

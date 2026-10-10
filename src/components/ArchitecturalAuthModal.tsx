@@ -26,6 +26,8 @@ interface ArchitecturalAuthModalProps {
   onEmailAuth: (mode: 'signin' | 'signup', email: string, password: string, fullName?: string) => Promise<void>;
   onLogout: () => Promise<void>;
   themeMode: 'light' | 'dark';
+  isLockedOut?: boolean;
+  onContinueAsGuest?: () => void;
 }
 
 export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
@@ -35,7 +37,9 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
   onGoogleLogin,
   onEmailAuth,
   onLogout,
-  themeMode
+  themeMode,
+  isLockedOut = false,
+  onContinueAsGuest,
 }) => {
   const isLight = themeMode === 'light';
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
@@ -144,8 +148,16 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
-        className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xl"
-        onClick={onClose}
+        className={`fixed inset-0 z-[110] flex items-center justify-center p-4 ${
+          isLockedOut
+            ? isLight
+              ? 'bg-[#faf8f5]'
+              : 'bg-[#030407]'
+            : 'bg-black/75 backdrop-blur-xl'
+        }`}
+        onClick={() => {
+          if (!isLockedOut) onClose();
+        }}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 18 }}
@@ -306,28 +318,36 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
             <div className="flex items-center justify-between mb-6">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-500 font-semibold block">
-                  {isAuthenticated ? 'ACTIVE CONTRIBUTOR SESSION' : 'EXECUTIVE WORKSPACE ACCESS'}
+                  {isAuthenticated
+                    ? 'ACTIVE CONTRIBUTOR SESSION'
+                    : isLockedOut
+                    ? 'SESSION TERMINATED · SIGNED OUT'
+                    : 'EXECUTIVE WORKSPACE ACCESS'}
                 </span>
                 <h2 className="text-2xl font-bold tracking-tight mt-0.5">
                   {isAuthenticated
                     ? 'Account & Session Security'
+                    : isLockedOut
+                    ? 'You Have Logged Out'
                     : authMode === 'signin'
                     ? 'Sign In to Studio'
                     : 'Create Contributor Account'}
                 </h2>
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className={`p-2 rounded-full border transition cursor-pointer ${
-                  isLight
-                    ? 'bg-white border-neutral-200 text-neutral-500 hover:text-black hover:bg-neutral-100'
-                    : 'bg-white/5 border-white/10 text-neutral-400 hover:text-white hover:bg-white/10'
-                }`}
-                aria-label="Close authentication modal"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              {!isLockedOut && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className={`p-2 rounded-full border transition cursor-pointer ${
+                    isLight
+                      ? 'bg-white border-neutral-200 text-neutral-500 hover:text-black hover:bg-neutral-100'
+                      : 'bg-white/5 border-white/10 text-neutral-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  aria-label="Close authentication modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             {isAuthenticated ? (
@@ -587,6 +607,21 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
                       </>
                     )}
                   </button>
+
+                  {isLockedOut && onContinueAsGuest && (
+                    <button
+                      type="button"
+                      onClick={onContinueAsGuest}
+                      className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold border transition cursor-pointer flex items-center justify-center gap-2 ${
+                        isLight
+                          ? 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-300'
+                          : 'bg-white/5 hover:bg-white/10 text-neutral-300 border-white/15'
+                      }`}
+                    >
+                      <span>Enter Workspace as Guest Contributor</span>
+                      <ArrowRight className="w-3.5 h-3.5 opacity-70" />
+                    </button>
+                  )}
                 </form>
               </div>
             )}

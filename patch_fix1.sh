@@ -1,1 +1,0 @@
-sed -i 's/const \[isAiGenerated,\n            tier: isPro ? "pro" : "free", setIsAiGenerated\] = useState<boolean>(false);/const \[isAiGenerated, setIsAiGenerated\] = useState<boolean>(false);/g' src/App.tsx

@@ -109,6 +109,102 @@ async function convertToJpegAndEmbed(file: File, title: string, keywords: string
   });
 }
 
+function decodeUTF16(bytes: number[]): string {
+  if (!Array.isArray(bytes) || bytes.length === 0) return '';
+  let out = '';
+  for (let i = 0; i < bytes.length - 1; i += 2) {
+    const code = (bytes[i] & 0xff) | ((bytes[i + 1] & 0xff) << 8);
+    if (code === 0) break;
+    out += String.fromCharCode(code);
+  }
+  return out.trim();
+}
+
+/**
+ * Reads existing EXIF / Windows XP / XMP metadata embedded inside a JPEG image
+ * so contributors uploading pre-tagged or partially-tagged photos don't lose existing tags.
+ */
+export async function readEmbeddedJpegMetadata(
+  file: File
+): Promise<{ title?: string; keywords?: string[]; description?: string } | null> {
+  const isJpeg =
+    file.type === 'image/jpeg' || file.type === 'image/jpg' || /\.jpe?g$/i.test(file.name);
+  if (!isJpeg) return null;
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const dataUrl = e.target?.result as string;
+        if (!dataUrl || !dataUrl.startsWith('data:image/jpeg')) {
+          return resolve(null);
+        }
+
+        let extractedTitle = '';
+        let extractedDesc = '';
+        let extractedKeywords: string[] = [];
+
+        try {
+          const exifObj = piexif.load(dataUrl);
+          const zeroth = exifObj?.['0th'] || {};
+
+          if (zeroth[piexif.ImageIFD.XPTitle]) {
+            extractedTitle = decodeUTF16(zeroth[piexif.ImageIFD.XPTitle]);
+          }
+          if (zeroth[piexif.ImageIFD.ImageDescription] && typeof zeroth[piexif.ImageIFD.ImageDescription] === 'string') {
+            const desc = zeroth[piexif.ImageIFD.ImageDescription].trim();
+            if (!extractedTitle) extractedTitle = desc;
+            extractedDesc = desc;
+          }
+          if (zeroth[piexif.ImageIFD.XPKeywords]) {
+            const kwStr = decodeUTF16(zeroth[piexif.ImageIFD.XPKeywords]);
+            if (kwStr) {
+              extractedKeywords = kwStr
+                .split(/[;,]+/)
+                .map((k) => k.trim())
+                .filter((k) => k.length >= 2);
+            }
+          }
+        } catch (_) {}
+
+        // Also scan raw binary head (first 128KB) for embedded Adobe XMP <dc:title> and <dc:subject>
+        try {
+          const b64 = dataUrl.split(',')[1] || '';
+          const headChunk = atob(b64.slice(0, 160000));
+          if (!extractedTitle) {
+            const titleMatch = headChunk.match(/<dc:title>[\s\S]*?<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>[\s\S]*?<\/dc:title>/i);
+            if (titleMatch?.[1]) {
+              extractedTitle = titleMatch[1].replace(/&amp;/g, '&').replace(/&quot;/g, '"').trim();
+            }
+          }
+          if (extractedKeywords.length === 0) {
+            const subjectMatch = headChunk.match(/<dc:subject>[\s\S]*?<rdf:Bag>([\s\S]*?)<\/rdf:Bag>[\s\S]*?<\/dc:subject>/i);
+            if (subjectMatch?.[1]) {
+              const liMatches = [...subjectMatch[1].matchAll(/<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>/gi)];
+              extractedKeywords = liMatches
+                .map((m) => m[1].replace(/&amp;/g, '&').trim())
+                .filter((k) => k.length >= 2);
+            }
+          }
+        } catch (_) {}
+
+        if (extractedTitle || extractedKeywords.length > 0) {
+          return resolve({
+            title: extractedTitle || undefined,
+            description: extractedDesc || extractedTitle || undefined,
+            keywords: extractedKeywords.length > 0 ? extractedKeywords : undefined,
+          });
+        }
+        resolve(null);
+      } catch {
+        resolve(null);
+      }
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
 function encodeUTF16(str: string): number[] {
   const bytes: number[] = [];
   for (let i = 0; i < str.length; i++) {
@@ -269,33 +365,41 @@ export async function embedMetadataIntoEps(
     updatedPsText = `${embeddedXmpBlock}\n${updatedPsText}`;
   }
 
-  const encoder = new TextEncoder();
-  const updatedPsBytes = encoder.encode(updatedPsText);
+  const updatedPsBytes = new Uint8Array(updatedPsText.length);
+  for (let i = 0; i < updatedPsText.length; i++) {
+    updatedPsBytes[i] = updatedPsText.charCodeAt(i) & 0xff;
+  }
 
   if (isDosBinaryEps) {
-    // If it was DOS binary EPS, rebuild DOS header with new PS length
+    // Standard DOS EPS 30-byte header specification:
+    // Bytes 4..7: PostScript start offset (uint32 LE)
+    // Bytes 8..11: PostScript byte length (uint32 LE)
+    // Bytes 12..15: Metafile (WMF) start offset (uint32 LE)
+    // Bytes 16..19: Metafile (WMF) byte length (uint32 LE)
+    // Bytes 20..23: TIFF start offset (uint32 LE)
+    // Bytes 24..27: TIFF byte length (uint32 LE)
     const view = new DataView(arrayBuffer);
-    const wmfStart = view.getUint32(20, true);
-    const wmfLength = view.getUint32(24, true);
-    const tiffStart = view.getUint32(12, true);
-    const tiffLength = view.getUint32(16, true);
+    const wmfStart = view.getUint32(12, true);
+    const wmfLength = view.getUint32(16, true);
+    const tiffStart = view.getUint32(20, true);
+    const tiffLength = view.getUint32(24, true);
 
     const newHeader = new Uint8Array(30);
     newHeader.set(uint8.subarray(0, 30));
     const newView = new DataView(newHeader.buffer);
 
     const newPsLength = updatedPsBytes.length;
+    const delta = newPsLength - psLength;
     newView.setUint32(8, newPsLength, true); // update PS byte count
 
-    // If TIFF preview existed after PS, shift its offset
-    if (tiffLength > 0 && tiffStart >= psStart + psLength) {
-      const newTiffStart = psStart + newPsLength;
-      newView.setUint32(12, newTiffStart, true);
-    }
+    // Shift WMF or TIFF offsets if they appear after the PostScript section
     if (wmfLength > 0 && wmfStart >= psStart + psLength) {
-      const newWmfStart = psStart + newPsLength;
-      newView.setUint32(20, newWmfStart, true);
+      newView.setUint32(12, wmfStart + delta, true);
     }
+    if (tiffLength > 0 && tiffStart >= psStart + psLength) {
+      newView.setUint32(20, tiffStart + delta, true);
+    }
+    newView.setUint16(28, 0xffff, true); // ignore checksum per DOS EPS spec
 
     const prePs = uint8.subarray(0, psStart);
     const postPs = uint8.subarray(psStart + psLength);

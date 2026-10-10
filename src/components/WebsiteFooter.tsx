@@ -39,10 +39,12 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
             : 'crystal-architectural-slab-dark text-neutral-300'
         }`}
       >
-        {/* Top Specular Glass Rim Line */}
+        {/* Top Specular Platinum & Crystal Glass Rim Line */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-0 inset-x-12 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent"
+          className={`pointer-events-none absolute top-0 inset-x-12 h-[1.5px] bg-gradient-to-r from-transparent ${
+            isLight ? 'via-amber-500/45' : 'via-white/35'
+          } to-transparent`}
         />
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
@@ -51,7 +53,7 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
             size="sm"
             showText={true}
             theme={isLight ? 'light' : 'dark'}
-            subtitle="CRYSTAL MONOLITH ENGINE"
+            subtitle="10TH-GEN QUANTUM ENGINE"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           />
 
@@ -64,7 +66,7 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
                 isLight ? 'hover:text-black' : 'hover:text-white'
               }`}
             >
-              CSV Hub
+              7-Agency CSV Hub
             </button>
             <button
               type="button"

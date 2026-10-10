@@ -22,6 +22,7 @@ import {
   User as UserIcon
 } from 'lucide-react';
 import { AdobeMetaProLogo } from './AdobeMetaProLogo';
+import { GlobalAssetStoreVault, GlobalStorePack } from './GlobalAssetStoreVault';
 import store01MetadataEps from '../assets/images/store01_metadata_eps_1791118931620.jpg';
 import storeCalendarHub from '../assets/images/store_calendar_hub_1791105379723.jpg';
 import storePromptStudio from '../assets/images/store_prompt_studio_1791105394619.jpg';
@@ -44,6 +45,7 @@ interface EditorialHeroProps {
   onOpenSettings?: () => void;
   onToggleTheme: () => void;
   themeMode: 'light' | 'dark';
+  gen10Skin?: 'velvet' | 'black';
   user: any;
   onNavigateView: (view: string) => void;
   onOpenMultiCsv?: () => void;
@@ -51,14 +53,14 @@ interface EditorialHeroProps {
   onOpenChat?: () => void;
   currentView?: string;
   itemsCount?: number;
-  isWaterWorldActive?: boolean;
-  onToggleWaterWorld?: () => void;
-  onOpenBlackOps?: () => void;
   onOpenProToolkit?: (tab?: 'presubmit' | 'rejection' | 'aidisclosure' | 'tracker' | 'embed' | 'kwscore') => void;
+  onOpenCommandPalette?: () => void;
   isLiteMode?: boolean;
   onToggleLiteMode?: () => void;
   uiLang?: 'en' | 'bn';
   onToggleLang?: () => void;
+  onLoadStorePack?: (pack: GlobalStorePack) => void;
+  showToast?: (msg: string) => void;
 }
 
 export interface BoutiqueStoreItem {
@@ -89,20 +91,21 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   onOpenSettings,
   onToggleTheme,
   themeMode,
+  gen10Skin = 'velvet',
   user,
   onNavigateView,
   onOpenMultiCsv,
   onOpenToolsHub,
   onOpenChat,
   itemsCount = 0,
-  isWaterWorldActive = true,
-  onToggleWaterWorld,
-  onOpenBlackOps,
   onOpenProToolkit,
+  onOpenCommandPalette,
   isLiteMode = false,
   onToggleLiteMode,
   uiLang = 'en',
-  onToggleLang
+  onToggleLang,
+  onLoadStorePack,
+  showToast
 }) => {
   const [activeDepartment, setActiveDepartment] = useState<'all' | 'metadata' | 'creative' | 'monetize'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -114,14 +117,13 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [countedWeight, setCountedWeight] = useState<number>(0);
   const [countedTags, setCountedTags] = useState<number>(0);
+  const [activeSpecimenAgency, setActiveSpecimenAgency] = useState<'adobe' | 'shutterstock' | 'freepik' | 'getty' | 'vecteezy'>('adobe');
+  const [customSpecimenTitle, setCustomSpecimenTitle] = useState<string>('');
+  const [customSpecimenTags, setCustomSpecimenTags] = useState<string[]>([]);
+  const [heroTilt, setHeroTilt] = useState<{ rx: number; ry: number }>({ rx: 0, ry: 0 });
 
   const isLight = themeMode === 'light';
   const isBn = false;
-
-  useEffect(() => {
-    const root = document.documentElement;
-    root.removeAttribute('data-skin');
-  }, [isLight]);
 
   // Intelligent Navigation State & Smooth Counting Magic Moment on Awakening
   useEffect(() => {
@@ -271,16 +273,16 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     {
       id: 'store-csv-export',
       storeNumber: '08 · DISTRIBUTION',
-      title: 'Multi-Agency CSV & Compliance Hub',
-      category: 'EXPORT HUB · ADOBE · SHUTTERSTOCK · FREEPIK',
+      title: '7-Agency CSV & Compliance Hub',
+      category: 'EXPORT HUB · ADOBE · SHUTTERSTOCK · FREEPIK · GETTY',
       department: 'monetize',
       image: store08MultiCsvHub,
-      badge: 'EXPORT SUITE',
-      statLabel: '5 Agencies Ready',
-      description: 'Export formatted metadata CSVs for Adobe Stock, Shutterstock, Freepik, Getty, and Vecteezy with built-in IP and release checks.',
-      features: ['5-Agency CSV Hub', 'Trademark IP Shield', 'Release Inspector'],
-      ctaText: 'Open Export Hub',
-      actionType: 'modal_tools',
+      badge: '7-AGENCY SUITE',
+      statLabel: '7 Agencies + JSON',
+      description: 'Export formatted metadata CSVs for Adobe Stock, Shutterstock, Freepik, Getty, Vecteezy, 123RF, and Dreamstime in 1 click.',
+      features: ['7-Agency CSV Hub', 'SEO Slug Renamer', 'Master JSON Export'],
+      ctaText: 'Open 7-Agency CSV Hub',
+      actionType: 'modal_csv',
       sampleTitle: 'Luxury Embossed Gold Foil Stationery Mockup On Travertine Stone',
       sampleKeywords: ['luxury stationery mockup', 'embossed gold foil', 'travertine stone', 'corporate identity', 'minimalist branding', 'editorial presentation', 'brand guidelines', 'paper texture']
     }
@@ -291,16 +293,6 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     : marketStores.filter(s => s.department === activeDepartment);
 
   const activePreviewStore = marketStores[previewStoreIdx] || marketStores[0];
-
-  // Autonomous Zero-Command Specimen Deck Rotation (Cycles smoothly every 4.5s unless hovered)
-  useEffect(() => {
-    if (isHoveringSpecimen) return;
-    const timer = setInterval(() => {
-      if (document.hidden) return;
-      setPreviewStoreIdx((prev) => (prev + 1) % marketStores.length);
-    }, 4500);
-    return () => clearInterval(timer);
-  }, [isHoveringSpecimen, marketStores.length]);
 
   const handleOpenStore = (store: BoutiqueStoreItem) => {
     if (store.actionType === 'view' && store.targetView) {
@@ -325,47 +317,28 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
   const skinPalette = isLight
     ? {
-        orbOne: 'bg-amber-300/25',
-        orbTwo: 'bg-emerald-300/20',
-        orbThree: 'bg-sky-300/20',
-        horizonBeam: 'from-transparent via-amber-500/50 to-transparent',
-        spotlightColor: 'rgba(212, 175, 55, 0.09)',
-        accentBadge: 'text-amber-700 border-amber-400/50 bg-amber-500/10',
+        orbOne: 'bg-white/90',
+        orbTwo: 'bg-amber-100/45',
+        orbThree: 'bg-stone-200/40',
+        horizonBeam: 'from-transparent via-amber-700/25 to-transparent',
+        spotlightColor: 'rgba(255, 255, 255, 0.5)',
+        accentBadge: 'text-amber-900 border-amber-400/50 bg-amber-500/10',
       }
     : {
-        orbOne: 'bg-amber-500/18',
-        orbTwo: 'bg-emerald-500/18',
-        orbThree: 'bg-sky-500/14',
-        horizonBeam: 'from-transparent via-amber-400/80 to-transparent',
-        spotlightColor: 'rgba(212, 175, 55, 0.11)',
-        accentBadge: 'text-amber-300 border-amber-400/40 bg-amber-500/15',
+        orbOne: 'bg-white/[0.025]',
+        orbTwo: 'bg-neutral-900/40',
+        orbThree: 'bg-white/[0.015]',
+        horizonBeam: 'from-transparent via-white/35 to-transparent',
+        spotlightColor: 'rgba(255, 255, 255, 0.045)',
+        accentBadge: 'text-white border-white/25 bg-white/10',
       };
 
   return (
     <div
-      onMouseMove={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        setMouseSpotlight({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-      }}
       className={`relative w-full overflow-hidden bg-transparent ${
         isLight ? 'text-[#111215]' : 'text-[#f4f4f6]'
       } font-sans transition-colors duration-500`}
     >
-
-      {/* Interactive Cursor-Tracked Prismatic Aura Spotlight */}
-      <div
-        className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-300"
-        style={{
-          background: `radial-gradient(720px circle at ${mouseSpotlight.x}px ${mouseSpotlight.y}px, ${skinPalette.spotlightColor}, transparent 70%)`,
-        }}
-      />
-
-      {/* Top Specular Prismatic Horizon Line */}
-      <div className="pointer-events-none select-none absolute inset-x-0 top-0 h-24 overflow-hidden z-0">
-        <div
-          className={`absolute top-16 inset-x-0 h-[1px] bg-gradient-to-r ${skinPalette.horizonBeam} opacity-80`}
-        />
-      </div>
 
       {/* ============================================================ */}
       {/* FLOATING 3D OPTICAL CRYSTAL GLASS HEADER (DAY & NIGHT MODE) */}
@@ -410,8 +383,20 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             >
               <span>{isBn ? 'মার্কেট' : 'Workspace'}</span>
               {activeDepartment === 'all' && (
-                <span className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-emerald-400 via-amber-400 to-sky-400 rounded-full" />
+                <span className={`absolute bottom-0 left-0 right-0 h-[1.5px] rounded-full ${isLight ? 'bg-neutral-950' : 'bg-white'}`} />
               )}
+            </button>
+
+            <button
+              onClick={() => {
+                const storeEl = document.getElementById('global-commercial-store-vault');
+                if (storeEl) storeEl.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap ${
+                isLight ? 'text-neutral-900 hover:text-black font-semibold' : 'text-white hover:text-neutral-200 font-semibold'
+              }`}
+            >
+              <span>Global Store</span>
             </button>
 
             <button
@@ -451,46 +436,32 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             </button>
           </nav>
 
-          {/* Zone 3: Pre-Check + Controls + Day/Night Mode + Studio CTA */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 relative">
-            {onOpenChat && (
+          {/* Zone 3: Minimalist Command Trigger + System Menu + Day/Night Mode + Primary Studio CTA */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 relative">
+            {onOpenCommandPalette && (
               <button
                 type="button"
-                onClick={onOpenChat}
-                className={`lumina-tactile-button px-2.5 py-1.5 rounded-xl text-[11px] font-bold hidden xl:flex items-center gap-1.5 border cursor-pointer ${
+                onClick={onOpenCommandPalette}
+                className={`lumina-tactile-button px-2.5 py-1.5 rounded-xl text-[11px] font-mono hidden md:flex items-center gap-2 border cursor-pointer ${
                   isLight
-                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300/90'
-                    : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/35'
+                    ? 'bg-[#faf8f5] hover:bg-neutral-100 text-neutral-600 hover:text-neutral-950 border-neutral-200/90'
+                    : 'bg-white/[0.03] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/10'
                 }`}
-                title="Open Sovereign AI Co-Pilot 6.0 (8 Intelligence Modes, Vision SEO, Image Synth & Multi-Agency CSV)"
+                title="Quick Command & Search Palette (⌘K or Ctrl+K)"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>AI Co-Pilot</span>
+                <span>Search</span>
+                <kbd className={`px-1.5 py-0.5 text-[9.5px] rounded font-mono ${
+                  isLight ? 'bg-neutral-200/70 text-neutral-700' : 'bg-white/10 text-neutral-300'
+                }`}>⌘K</kbd>
               </button>
             )}
 
-            {onOpenProToolkit && (
-              <button
-                type="button"
-                onClick={() => onOpenProToolkit('presubmit')}
-                className={`lumina-tactile-button px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border cursor-pointer ${
-                  isLight
-                    ? 'bg-emerald-50/90 hover:bg-emerald-100 text-emerald-900 border-emerald-300/80'
-                    : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/35'
-                }`}
-                title="Pre-Submission Checker, Rejection Helper, AI Disclosure & Earnings Tracker"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="hidden sm:inline">Audit</span>
-              </button>
-            )}
-
-            {/* Consolidated Quick Controls & Modes Trigger */}
+            {/* Consolidated System, Audit, Studio Desk & Account Menu */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowHeaderControlsMenu((prev) => !prev)}
-                className={`lumina-tactile-button px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border cursor-pointer ${
+                className={`lumina-tactile-button px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border cursor-pointer relative ${
                   showHeaderControlsMenu
                     ? isLight
                       ? 'bg-neutral-900 text-white border-neutral-900'
@@ -499,10 +470,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                     ? 'bg-white/80 hover:bg-white text-neutral-700 border-neutral-200/90'
                     : 'bg-white/5 hover:bg-white/10 text-neutral-300 border-white/15'
                 }`}
-                title="More Tools, Black-Ops Terminal, Lite Mode & Display Settings"
+                title="Pre-Check Audit, Studio Desk, Performance & Account Settings"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">{isBn ? 'কন্ট্রোল' : 'System'}</span>
+                <span className="hidden sm:inline">{isBn ? 'কন্ট্রোল' : 'System'}</span>
               </button>
 
               <AnimatePresence>
@@ -524,78 +495,25 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                       } backdrop-blur-xl space-y-1`}
                     >
                       <div className="px-2.5 pt-1 text-[9.5px] font-mono uppercase tracking-[0.16em] text-neutral-400">
-                        {isBn ? 'টুলস এবং পারফরম্যান্স' : 'WORKSPACE & PERFORMANCE'}
+                        {isBn ? 'টুলস এবং পারফরম্যান্স' : 'WORKSPACE & TOOLS'}
                       </div>
 
-                      {onOpenBlackOps && (
+                      {onOpenProToolkit && (
                         <button
                           type="button"
                           onClick={() => {
                             setShowHeaderControlsMenu(false);
-                            onOpenBlackOps();
-                          }}
-                          className="w-full px-3 py-2 rounded-xl text-left text-xs font-mono font-bold flex items-center justify-between bg-emerald-950/90 hover:bg-black text-emerald-300 border border-emerald-500/35 transition cursor-pointer"
-                        >
-                          <span className="flex items-center gap-2">
-                            <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>Black-Ops Terminal</span>
-                          </span>
-                          <span className="text-[9.5px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                            Ctrl+K
-                          </span>
-                        </button>
-                      )}
-
-                      {onToggleLiteMode && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onToggleLiteMode();
-                          }}
-                          className={`w-full px-3 py-2 rounded-xl text-left text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-                            isLight ? 'hover:bg-neutral-100' : 'hover:bg-neutral-800/80'
-                          }`}
-                        >
-                          <span>{isBn ? '⚡ লাইট মোড (ফাস্ট ফোন)' : '⚡ Lite Mode (Low-End Phone)'}</span>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              isLiteMode
-                                ? 'bg-amber-500 text-black'
-                                : isLight
-                                ? 'bg-neutral-200 text-neutral-700'
-                                : 'bg-neutral-800 text-neutral-400'
-                            }`}
-                          >
-                            {isLiteMode ? 'ON' : 'OFF'}
-                          </span>
-                        </button>
-                      )}
-
-                      {onToggleWaterWorld && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onToggleWaterWorld();
+                            onOpenProToolkit('presubmit');
                           }}
                           className={`w-full px-3 py-2 rounded-xl text-left text-xs font-medium flex items-center justify-between transition cursor-pointer ${
                             isLight ? 'hover:bg-neutral-100' : 'hover:bg-neutral-800/80'
                           }`}
                         >
                           <span className="flex items-center gap-2">
-                            <Droplets className="w-3.5 h-3.5 text-sky-500" />
-                            <span>{isBn ? 'ওয়াটার ফিজিক্স FX' : 'Crystal Water FX'}</span>
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>Pre-Submit Audit &amp; Tracker</span>
                           </span>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              isWaterWorldActive
-                                ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-                                : isLight
-                                ? 'bg-neutral-200 text-neutral-700'
-                                : 'bg-neutral-800 text-neutral-400'
-                            }`}
-                          >
-                            {isWaterWorldActive ? 'ON' : 'OFF'}
-                          </span>
+                          <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
                         </button>
                       )}
 
@@ -612,9 +530,34 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                         >
                           <span className="flex items-center gap-2">
                             <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-                            <span>{isBn ? 'এআই চ্যাট অ্যাসিস্ট্যান্ট' : 'AI Chat Assistant'}</span>
+                            <span>{isBn ? 'স্টুডিও ডেস্ক' : 'Studio Desk & Concierge'}</span>
                           </span>
                           <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
+                        </button>
+                      )}
+
+                      {onToggleLiteMode && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onToggleLiteMode();
+                          }}
+                          className={`w-full px-3 py-2 rounded-xl text-left text-xs font-medium flex items-center justify-between transition cursor-pointer ${
+                            isLight ? 'hover:bg-neutral-100' : 'hover:bg-neutral-800/80'
+                          }`}
+                        >
+                          <span>{isBn ? 'লাইট মোড (ফাস্ট ফোন)' : 'Lite Performance Mode'}</span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              isLiteMode
+                                ? 'bg-amber-500 text-black'
+                                : isLight
+                                ? 'bg-neutral-200 text-neutral-700'
+                                : 'bg-neutral-800 text-neutral-400'
+                            }`}
+                          >
+                            {isLiteMode ? 'ON' : 'OFF'}
+                          </span>
                         </button>
                       )}
 
@@ -633,6 +576,107 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                           <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
                         </button>
                       )}
+
+                      {onOpenSettings && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowHeaderControlsMenu(false);
+                            onOpenSettings();
+                          }}
+                          className={`w-full px-3 py-2 rounded-xl text-left text-xs font-medium flex items-center justify-between transition cursor-pointer ${
+                            isLight ? 'hover:bg-neutral-100' : 'hover:bg-neutral-800/80'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Settings className="w-3.5 h-3.5 text-amber-400" />
+                            <span>{isBn ? 'স্টুডিও প্রেফারেন্স ও থিম' : 'Studio Preferences & Theme'}</span>
+                          </span>
+                          <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
+                        </button>
+                      )}
+
+                      <div className={`my-1.5 border-t ${isLight ? 'border-neutral-200' : 'border-neutral-800'}`} />
+
+                      <div className="px-2.5 pt-0.5 text-[9.5px] font-mono uppercase tracking-[0.16em] text-neutral-400">
+                        {isBn ? 'অ্যাকাউন্ট ও সেশন' : 'ACCOUNT & SESSION'}
+                      </div>
+
+                      {user ? (
+                        <div className="space-y-1.5 pt-0.5">
+                          <div className={`px-3 py-2 rounded-xl border flex items-center gap-2.5 ${
+                            isLight ? 'bg-neutral-50 border-neutral-200/80' : 'bg-neutral-900/80 border-neutral-800'
+                          }`}>
+                            <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-500 font-bold text-xs shrink-0">
+                              {(user.displayName || user.email || 'U')[0].toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-[11px] font-bold truncate">
+                                {user.displayName || user.email?.split('@')[0] || 'Contributor'}
+                              </div>
+                              <div className="text-[10px] text-neutral-400 truncate">
+                                {user.email || 'Active Studio Session'}
+                              </div>
+                            </div>
+                          </div>
+
+                          {onLogout && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowHeaderControlsMenu(false);
+                                onLogout();
+                              }}
+                              className="w-full px-3 py-2 rounded-xl text-left text-xs font-bold flex items-center justify-between bg-red-500/15 hover:bg-red-500/25 text-red-500 dark:text-red-400 border border-red-500/30 transition cursor-pointer"
+                            >
+                              <span className="flex items-center gap-2">
+                                <LogOut className="w-3.5 h-3.5" />
+                                <span>{isBn ? 'লগ আউট করুন (Log Out)' : 'Log Out / Sign Out'}</span>
+                              </span>
+                              <span className="text-[9.5px] font-mono uppercase px-1.5 py-0.5 rounded bg-red-500/20">
+                                EXIT
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5 pt-0.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowHeaderControlsMenu(false);
+                              onOpenLogin();
+                            }}
+                            className={`w-full px-3 py-2 rounded-xl text-left text-xs font-bold flex items-center justify-between transition cursor-pointer ${
+                              isLight
+                                ? 'bg-neutral-900 hover:bg-black text-white'
+                                : 'bg-white hover:bg-neutral-200 text-neutral-950'
+                            }`}
+                          >
+                            <span className="flex items-center gap-2">
+                              <UserIcon className="w-3.5 h-3.5 text-emerald-500" />
+                              <span>{isBn ? 'লগইন / অ্যাকাউন্ট খুলুন' : 'Sign In / Create Account'}</span>
+                            </span>
+                            <ArrowUpRight className="w-3.5 h-3.5 opacity-70" />
+                          </button>
+
+                          {onLogout && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowHeaderControlsMenu(false);
+                                onLogout();
+                              }}
+                              className="w-full px-3 py-1.5 rounded-xl text-left text-[11px] font-semibold flex items-center justify-between text-red-500 dark:text-red-400 hover:bg-red-500/10 border border-red-500/20 transition cursor-pointer"
+                            >
+                              <span className="flex items-center gap-2">
+                                <LogOut className="w-3.5 h-3.5" />
+                                <span>{isBn ? 'লগ আউট / সেশন রিসেট' : 'Log Out / Clear Session'}</span>
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </motion.div>
                   </>
                 )}
@@ -641,35 +685,20 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
             <button
               onClick={onToggleTheme}
-              aria-label="Toggle theme mode"
+              aria-label="Toggle theme mode (Pure Black / Warm Sunlight)"
               className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer ${
                 isLight 
-                  ? 'text-neutral-500 hover:text-black hover:bg-neutral-200/50' 
-                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                  ? 'text-neutral-700 hover:text-black hover:bg-neutral-200/50' 
+                  : 'text-neutral-300 hover:text-white hover:bg-white/10'
               }`}
-              title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              title={
+                isLight
+                  ? 'Current: Warm Sunlight · Click for Pure Premium Black'
+                  : 'Current: Pure Premium Black · Click for Warm Sunlight'
+              }
             >
-              {isLight ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+              {isLight ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </button>
-
-            {onOpenSettings && (
-              <button
-                type="button"
-                onClick={onOpenSettings}
-                aria-label="Settings, Account & API Key"
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer relative ${
-                  isLight 
-                    ? 'text-neutral-600 hover:text-black hover:bg-neutral-200/50' 
-                    : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
-                }`}
-                title="Settings, Account Login/Logout & API Key"
-              >
-                <Settings className="w-3.5 h-3.5" />
-                {user && (
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                )}
-              </button>
-            )}
 
             <button
               onClick={() => onNavigateView('upload')}
@@ -688,325 +717,456 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       </header>
 
       {/* ============================================================ */}
-      {/* ULTRA-MINIMAL EXECUTIVE ARCHITECTURAL HERO (MAXIMUM SPACE)   */}
+      {/* REFINED ARCHITECTURAL LUXURY HERO MONOLITH                   */}
       {/* ============================================================ */}
-      <div className="relative z-10 pt-8 sm:pt-12 pb-16 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14">
+      <div className="relative z-10 pt-12 sm:pt-16 pb-28 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14">
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.992 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          className={`rounded-[28px] p-8 sm:p-12 lg:p-16 relative overflow-hidden transition-all duration-500 ${
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setMouseSpotlight({
+              x: e.clientX - rect.left,
+              y: e.clientY - rect.top,
+            });
+          }}
+          className={`rounded-[32px] p-7 sm:p-12 lg:p-16 xl:p-20 relative overflow-hidden transition-all duration-500 sovereign-prism-card ${
             isLight ? 'crystal-architectural-slab-light' : 'crystal-architectural-slab-dark'
           }`}
         >
-          {/* Top-Left Specular Glass Reflection Glint */}
+          {/* Interactive Cursor-Tracking Warm Champagne AmbientCaustic Spotlight */}
+          {!isLiteMode && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 transition-opacity duration-500"
+              style={{
+                background: `radial-gradient(640px circle at ${mouseSpotlight.x}px ${mouseSpotlight.y}px, ${skinPalette.spotlightColor}, transparent 70%)`,
+              }}
+            />
+          )}
+
+          {/* Top-Left & Bottom-Right Warm Champagne & Velvet Refraction Orbs */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/10 blur-3xl"
+            className={`pointer-events-none absolute -top-28 -left-24 w-[440px] h-[440px] rounded-full blur-[115px] ${skinPalette.orbOne}`}
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute top-0 inset-x-12 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent"
+            className={`pointer-events-none absolute -bottom-28 -right-24 w-[440px] h-[440px] rounded-full blur-[125px] ${skinPalette.orbTwo}`}
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 inset-x-10 h-[1px] bg-gradient-to-r from-transparent via-white/35 to-transparent"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-0 inset-x-24 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent"
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center relative z-10">
+          {/* Minimalist Editorial Kicker at Top of Hero */}
+          <div className={`mb-7 sm:mb-8 pb-4 border-b flex flex-wrap items-center justify-between gap-3 relative z-10 ${
+            isLight ? 'border-neutral-200/70' : 'border-white/10'
+          }`}>
+            <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono tracking-[0.12em] uppercase tabular-nums">
+              <span className={isLight ? 'text-neutral-950 font-semibold' : 'text-white font-semibold'}>
+                CONTRIBUTOR ATELIER
+              </span>
+              <span aria-hidden="true" className="opacity-30">·</span>
+              <span className={isLight ? 'text-neutral-600' : 'text-neutral-300'}>
+                49 Weighted Keywords
+              </span>
+              <span aria-hidden="true" className="opacity-30">·</span>
+              <span className={isLight ? 'text-neutral-600' : 'text-neutral-300'}>
+                Top-10 Priority Control
+              </span>
+              <span aria-hidden="true" className="opacity-30 hidden sm:inline">·</span>
+              <span className={isLight ? 'hidden sm:inline text-neutral-700' : 'hidden sm:inline text-neutral-300'}>
+                7-Agency CSV &amp; IPTC
+              </span>
+            </div>
+
+            <div className="hidden md:flex items-center gap-2.5 text-[10.5px] font-mono tabular-nums text-neutral-400">
+              <span>Vector EPS · JPG · 4K</span>
+              <span aria-hidden="true">·</span>
+              <span className={isLight ? 'text-neutral-900 font-medium' : 'text-white font-medium'}>Direct Embed</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-stretch relative z-10">
           
           {/* Left 7 Columns: Progressive Hero Awakening Typography & Dropzone */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-7 space-y-7 text-left"
+            className="lg:col-span-7 flex flex-col justify-between space-y-6 text-left"
           >
-            {/* Unboxed Editorial Kicker with Smooth Counting Metrics */}
-            <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-mono tracking-[0.08em] uppercase tabular-nums text-emerald-600 dark:text-emerald-400">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>Zero-Error Vision Engine</span>
-              <span aria-hidden="true" className="opacity-35">/</span>
-              <span>{countedTags}-Tag Precision</span>
-              <span aria-hidden="true" className="opacity-35">/</span>
-              <span>{countedWeight}% Top-10 Weight</span>
-            </div>
-
-            {/* Editorial Display Headline */}
-            <h1 className={`text-[38px] sm:text-[52px] xl:text-[62px] font-bold tracking-[-0.04em] leading-[1.04] text-balance ${
-              isLight ? 'text-neutral-950' : 'text-white'
-            }`}>
-              Precision Stock{' '}
-              <span className="font-editorial italic font-normal luxury-headline-gradient">
-                Metadata
-              </span>{' '}
-              Architecture.
-            </h1>
-
-            <p className={`text-[15px] sm:text-[16px] font-normal max-w-xl leading-[1.65] ${
-              isLight ? 'text-neutral-600' : 'text-neutral-300'
-            }`}>
-              Drop any EPS vector, PSD, or high-res photo, or press <kbd className="px-1.5 py-0.5 text-[11px] font-mono rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Ctrl+V</kbd>. Generates 100% visually verified titles, zero-duplicate keywords, and ready-to-submit agency CSVs.
-            </p>
-
-            {/* Instant Minimalist Executive Dropzone Bar */}
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!isHeroDragging) setIsHeroDragging(true);
-              }}
-              onDragLeave={() => setIsHeroDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsHeroDragging(false);
-                if (e.dataTransfer?.files && e.dataTransfer.files.length > 0 && onQuickDropFiles) {
-                  onQuickDropFiles(Array.from(e.dataTransfer.files));
-                } else {
-                  onStartGenerating();
-                }
-              }}
-              onClick={onStartGenerating}
-              className={`p-5 sm:p-6 rounded-2xl transition-all duration-300 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 sovereign-prism-card group ${
-                isHeroDragging
-                  ? 'border-emerald-400 bg-emerald-500/15 scale-[1.01]'
-                  : isLight
-                  ? 'crystal-glass-panel-light hover:border-neutral-900'
-                  : 'crystal-glass-panel-dark hover:border-amber-400/50'
-              }`}
-            >
-              <div className="flex items-center gap-4 relative z-10">
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border backdrop-blur-xl transition-transform duration-300 group-hover:scale-105 ${
-                  isLight
-                    ? 'bg-neutral-950 text-amber-300 border-neutral-800 shadow-sm'
-                    : 'bg-white/10 text-amber-300 border-white/20'
-                }`}>
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className={`text-xs sm:text-sm font-semibold flex flex-wrap items-center gap-2 ${
-                    isLight ? 'text-neutral-950' : 'text-white'
-                  }`}>
-                    <span>Drop EPS, AI, PSD, JPG or Paste (Ctrl+V)</span>
-                  </div>
-                  <div className={`text-[11.5px] mt-0.5 ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                    100% Ground-Truth Vision · {countedTags} Pure Keywords · Instant CSV &amp; XMP
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5 shrink-0 relative z-10">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onWatchDemo();
-                  }}
-                  className={`lumina-tactile-button px-3.5 py-2.5 rounded-xl text-[11.5px] font-semibold border cursor-pointer backdrop-blur-md ${
-                    isLight
-                      ? 'bg-white/80 hover:bg-white text-neutral-800 border-neutral-200/90'
-                      : 'bg-white/5 hover:bg-white/10 text-neutral-200 border-white/15'
-                  }`}
-                >
-                  Live Demo
-                </button>
-                <span className={`lumina-tactile-button px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm ${
-                  isLight
-                    ? 'bg-neutral-950 text-white'
-                    : 'bg-white text-neutral-950'
-                }`}>
-                  <span>Select Files</span>
-                  <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+            <div className="space-y-5">
+              {/* Editorial Display Headline with Explicit Line Rhythm (Zero Awkward Word Gaps) */}
+              <h1 className={`text-[38px] sm:text-[52px] xl:text-[62px] font-bold tracking-[-0.034em] leading-[1.06] ${
+                isLight ? 'text-neutral-950' : 'text-white'
+              }`}>
+                <span className="block">
+                  Precision Stock{' '}
+                  <span className="font-editorial italic font-semibold text-[1.08em] luxury-headline-gradient pr-1.5 tracking-[-0.015em]">
+                    Metadata
+                  </span>
                 </span>
-              </div>
+                <span className="block mt-1">
+                  &amp;{' '}
+                  <span className="font-editorial italic font-medium text-[1.06em] tracking-[-0.015em]">
+                    Editorial
+                  </span>{' '}
+                  Craft.
+                </span>
+              </h1>
+
+              <p className={`text-[15.5px] sm:text-[16.5px] font-normal max-w-xl leading-[1.72] tracking-[-0.008em] ${
+                isLight ? 'text-neutral-600' : 'text-neutral-300'
+              }`}>
+                A calm, high-precision workbench for commercial stock contributors. Inspect EPS vectors, fine-tune subject-first titles under 70 characters, lock your top 10 priority keywords, and export verified CSVs for 7 global agencies.
+              </p>
             </div>
 
-            {/* Quantum Metadata & Multi-Agency Executive Quick-Launch Strip */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => onNavigateView('upload')}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
-                  isLight
-                    ? 'bg-white/90 hover:bg-neutral-950 hover:text-white text-neutral-800 border-neutral-200/90'
-                    : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
+            <div className="space-y-4">
+              {/* Instant Minimalist Executive Dropzone Bar */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!isHeroDragging) setIsHeroDragging(true);
+                }}
+                onDragLeave={() => setIsHeroDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsHeroDragging(false);
+                  if (e.dataTransfer?.files && e.dataTransfer.files.length > 0 && onQuickDropFiles) {
+                    onQuickDropFiles(Array.from(e.dataTransfer.files));
+                  } else {
+                    onStartGenerating();
+                  }
+                }}
+                onClick={onStartGenerating}
+                className={`p-5 sm:p-6 rounded-2xl transition-all duration-200 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 sovereign-prism-card group ${
+                  isHeroDragging
+                    ? 'border-white bg-white/10'
+                    : isLight
+                    ? 'crystal-glass-panel-light hover:border-neutral-900'
+                    : 'crystal-glass-panel-dark hover:border-white/35'
                 }`}
               >
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Quantum 49-Tag Studio</span>
-              </button>
-              {onOpenMultiCsv && (
+                <div className="flex items-center gap-3.5 relative z-10">
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
+                    isLight
+                      ? 'bg-neutral-950 text-white border-neutral-800'
+                      : 'bg-white/[0.06] text-white border-white/15'
+                  }`}>
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className={`text-xs sm:text-sm font-semibold flex flex-wrap items-center gap-2 ${
+                      isLight ? 'text-neutral-950' : 'text-white'
+                    }`}>
+                      <span>Open EPS, AI, PSD, JPG or 4K Footage in Workbench</span>
+                    </div>
+                    <div className={`text-[11.5px] mt-0.5 ${isLight ? 'text-neutral-500' : 'text-neutral-300'}`}>
+                      Full Manual Title &amp; Tag Control · 49 Keywords · 7-Agency CSV &amp; IPTC Write
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 shrink-0 relative z-10">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onWatchDemo();
+                    }}
+                    className={`lumina-tactile-button px-3.5 py-2.5 rounded-xl text-[11.5px] font-semibold border cursor-pointer ${
+                      isLight
+                        ? 'bg-[#faf8f5] hover:bg-neutral-100 text-neutral-800 border-neutral-300'
+                        : 'bg-[#050506] hover:bg-white/10 text-neutral-200 border-white/15 hover:border-white/30'
+                    }`}
+                  >
+                    Load Sample
+                  </button>
+                  <span className={`lumina-tactile-button px-4.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md ${
+                    isLight
+                      ? 'bg-neutral-950 text-white'
+                      : 'bg-white text-black hover:bg-neutral-200'
+                  }`}>
+                    <span>Select Files</span>
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  </span>
+                </div>
+              </div>
+
+              {/* Clean Directional Quick-Launch Links (Minimalist Editorial Typography) */}
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-xs font-medium">
+                {onOpenMultiCsv && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={onOpenMultiCsv}
+                      className={`lumina-directional-link cursor-pointer gap-1.5 ${
+                        isLight ? 'text-neutral-700 hover:text-black' : 'text-neutral-300 hover:text-white'
+                      }`}
+                    >
+                      <span>7-Agency CSV Hub</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
+                    </button>
+                    <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
+                  </>
+                )}
                 <button
                   type="button"
-                  onClick={onOpenMultiCsv}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
-                    isLight
-                      ? 'bg-white/90 hover:bg-neutral-950 hover:text-white text-neutral-800 border-neutral-200/90'
-                      : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
+                  onClick={() => onNavigateView('seo-rank')}
+                  className={`lumina-directional-link cursor-pointer gap-1.5 ${
+                    isLight ? 'text-neutral-700 hover:text-black' : 'text-neutral-300 hover:text-white'
                   }`}
                 >
-                  <Globe className="w-3.5 h-3.5 text-sky-500" />
-                  <span>5-Agency Universal CSV</span>
+                  <span>Title &amp; Top-10 Calibrator</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 opacity-75" />
                 </button>
-              )}
-              {onOpenChat && (
+                <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
                 <button
                   type="button"
-                  onClick={onOpenChat}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
-                    isLight
-                      ? 'bg-amber-50/90 hover:bg-amber-100 text-amber-900 border-amber-300/80'
-                      : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
+                  onClick={() => onNavigateView('monetize')}
+                  className={`lumina-directional-link cursor-pointer gap-1.5 ${
+                    isLight ? 'text-neutral-700 hover:text-black' : 'text-neutral-300 hover:text-white'
                   }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>8-Mode AI Co-Pilot 6.0</span>
+                  <span>Royalty &amp; AdSense Analytics</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={() => onNavigateView('monetize')}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
-                  isLight
-                    ? 'bg-white/90 hover:bg-neutral-950 hover:text-white text-neutral-800 border-neutral-200/90'
-                    : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
-                }`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Royalty &amp; AdSense Vault</span>
-              </button>
+                <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const storeEl = document.getElementById('global-commercial-store-vault');
+                    if (storeEl) storeEl.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`lumina-directional-link cursor-pointer gap-1.5 font-semibold ${
+                    isLight ? 'text-neutral-950 hover:text-black' : 'text-white hover:text-neutral-200'
+                  }`}
+                >
+                  <span>Global Store (588+ Tags)</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 opacity-80" />
+                </button>
+              </div>
             </div>
           </motion.div>
 
-          {/* Right 5 Columns: Live Interactive Store Telemetry & SEO Specimen Card */}
+          {/* Right 5 Columns: Live Interactive Multi-Agency Manual Specimen Card */}
           <motion.div
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.14, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-5"
+            className="lg:col-span-5 flex flex-col"
           >
             <div
-              data-bounce-card="true"
               onMouseEnter={() => setIsHoveringSpecimen(true)}
               onMouseLeave={() => setIsHoveringSpecimen(false)}
-              className={`rounded-2xl p-6 sm:p-7 transition-all duration-300 relative overflow-hidden phantom-monolith-card sovereign-prism-card ${
+              className={`rounded-2xl p-6 sm:p-7 relative overflow-hidden phantom-monolith-card sovereign-prism-card flex-1 flex flex-col justify-between ${
               isLight
                 ? 'crystal-glass-panel-light'
                 : 'crystal-glass-panel-dark'
             }`}>
-              {/* Top Specimen Header */}
-              <div className="flex items-center justify-between pb-4 mb-4 border-b border-neutral-200/60 dark:border-white/10">
-                <div className="flex items-center gap-2 text-[10.5px] font-mono tracking-[0.06em] uppercase tabular-nums text-neutral-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                  <span>Specimen · {activePreviewStore.storeNumber}</span>
+              {/* Top Specimen Header + Minimalist Agency Selector */}
+              <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-neutral-200/60 dark:border-white/10 gap-2">
+                <div className="flex items-center gap-2 text-[10.5px] font-mono tracking-[0.08em] uppercase tabular-nums text-neutral-400 truncate">
+                  <span>{activePreviewStore.storeNumber}</span>
                 </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <select
+                    value={activeSpecimenAgency}
+                    onChange={(e) => setActiveSpecimenAgency(e.target.value as any)}
+                    aria-label="Select agency format preview"
+                    className={`text-[10.5px] font-mono font-semibold px-2.5 py-1 rounded-lg border cursor-pointer focus:outline-none ${
+                      isLight
+                        ? 'bg-white/90 border-neutral-200 text-neutral-800 hover:border-neutral-400'
+                        : 'bg-white/[0.05] border-white/10 text-neutral-200 hover:border-white/25'
+                    }`}
+                  >
+                    <option value="adobe">Adobe Stock (&lt;70c)</option>
+                    <option value="shutterstock">Shutterstock (50 KW)</option>
+                    <option value="freepik">Freepik (30 KW)</option>
+                    <option value="getty">Getty / iStock (35 KW)</option>
+                    <option value="vecteezy">Vecteezy (35 KW)</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenStore(activePreviewStore)}
+                    className={`lumina-directional-link text-[11px] font-semibold flex items-center gap-1 cursor-pointer ${
+                      isLight ? 'text-neutral-900 hover:text-amber-600' : 'text-white hover:text-amber-400'
+                    }`}
+                  >
+                    <span>Open</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Specimen Visual & Dynamic Interactive Agency Title Sandbox */}
+              {(() => {
+                const baseTitle = customSpecimenTitle || activePreviewStore.sampleTitle;
+                const kws = customSpecimenTags.length > 0 ? customSpecimenTags : activePreviewStore.sampleKeywords;
+                const formattedTitle =
+                  activeSpecimenAgency === 'shutterstock'
+                    ? `${baseTitle} featuring ${kws.slice(0, 3).join(', ')} for commercial design and enterprise marketing`
+                    : activeSpecimenAgency === 'freepik'
+                    ? `${baseTitle.slice(0, 56)} — Editable Commercial Asset`
+                    : activeSpecimenAgency === 'getty'
+                    ? `Conceptual B2B view of ${baseTitle.charAt(0).toLowerCase() + baseTitle.slice(1)}`
+                    : activeSpecimenAgency === 'vecteezy'
+                    ? `${baseTitle} (Scalable Commercial Graphic)`
+                    : baseTitle;
+
+                const agencyRuleBadge =
+                  activeSpecimenAgency === 'adobe'
+                    ? `${baseTitle.length}/70 chars`
+                    : activeSpecimenAgency === 'shutterstock'
+                    ? `50 Tags · Narrative`
+                    : activeSpecimenAgency === 'freepik'
+                    ? `30 Vector Tags`
+                    : activeSpecimenAgency === 'getty'
+                    ? `35 B2B Tags`
+                    : `35 Clean Tags`;
+
+                return (
+                  <div className="flex items-start gap-4 mb-5">
+                    <img
+                      src={activePreviewStore.image}
+                      alt={activePreviewStore.title}
+                      className="w-20 h-16 rounded-xl object-cover border border-neutral-200/60 dark:border-white/10 shrink-0 transition-transform duration-500 hover:scale-105"
+                    />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex items-center justify-between text-[10.5px] font-mono tabular-nums">
+                        <span className="text-neutral-400">
+                          Subject-First Title
+                        </span>
+                        <span className={baseTitle.length <= 70 ? (isLight ? 'text-neutral-900 font-semibold' : 'text-white font-semibold') : 'text-amber-500 font-semibold'}>
+                          {agencyRuleBadge}
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        value={formattedTitle}
+                        onChange={(e) => {
+                          setIsHoveringSpecimen(true);
+                          setCustomSpecimenTitle(e.target.value);
+                        }}
+                        title="Live Sandbox: Click to edit and test title character compliance"
+                        className={`w-full text-xs font-semibold leading-snug rounded-lg px-2 py-1 -mx-1 border border-transparent hover:border-neutral-300 dark:hover:border-white/20 focus:border-white focus:outline-none transition ${
+                          isLight ? 'bg-transparent focus:bg-white text-neutral-900' : 'bg-transparent focus:bg-neutral-950 text-neutral-100'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Interactive First-10 Slot Lock Sandbox (Click any tag to promote to Slot #1) */}
+              {(() => {
+                const activeTags = customSpecimenTags.length > 0 ? customSpecimenTags : activePreviewStore.sampleKeywords;
+                const agencySpecNote =
+                  activeSpecimenAgency === 'adobe'
+                    ? 'Adobe Rule: First 10 tags carry ~80% algorithmic search weight · Zero brand names'
+                    : activeSpecimenAgency === 'shutterstock'
+                    ? 'Shutterstock Rule: Up to 50 tags + descriptive editorial narrative caption'
+                    : activeSpecimenAgency === 'freepik'
+                    ? 'Freepik Rule: Top 30 vector & editable commercial design keywords'
+                    : activeSpecimenAgency === 'getty'
+                    ? 'Getty / iStock Rule: Conceptual B2B vocabulary · Strict disambiguation ready'
+                    : 'Vecteezy Rule: Clean commercial vector tags · Zero spam or duplicate stems';
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-[10.5px] font-mono tabular-nums text-neutral-400">
+                      <span>Top Priority Keywords (Click to Lock #1)</span>
+                      <span>01–08 / 49</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      {activeTags.slice(0, 8).map((kw, kIdx) => {
+                        return (
+                          <button
+                            key={kw}
+                            type="button"
+                            onClick={() => {
+                              setIsHoveringSpecimen(true);
+                              const reordered = [kw, ...activeTags.filter((t) => t !== kw)];
+                              setCustomSpecimenTags(reordered);
+                            }}
+                            title={kIdx === 0 ? 'Locked at Slot #1 (99% Search Weight)' : `Click to promote "${kw}" to Slot #1`}
+                            className={`text-[11px] px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5 border transition cursor-pointer ${
+                              kIdx === 0
+                                ? isLight
+                                  ? 'bg-neutral-950 text-white border-neutral-950 font-semibold'
+                                  : 'bg-white text-black border-white font-bold shadow-xs'
+                                : isLight
+                                ? 'bg-white/70 hover:bg-white text-neutral-700 border-neutral-200/80'
+                                : 'bg-[#050506] hover:bg-white/10 text-neutral-200 border-white/12 hover:border-white/30'
+                            }`}
+                          >
+                            <span className="text-[9.5px] font-mono tabular-nums opacity-55">0{kIdx + 1}</span>
+                            <span>{kw}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className={`text-[10.5px] font-mono pt-1 truncate ${
+                      isLight ? 'text-neutral-500' : 'text-neutral-400'
+                    }`}>
+                      {agencySpecNote}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Store Switcher Dots & Single Active Format Copy Trigger */}
+              <div className="mt-6 pt-4 border-t border-neutral-200/60 dark:border-white/10 flex items-center justify-between gap-2">
                 <button
                   type="button"
-                  onClick={() => handleOpenStore(activePreviewStore)}
-                  className={`lumina-directional-link text-[11px] font-semibold flex items-center gap-1 cursor-pointer ${
-                    isLight ? 'text-neutral-900 hover:text-amber-600' : 'text-white hover:text-amber-400'
+                  onClick={() => {
+                    const baseTitle = customSpecimenTitle || activePreviewStore.sampleTitle;
+                    const kws = customSpecimenTags.length > 0 ? customSpecimenTags : activePreviewStore.sampleKeywords;
+                    navigator.clipboard.writeText(`${baseTitle}\n\n${kws.join(', ')}`);
+                    setCopiedId(`${activePreviewStore.id}_full`);
+                    setTimeout(() => setCopiedId(null), 1800);
+                  }}
+                  className={`text-[10.5px] font-mono tracking-[0.06em] uppercase flex items-center gap-1.5 cursor-pointer transition ${
+                    copiedId === `${activePreviewStore.id}_full`
+                      ? 'text-white font-bold'
+                      : isLight
+                      ? 'text-neutral-600 hover:text-neutral-950'
+                      : 'text-neutral-400 hover:text-white'
                   }`}
                 >
-                  <span>{activePreviewStore.ctaText}</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  {copiedId === `${activePreviewStore.id}_full` ? (
+                    <>
+                      <Check className="w-3 h-3 text-white" />
+                      <span>Copied Title + Tags</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 opacity-70" />
+                      <span>Copy Specimen</span>
+                    </>
+                  )}
                 </button>
-              </div>
-
-              {/* Specimen Visual & Before/After Title Comparison */}
-              <div className="flex items-start gap-4 mb-5">
-                <img
-                  src={activePreviewStore.image}
-                  alt={activePreviewStore.title}
-                  className="w-20 h-16 rounded-xl object-cover border border-neutral-200/60 dark:border-white/10 shrink-0 transition-transform duration-500 hover:scale-105"
-                />
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <div className="flex items-center justify-between text-[10.5px] font-mono tabular-nums">
-                    <span className="text-neutral-400">
-                      Adobe Stock Title
-                    </span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                      {activePreviewStore.sampleTitle.length}/70 chars · 100% Pure
-                    </span>
-                  </div>
-                  <p className={`text-xs font-semibold leading-snug line-clamp-2 ${
-                    isLight ? 'text-neutral-900' : 'text-neutral-100'
-                  }`}>
-                    {activePreviewStore.sampleTitle}
-                  </p>
-                </div>
-              </div>
-
-              {/* First-10 Slot Lock Preview */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-[10.5px] font-mono tabular-nums text-neutral-400">
-                  <span>Top-10 Priority Keywords ({countedWeight}% Weight)</span>
-                  <button
-                    type="button"
-                    onClick={(e) => handleQuickCopyTags(activePreviewStore, e)}
-                    className={`font-sans font-semibold text-[11px] flex items-center gap-1 cursor-pointer ${
-                      isLight ? 'text-neutral-800 hover:text-black' : 'text-neutral-200 hover:text-white'
-                    }`}
-                  >
-                    {copiedId === activePreviewStore.id ? (
-                      <>
-                        <Check className="w-3 h-3 text-emerald-500" />
-                        <span>Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3" />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {activePreviewStore.sampleKeywords.slice(0, 6).map((kw, kIdx) => {
-                    return (
-                      <span
-                        key={kw}
-                        className={`text-[11px] px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5 border ${
-                          kIdx === 0
-                            ? isLight
-                              ? 'bg-neutral-950 text-white border-neutral-950 font-semibold'
-                              : 'bg-white text-neutral-950 border-white font-semibold'
-                            : isLight
-                            ? 'bg-white/70 text-neutral-700 border-neutral-200/80'
-                            : 'bg-white/[0.04] text-neutral-300 border-white/10'
-                        }`}
-                      >
-                        <span className="text-[9.5px] font-mono tabular-nums opacity-55">0{kIdx + 1}</span>
-                        <span>{kw}</span>
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Store Switcher Dots & Metadata Inspector Trigger */}
-              <div className="mt-5 pt-3.5 border-t border-neutral-200/60 dark:border-white/10 flex items-center justify-between gap-2">
-                {onOpenBlackOps ? (
-                  <button
-                    type="button"
-                    onClick={onOpenBlackOps}
-                    className={`lumina-directional-link text-[11px] font-medium flex items-center gap-1.5 cursor-pointer transition ${
-                      isLight
-                        ? 'text-neutral-600 hover:text-black'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <Terminal className="w-3.5 h-3.5" />
-                    <span>Binary &amp; Competitor Inspector (Ctrl+K)</span>
-                  </button>
-                ) : (
-                  <span className="text-[10.5px] text-neutral-400">
-                    Select any module below to launch
-                  </span>
-                )}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   {marketStores.map((st, idx) => (
                     <button
                       key={st.id}
                       type="button"
-                      onClick={() => setPreviewStoreIdx(idx)}
+                      onClick={() => {
+                        setPreviewStoreIdx(idx);
+                        setCustomSpecimenTitle('');
+                        setCustomSpecimenTags([]);
+                      }}
                       className={`h-1.5 rounded-full transition-all cursor-pointer ${
                         previewStoreIdx === idx
                           ? (isLight ? 'w-5 bg-neutral-950' : 'w-5 bg-white')
@@ -1017,67 +1177,6 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   ))}
                 </div>
               </div>
-
-              {/* 1-Click Multi-Agency Format Copy Strip inside Hero Specimen */}
-              <div className="mt-3 pt-3 border-t border-neutral-200/60 dark:border-white/10 flex flex-wrap items-center justify-between gap-1.5">
-                <span className="text-[9.5px] font-mono uppercase tracking-wider text-emerald-500 font-bold">
-                  1-Click Copy Specimen:
-                </span>
-                <div className="flex flex-wrap items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${activePreviewStore.sampleTitle}\n\n${activePreviewStore.sampleKeywords.join(', ')}`);
-                      setCopiedId(`${activePreviewStore.id}_adobe`);
-                      setTimeout(() => setCopiedId(null), 1800);
-                    }}
-                    className={`px-2 py-0.5 rounded text-[9.5px] font-semibold border transition cursor-pointer ${
-                      copiedId === `${activePreviewStore.id}_adobe`
-                        ? 'bg-emerald-500 text-black border-emerald-500 font-bold'
-                        : isLight
-                        ? 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-200'
-                        : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
-                    }`}
-                  >
-                    {copiedId === `${activePreviewStore.id}_adobe` ? '✓ Copied Adobe' : 'Adobe (<70c)'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const shutterDesc = `${activePreviewStore.sampleTitle} featuring ${activePreviewStore.sampleKeywords.slice(0, 4).join(', ')} for commercial design`;
-                      navigator.clipboard.writeText(`${shutterDesc}\n\n${activePreviewStore.sampleKeywords.join(', ')}`);
-                      setCopiedId(`${activePreviewStore.id}_shutter`);
-                      setTimeout(() => setCopiedId(null), 1800);
-                    }}
-                    className={`px-2 py-0.5 rounded text-[9.5px] font-semibold border transition cursor-pointer ${
-                      copiedId === `${activePreviewStore.id}_shutter`
-                        ? 'bg-emerald-500 text-black border-emerald-500 font-bold'
-                        : isLight
-                        ? 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-200'
-                        : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
-                    }`}
-                  >
-                    {copiedId === `${activePreviewStore.id}_shutter` ? '✓ Copied Shutter' : 'Shutterstock'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(activePreviewStore.sampleKeywords.slice(0, 30).join(', '));
-                      setCopiedId(`${activePreviewStore.id}_freepik`);
-                      setTimeout(() => setCopiedId(null), 1800);
-                    }}
-                    className={`px-2 py-0.5 rounded text-[9.5px] font-semibold border transition cursor-pointer ${
-                      copiedId === `${activePreviewStore.id}_freepik`
-                        ? 'bg-emerald-500 text-black border-emerald-500 font-bold'
-                        : isLight
-                        ? 'bg-white hover:bg-neutral-100 text-neutral-800 border-neutral-200'
-                        : 'bg-white/5 hover:bg-white/15 text-neutral-200 border-white/10'
-                    }`}
-                  >
-                    {copiedId === `${activePreviewStore.id}_freepik` ? '✓ Copied Freepik' : 'Freepik'}
-                  </button>
-                </div>
-              </div>
             </div>
           </motion.div>
 
@@ -1086,7 +1185,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           {/* ============================================================ */}
           {/* INTEGRATED ARCHITECTURAL HAIRLINE SUITE (MINIMALIST RIBBON)  */}
           {/* ============================================================ */}
-          <div className="mt-12 pt-8 border-t border-neutral-200/70 dark:border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
+          <div className="mt-14 pt-10 border-t border-neutral-200/70 dark:border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 relative z-10">
             {[
               {
                 tab: 'presubmit' as const,
@@ -1121,10 +1220,12 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 className={`p-4 rounded-2xl transition cursor-pointer group sovereign-prism-card ${
                   isLight
                     ? 'bg-white/55 hover:bg-white/90 border border-neutral-200/70 hover:border-neutral-900'
-                    : 'bg-white/[0.025] hover:bg-white/[0.06] border border-white/10 hover:border-white/25'
+                    : 'bg-[#050506] hover:bg-[#0c0c0e] border border-white/10 hover:border-white/30 shadow-lg'
                 }`}
               >
-                <div className="flex items-center justify-between text-[10px] font-mono tracking-[0.12em] uppercase mb-1.5 text-emerald-600 dark:text-emerald-400">
+                <div className={`flex items-center justify-between text-[10px] font-mono tracking-[0.12em] uppercase mb-1.5 ${
+                  isLight ? 'text-neutral-500' : 'text-neutral-400'
+                }`}>
                   <span>{item.stage}</span>
                   <ArrowUpRight className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                 </div>
@@ -1155,16 +1256,20 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-16 pt-2 flex flex-col sm:flex-row sm:items-end justify-between gap-6"
+          className="mt-28 pt-8 border-t border-neutral-200/60 dark:border-white/[0.08] flex flex-col sm:flex-row sm:items-end justify-between gap-6"
         >
-          <div className="space-y-1">
-            <div className="text-[10.5px] font-mono tracking-[0.16em] uppercase text-emerald-600 dark:text-emerald-400">
-              01 / ENTERPRISE MODULES
+          <div className="space-y-2">
+            <div className="text-[10.5px] font-mono tracking-[0.2em] uppercase text-neutral-400">
+              01. ENTERPRISE MODULES
             </div>
-            <h2 className={`text-xl sm:text-2xl font-bold tracking-[-0.025em] ${
+            <h2 className={`text-2xl sm:text-4xl font-bold tracking-[-0.03em] leading-[1.1] ${
               isLight ? 'text-neutral-950' : 'text-white'
             }`}>
-              Specialized Creative Workspaces
+              Specialized{' '}
+              <span className="font-editorial italic font-semibold text-[1.08em] luxury-headline-gradient pr-1">
+                Creative
+              </span>{' '}
+              Workspaces
             </h2>
           </div>
 
@@ -1201,9 +1306,9 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       {/* ============================================================ */}
       {/* ARCHITECTURAL BOUTIQUE GALLERY GRID (GENEROUS BREATHING ROOM) */}
       {/* ============================================================ */}
-      <section className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14 pb-28">
+      <section className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14 pb-32">
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <AnimatePresence mode="popLayout">
             {filteredStores.map((store, idx) => (
               <motion.div
@@ -1219,35 +1324,41 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   if (foundIdx !== -1) setPreviewStoreIdx(foundIdx);
                 }}
                 onClick={() => handleOpenStore(store)}
-                className={`group cursor-pointer rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 sovereign-prism-card ${
+                className={`group cursor-pointer rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 sovereign-prism-card relative overflow-hidden ${
                   isLight
                     ? 'crystal-glass-panel-light hover:border-neutral-900'
-                    : 'crystal-glass-panel-dark hover:border-amber-400/50'
+                    : 'crystal-glass-panel-dark hover:border-white/35'
                 }`}
               >
-                <div className="space-y-4">
+                {/* Subtle Top Specular White Hairline on Card Hover */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                />
+
+                <div className="space-y-4 relative z-10">
                   {/* Top Store Number & Live Status Line (Zero-Pill Unboxed Metadata) */}
                   <div className="flex items-center justify-between text-[10px] font-mono tabular-nums tracking-[0.14em] uppercase text-neutral-400">
                     <span>{store.storeNumber}</span>
-                    <span className={isLight ? 'text-neutral-700 font-semibold' : 'text-neutral-300 font-semibold'}>
+                    <span className={isLight ? 'text-neutral-700 font-semibold' : 'text-neutral-200 font-semibold'}>
                       {store.statLabel}
                     </span>
                   </div>
 
                   {/* Signature Architectural Cover Image Card */}
-                  <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-neutral-900">
+                  <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-neutral-900 ring-1 ring-inset ring-white/15 group-hover:ring-white/35 shadow-md transition-all duration-500">
                     <img
                       src={store.image}
                       alt={store.title}
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
                       referrerPolicy="no-referrer"
                     />
 
                     {/* Subtle Contrast Scrim */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent opacity-65 group-hover:opacity-80 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-70 group-hover:opacity-85 transition-opacity duration-300" />
 
                     {/* Subtle Top-Left Store Kicker */}
-                    <div className="absolute top-3 left-3.5 text-[9px] font-mono font-semibold tracking-[0.16em] uppercase text-white/95">
+                    <div className="absolute top-3 left-3.5 text-[9px] font-mono font-semibold tracking-[0.16em] uppercase text-white/95 drop-shadow-xs">
                       {store.badge}
                     </div>
 
@@ -1256,12 +1367,12 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleQuickCopyTags(store, e)}
-                        className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg text-[9.5px] font-semibold bg-white/95 hover:bg-white text-black flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-xs cursor-pointer whitespace-nowrap"
+                        className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg text-[9.5px] font-semibold bg-white/95 hover:bg-white text-black flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-sm cursor-pointer whitespace-nowrap"
                         title="Copy store sample SEO keywords"
                       >
                         {copiedId === store.id ? (
                           <>
-                            <Check className="w-2.5 h-2.5 text-emerald-600" />
+                            <Check className="w-2.5 h-2.5 text-black" />
                             <span>Copied</span>
                           </>
                         ) : (
@@ -1278,7 +1389,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                       <span className="text-[10.5px] font-semibold tracking-[0.12em] uppercase">
                         {store.ctaText}
                       </span>
-                      <span className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center transform group-hover:translate-x-0.5 transition-transform shadow-xs">
+                      <span className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center transform group-hover:translate-x-0.5 transition-transform shadow-sm">
                         <ArrowRight className="w-3 h-3" />
                       </span>
                     </div>
@@ -1286,8 +1397,8 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
                   {/* Details Typography Block */}
                   <div className="space-y-1.5 pt-1">
-                    <h3 className={`text-[15.5px] font-bold tracking-tight leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors ${
-                      isLight ? 'text-neutral-950' : 'text-white'
+                    <h3 className={`text-[15.5px] font-bold tracking-tight leading-snug transition-colors ${
+                      isLight ? 'text-neutral-950' : 'text-white group-hover:text-neutral-200'
                     }`}>
                       {store.title}
                     </h3>
@@ -1304,6 +1415,21 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
         </div>
 
       </section>
+
+      {/* ============================================================ */}
+      {/* GLOBAL COMMERCIAL METADATA, PROMPT & NICHE STORE VAULT       */}
+      {/* ============================================================ */}
+      <GlobalAssetStoreVault
+        isLight={isLight}
+        showToast={showToast}
+        onLoadPackIntoWorkbench={(pack) => {
+          if (onLoadStorePack) {
+            onLoadStorePack(pack);
+          } else {
+            onNavigateView('upload');
+          }
+        }}
+      />
 
     </div>
   );

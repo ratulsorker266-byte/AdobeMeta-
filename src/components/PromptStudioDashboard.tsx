@@ -102,46 +102,51 @@ export const PromptStudioDashboard: React.FC<PromptStudioDashboardProps> = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="space-y-6"
+      className="space-y-10 pb-12"
     >
       {/* Top Header */}
-      <div className={`flex items-center justify-between border p-5 sm:p-6 rounded-2xl transition-colors ${
+      <div className={`flex items-center justify-between p-7 sm:p-10 rounded-[32px] transition-colors sovereign-prism-card ${
         isLight
-          ? 'bg-white border-neutral-200/90 text-neutral-900 shadow-2xs'
-          : 'bg-[#111318] border-neutral-800 text-white shadow-xl'
+          ? 'crystal-architectural-slab-light text-neutral-900'
+          : 'crystal-architectural-slab-dark text-white'
       }`}>
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className={`p-2.5 rounded-xl border transition cursor-pointer ${
+            className={`p-3 rounded-2xl border transition cursor-pointer ${
               isLight
                 ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-700'
                 : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
             }`}
-            title="Back to All Stores"
+            title="Back to Workspace"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-400">
+          <div className="space-y-1">
+            <div className="text-[10.5px] font-mono uppercase tracking-[0.2em] text-neutral-400">
               03 . STORE · AI PROMPT ENGINEERING LAB
             </div>
-            <h1 className="text-lg sm:text-2xl font-bold tracking-tight flex items-center gap-2 mt-0.5">
-              <Wand2 className="w-5 h-5 text-amber-500" />
-              <span>AI Stock Prompt Creator</span>
+            <h1 className="text-xl sm:text-3xl font-bold tracking-[-0.025em] flex items-center gap-2.5">
+              <span>
+                Commercial{' '}
+                <span className="font-editorial italic font-semibold text-[1.08em] luxury-headline-gradient pr-1">
+                  Prompt
+                </span>{' '}
+                Synthesis Studio
+              </span>
             </h1>
-            <p className={`text-xs mt-0.5 ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
-              Generate commercial-grade prompts optimized to pass Adobe Stock, Shutterstock &amp; Midjourney review.
+            <p className={`text-xs sm:text-sm ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
+              Generate commercial-grade prompts calibrated for Adobe Stock, Shutterstock &amp; Midjourney review.
             </p>
           </div>
         </div>
       </div>
 
       {/* Input Form Card */}
-      <div className={`border p-5 sm:p-6 rounded-2xl space-y-5 ${
+      <div className={`p-7 sm:p-9 rounded-[32px] space-y-6 sovereign-prism-card ${
         isLight
-          ? 'bg-white border-neutral-200/90 text-neutral-900 shadow-2xs'
-          : 'bg-[#111318] border-neutral-800 text-white shadow-xl'
+          ? 'crystal-architectural-slab-light text-neutral-900'
+          : 'crystal-architectural-slab-dark text-white'
       }`}>
         <div>
           <label className="text-[11px] font-mono font-bold uppercase tracking-[0.14em] text-neutral-400 block mb-2">

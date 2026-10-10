@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TrendingUp, Flame, Sparkles, Zap, ArrowUpRight, Copy, Check } from 'lucide-react';
-import { arcadeAudio } from './games/ArcadeSoundEngine';
+import { playTickSound } from '../lib/audioFeedback';
 
 interface LiveTrendingTickerProps {
   onSelectTrend?: (keyword: string) => void;
@@ -38,7 +38,7 @@ export const LiveTrendingTicker: React.FC<LiveTrendingTickerProps> = ({
   const isLight = themeMode === 'light';
 
   const handleTrendClick = (item: TrendItem) => {
-    arcadeAudio.playCoin();
+    playTickSound();
     navigator.clipboard.writeText(item.tag);
     setCopiedId(item.id);
     showToast(`✓ Copied trending tag: "${item.tag}" (${item.growth} surge)`);

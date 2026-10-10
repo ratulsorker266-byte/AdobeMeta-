@@ -173,6 +173,47 @@ export const CloudFtpGuideModal = ({ isOpen, onClose, showToast }: { isOpen: boo
             </ol>
           </div>
 
+          {/* 1-Click Automated SFTP / FTPS Batch Uploader CLI Scripts (macOS, Linux & Windows) */}
+          <div className="bg-slate-950/90 p-5 rounded-2xl border border-amber-500/25 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2">
+                <Key className="w-4 h-4 text-amber-400" /> 1-Click Automated Batch Upload CLI Script ({current.name})
+              </h4>
+              <button
+                type="button"
+                onClick={() => {
+                  const script =
+                    activeTab === 'adobe'
+                      ? `# Adobe Stock Automated SFTP Batch Upload Script\n# Place inside your unzipped SEO_Renamed_Images folder and run:\nsftp -P 22 YOUR_ADOBE_SFTP_USER@${current.host} <<EOF\nmput *.jpg\nmput *.eps\nmput *.csv\nbye\nEOF`
+                      : activeTab === 'shutterstock'
+                      ? `# Shutterstock Automated Explicit FTPS Batch Upload Script (via curl/lftp)\nlftp -u "YOUR_SHUTTERSTOCK_EMAIL,YOUR_PASSWORD" -e "set ftp:ssl-force true; set ftp:ssl-protect-data true; mput *.jpg *.eps; quit" ${current.host}`
+                      : `# Freepik Automated FTP Batch Upload Script\nlftp -u "YOUR_FREEPIK_USER,YOUR_FREEPIK_PASS" -e "mput *.jpg *.eps *.csv; quit" ${current.host}`;
+                  copyText(script, 'cli_script');
+                }}
+                className="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-[11px] font-bold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                {copiedKey === 'cli_script' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Copied Script!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy Automated Upload Script</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <pre className="p-3 rounded-xl bg-black/80 border border-white/10 text-[11px] font-mono text-cyan-200/90 overflow-x-auto leading-relaxed">
+              {activeTab === 'adobe'
+                ? `# Run in Terminal / PowerShell inside your exported ZIP folder:\nsftp -P 22 YOUR_ADOBE_SFTP_USER@${current.host}\n> mput *.jpg *.eps *.csv`
+                : activeTab === 'shutterstock'
+                ? `# Run in Terminal with lftp (Explicit FTPS Port 21):\nlftp -u "YOUR_EMAIL,YOUR_PASSWORD" -e "set ftp:ssl-force true; mput *.jpg *.eps; quit" ${current.host}`
+                : `# Run in Terminal to push vectors, photos & Freepik CSV simultaneously:\nlftp -u "YOUR_FREEPIK_USER,YOUR_PASS" -e "mput *.jpg *.eps *.csv; quit" ${current.host}`}
+            </pre>
+          </div>
+
           <div className="p-4 bg-emerald-950/20 border border-emerald-500/30 rounded-2xl text-xs text-emerald-300 flex items-center gap-3">
             <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
             <span>

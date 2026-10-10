@@ -125,64 +125,70 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.3 }}
-      className="space-y-6"
+      className="space-y-10 pb-12"
     >
       {/* Hero Monetization Banner */}
-      <div className={`relative overflow-hidden rounded-2xl border p-6 sm:p-8 ${
+      <div className={`relative overflow-hidden rounded-[32px] p-8 sm:p-10 lg:p-12 sovereign-prism-card ${
         isLight 
-          ? 'bg-white border-neutral-200/90 shadow-2xs text-neutral-900' 
-          : 'bg-[#111318] border-neutral-800 text-white shadow-xl'
+          ? 'crystal-architectural-slab-light text-neutral-900' 
+          : 'crystal-architectural-slab-dark text-white'
       }`}>
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           <div className="flex items-start gap-4 max-w-2xl">
             <button
               onClick={onBackToStudio}
-              className={`p-2.5 rounded-xl border transition cursor-pointer shrink-0 mt-0.5 ${
+              className={`p-2.5 rounded-xl border transition cursor-pointer shrink-0 mt-1 ${
                 isLight
                   ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-700'
-                  : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+                  : 'bg-[#050506] hover:bg-white/10 border-white/12 text-neutral-300'
               }`}
               title="Back to All Stores"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className="space-y-2.5">
-              <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-400">
-                <span>04 . STORE · GOOGLE MONETIZE &amp; EARNING HUB</span>
-                <span>·</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2.5 text-[10.5px] font-mono uppercase tracking-[0.18em] text-neutral-400">
+                <span>04 · ROYALTY &amp; ADSENSE ANALYTICS</span>
+                <span aria-hidden="true">·</span>
+                <span className={isLight ? 'text-neutral-950 font-semibold' : 'text-white font-semibold'}>
                   ADS.TXT: {adsTxtStatus === 'verified' ? 'ACTIVE & CRAWLABLE' : 'VERIFYING'}
                 </span>
               </div>
 
-              <h2 className="text-xl sm:text-3xl font-bold tracking-tight leading-tight">
-                High-Earning Stock Portfolio &amp; Google AdSense Monetization Engine
+              <h2 className="text-2xl sm:text-4xl font-bold tracking-[-0.03em] leading-[1.1]">
+                Portfolio{' '}
+                <span className="font-editorial italic font-semibold text-[1.08em] luxury-headline-gradient pr-1">
+                  Royalty &amp; AdSense
+                </span>{' '}
+                Architecture
               </h2>
 
               <p className={`text-xs sm:text-sm ${isLight ? 'text-neutral-600' : 'text-neutral-400'} leading-relaxed`}>
-                Generate predictable passive income: pair your EPS vector &amp; photo microstock royalties with Google AdSense high-eCPM web traffic advertising.
+                Forecast predictable microstock download royalties alongside high-eCPM Google AdSense display revenue.
               </p>
             </div>
           </div>
 
           {/* Quick Projected Revenue Snapshot Card */}
-          <div className={`shrink-0 p-5 rounded-2xl border ${
-            isLight ? 'bg-[#fbfaf8] border-neutral-200/90 text-neutral-900' : 'bg-neutral-950 border-neutral-800 text-white'
+          <div className={`shrink-0 p-6 rounded-2xl border ${
+            isLight ? 'bg-[#fbfaf8] border-neutral-200/90 text-neutral-900' : 'bg-[#050506] border-white/12 text-white'
           } space-y-2.5 min-w-[260px]`}>
-            <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+            <div className="flex items-center justify-between text-[10.5px] font-mono uppercase tracking-[0.14em] text-neutral-400">
               <span>Projected Run Rate</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5" /> Passive
+              <span className={isLight ? 'text-neutral-950 font-semibold' : 'text-white font-semibold'}>
+                Passive Yield
               </span>
             </div>
 
-            <div className="text-3xl font-bold font-mono tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400 flex items-baseline gap-1">
+            <div className={`text-3xl font-bold font-mono tabular-nums tracking-tight flex items-baseline gap-1 ${
+              isLight ? 'text-neutral-950' : 'text-white'
+            }`}>
               ${totalCombinedMonthly.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               <span className="text-xs font-sans font-normal text-neutral-400">/mo</span>
             </div>
 
             <div className={`pt-2 border-t flex items-center justify-between text-xs ${
-              isLight ? 'border-neutral-200/80 text-neutral-600' : 'border-neutral-800 text-neutral-400'
+              isLight ? 'border-neutral-200/80 text-neutral-600' : 'border-white/10 text-neutral-400'
             }`}>
               <span>Annual Projection:</span>
               <strong className={`font-mono ${isLight ? 'text-neutral-900' : 'text-white'}`}>
@@ -193,14 +199,14 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
         </div>
 
         {/* Minimalist Tab Navigation Bar */}
-        <div className={`mt-6 flex items-center gap-2 overflow-x-auto scrollbar-none pt-4 border-t ${
-          isLight ? 'border-neutral-100' : 'border-neutral-800/80'
+        <div className={`mt-8 flex items-center gap-2 overflow-x-auto scrollbar-none pt-5 border-t ${
+          isLight ? 'border-neutral-200/70' : 'border-white/10'
         }`}>
           {[
             { id: 'calculator', label: 'Earning Simulator', icon: Calculator },
             { id: 'niches', label: 'High-CPC Niches', icon: Flame },
             { id: 'adsense', label: 'Google AdSense & ads.txt', icon: Globe },
-            { id: 'strategy', label: '30-Day $1k Blueprint', icon: Award },
+            { id: 'strategy', label: '30-Day Blueprint', icon: Award },
             { id: 'partners', label: '7-Agency Royalties', icon: FileSpreadsheet },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -209,10 +215,10 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer border ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition whitespace-nowrap cursor-pointer border ${
                   isActive
                     ? (isLight ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-950 border-white')
-                    : (isLight ? 'bg-[#fbfaf8] hover:bg-neutral-100 text-neutral-600 border-neutral-200/80' : 'bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border-neutral-800')
+                    : (isLight ? 'bg-[#fbfaf8] hover:bg-neutral-100 text-neutral-600 border-neutral-200/80' : 'bg-[#050506] hover:bg-white/10 text-neutral-300 border-white/10')
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -230,17 +236,45 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
       {activeTab === 'calculator' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Controls Column */}
-          <div className={`lg:col-span-7 rounded-2xl border p-6 space-y-6 ${
-            isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#111318] border-neutral-800 shadow-xl'
+          <div className={`lg:col-span-7 rounded-3xl p-6 space-y-6 sovereign-prism-card ${
+            isLight ? 'crystal-architectural-slab-light' : 'crystal-architectural-slab-dark'
           }`}>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className={`text-base font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
                 <Calculator className="w-4 h-4 text-emerald-500" />
                 <span>Dual Monetization Simulator</span>
               </h3>
-              <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400">
-                Interactive Controls
-              </span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { label: 'Starter (250 Assets)', assets: 250, dls: 0.75, royalty: 0.85, views: 15000, ecpm: 3.5 },
+                  { label: 'Pro Studio (1,200 Assets)', assets: 1200, dls: 1.15, royalty: 1.10, views: 65000, ecpm: 5.4 },
+                  { label: 'Enterprise (3,500 Assets)', assets: 3500, dls: 1.65, royalty: 1.45, views: 180000, ecpm: 7.8 },
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => {
+                      setStockAssets(preset.assets);
+                      setMonthlyDlsPerAsset(preset.dls);
+                      setAvgStockRoyalty(preset.royalty);
+                      setMonthlyPageviews(preset.views);
+                      setAdsenseEcpm(preset.ecpm);
+                      showToast(`⚡ Loaded ${preset.label} Revenue Benchmark!`);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition cursor-pointer ${
+                      stockAssets === preset.assets
+                        ? isLight
+                          ? 'bg-neutral-950 text-white border-neutral-950'
+                          : 'bg-white text-neutral-950 border-white'
+                        : isLight
+                        ? 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200'
+                        : 'bg-white/5 hover:bg-white/10 text-neutral-300 border-white/10'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Microstock Portfolio Royalties Sliders */}

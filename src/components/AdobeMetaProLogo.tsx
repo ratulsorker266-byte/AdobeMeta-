@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showText?: boolean;
+  showSubtitle?: boolean;
   layout?: 'horizontal' | 'stacked';
   className?: string;
   theme?: 'light' | 'dark';
@@ -11,127 +12,170 @@ interface LogoProps {
 }
 
 /**
- * Brand-New Professional Graphic Designer Minimalist Crest & Wordmark
- * Engineered specifically for the Coffy.net Boutique Marketplace aesthetic:
- * - Swiss Golden-Ratio Monogram ('A' + 'M' + Vector Anchor Node)
- * - Crisp hairline geometric enclosure with dual-theme obsidian/alabaster contrast
- * - Signature Gold (#F59E0B) & Emerald (#10B981) precision accents
+ * Sovereign 10/10 Swiss Architectural Crest & Wordmark
+ * - Deep Obsidian Glass (#07080C) enclosure with precision Liquid Champagne Gold (#E5C158) rim
+ * - Interlocking Golden-Ratio 'A' + 'M' Architectural Prism Monogram
+ * - Zero-clutter navbar presence (hides micro-subtitle in compact 'sm' header mode unless explicitly requested)
  */
 export const AdobeMetaProLogo: React.FC<LogoProps> = ({
   size = 'md',
   showText = true,
+  showSubtitle,
   layout = 'horizontal',
   className = '',
-  theme = 'light',
-  subtitle = 'CREATIVE STORE MARKETPLACE',
+  theme = 'dark',
+  subtitle = 'ARCHITECTURAL METADATA STUDIO',
   onClick
 }) => {
+  const uid = useId().replace(/:/g, '');
   const isLight = theme === 'light';
 
+  // In compact 'sm' navbar mode, keep the header ultra-minimalist and spacious by omitting the micro-subtitle unless explicitly enabled
+  const shouldShowSubtitle = showSubtitle !== undefined ? showSubtitle : size !== 'sm';
+
   const iconDimensions = {
-    sm: 'w-7 h-7',
+    sm: 'w-8 h-8',
     md: 'w-9 h-9',
     lg: 'w-11 h-11',
     xl: 'w-14 h-14'
   }[size];
 
   const titleSize = {
-    sm: 'text-[13px] tracking-[0.22em]',
-    md: 'text-[15.5px] sm:text-[17px] tracking-[0.24em]',
-    lg: 'text-[18px] sm:text-[20px] tracking-[0.26em]',
-    xl: 'text-[22px] sm:text-[26px] tracking-[0.28em]'
+    sm: 'text-[14.5px] sm:text-[15.5px]',
+    md: 'text-[16.5px] sm:text-[18px]',
+    lg: 'text-[19px] sm:text-[21px]',
+    xl: 'text-[24px] sm:text-[28px]'
   }[size];
 
   const subSize = {
-    sm: 'text-[7px] tracking-[0.32em]',
-    md: 'text-[7.5px] sm:text-[8px] tracking-[0.36em]',
-    lg: 'text-[8.5px] tracking-[0.38em]',
-    xl: 'text-[9.5px] tracking-[0.4em]'
+    sm: 'text-[7px] tracking-[0.28em]',
+    md: 'text-[7.5px] sm:text-[8px] tracking-[0.32em]',
+    lg: 'text-[8.5px] tracking-[0.34em]',
+    xl: 'text-[9.5px] tracking-[0.36em]'
   }[size];
 
   return (
     <div
       onClick={onClick}
       className={`group inline-flex ${
-        layout === 'stacked' ? 'flex-col items-center text-center gap-1.5' : 'items-center gap-3 text-left'
+        layout === 'stacked' ? 'flex-col items-center text-center gap-2' : 'items-center gap-3 text-left'
       } select-none ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
-      {/* Bespoke Graphic Designer Geometric Monogram Crest */}
+      {/* Bespoke Swiss Obsidian & Champagne Gold Architectural Prism Crest */}
       <div className="relative flex items-center justify-center shrink-0">
         <svg
           viewBox="0 0 48 48"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className={`${iconDimensions} shrink-0 transition-transform duration-500 ease-out group-hover:scale-[1.05]`}
-          aria-label="AdobeMeta Pro Official Designer Emblem"
+          className={`${iconDimensions} shrink-0 transition-transform duration-500 ease-out group-hover:scale-[1.04]`}
+          aria-label="AdobeMeta Pro Official Emblem"
         >
-          {/* Outer Architectural Squircle Badge */}
+          <defs>
+            {/* Deep Obsidian Architectural Surface */}
+            <linearGradient id={`obsidianSurface_${uid}`} x1="4" y1="2" x2="44" y2="46" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor={isLight ? '#14151A' : '#12131A'} />
+              <stop offset="55%" stopColor={isLight ? '#090A0D' : '#07080B'} />
+              <stop offset="100%" stopColor="#030305" />
+            </linearGradient>
+
+            {/* Liquid Champagne 24K Gold Foil */}
+            <linearGradient id={`champagneFoil_${uid}`} x1="10" y1="8" x2="38" y2="40" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#FFF6D6" />
+              <stop offset="35%" stopColor="#F3E5AB" />
+              <stop offset="70%" stopColor="#D4AF37" />
+              <stop offset="100%" stopColor="#AA8222" />
+            </linearGradient>
+
+            {/* Platinum Ivory Highlight for Primary Pillar */}
+            <linearGradient id={`platinumPillar_${uid}`} x1="12" y1="11" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#FFFFFF" />
+              <stop offset="65%" stopColor="#F4F4F6" />
+              <stop offset="100%" stopColor="#D4D4D8" />
+            </linearGradient>
+
+            {/* Outer Rim Specular Sheen */}
+            <linearGradient id={`rimSheen_${uid}`} x1="2" y1="2" x2="46" y2="46" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="rgba(243, 229, 171, 0.55)" />
+              <stop offset="45%" stopColor="rgba(255, 255, 255, 0.12)" />
+              <stop offset="100%" stopColor="rgba(212, 175, 55, 0.38)" />
+            </linearGradient>
+          </defs>
+
+          {/* Outer Architectural Squircle Enclosure */}
           <rect
             x="2"
             y="2"
             width="44"
             height="44"
-            rx="11"
-            fill={isLight ? '#0A0B0E' : '#FFFFFF'}
-            className="transition-colors duration-300"
+            rx="12"
+            fill={`url(#obsidianSurface_${uid})`}
+            stroke={`url(#rimSheen_${uid})`}
+            strokeWidth="1.15"
           />
 
-          {/* Subtle Inner Hairline Bezel */}
+          {/* Subtle Inner Optical Bezel */}
           <rect
-            x="4.25"
-            y="4.25"
-            width="39.5"
-            height="39.5"
-            rx="8.75"
-            stroke={isLight ? 'rgba(255,255,255,0.14)' : 'rgba(10,11,14,0.14)'}
-            strokeWidth="0.85"
+            x="4.75"
+            y="4.75"
+            width="38.5"
+            height="38.5"
+            rx="9.25"
+            stroke="rgba(243, 229, 171, 0.12)"
+            strokeWidth="0.75"
           />
 
-          {/* Primary Architectural 'A' / 'M' Monogram Pillars */}
+          {/* Top Ambient Specular Arc */}
           <path
-            d="M12.5 34.5L21.6 13.5H26.4L35.5 34.5H30.4L24 19.2L17.6 34.5H12.5Z"
-            fill={isLight ? '#FFFFFF' : '#0A0B0E'}
+            d="M11 5.2H37"
+            stroke={`url(#champagneFoil_${uid})`}
+            strokeOpacity="0.35"
+            strokeWidth="0.9"
+            strokeLinecap="round"
           />
 
-          {/* Precision Golden Ratio Vector Bezier Crossbar */}
+          {/* Architectural 'A' Outer Sovereign Apex */}
           <path
-            d="M18.2 28.5H29.8L31.4 32.2H16.6L18.2 28.5Z"
-            fill="#F59E0B"
+            d="M11.8 35.2L22.1 11.8H25.9L36.2 35.2H31.5L24 17.4L16.5 35.2H11.8Z"
+            fill={`url(#platinumPillar_${uid})`}
           />
 
-          {/* Center Emerald Intelligence Prism Node */}
-          <circle
-            cx="24"
-            cy="11.2"
-            r="1.8"
-            fill="#10B981"
+          {/* Interwoven Inner 'M' / Champagne Gold Vector Prism Wing */}
+          <path
+            d="M17.6 35.2L24 21.2L30.4 35.2H26.7L24 28.9L21.3 35.2H17.6Z"
+            fill={`url(#champagneFoil_${uid})`}
+          />
+
+          {/* Precision Vector Anchor Diamond at Sovereign Apex */}
+          <path
+            d="M24 7.8L26.1 9.9L24 12L21.9 9.9L24 7.8Z"
+            fill={`url(#champagneFoil_${uid})`}
           />
         </svg>
       </div>
 
       {showText && (
         <div className={`flex flex-col leading-none ${layout === 'stacked' ? 'items-center' : 'items-start'}`}>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-baseline gap-1.5">
             <span
-              className={`${titleSize} font-black uppercase transition-opacity group-hover:opacity-85 ${
-                isLight ? 'text-[#0A0B0E]' : 'text-white'
+              className={`${titleSize} font-bold tracking-[-0.03em] transition-opacity duration-300 group-hover:opacity-90 ${
+                isLight ? 'text-[#0A0B0E]' : 'text-[#F8F8FA]'
               }`}
             >
-              ADOBEMETA
+              AdobeMeta
             </span>
             <span
-              className={`text-[9px] sm:text-[10px] font-mono font-extrabold tracking-[0.18em] uppercase px-1.5 py-0.5 rounded ${
+              className={`font-editorial italic font-semibold tracking-[-0.01em] text-[1.16em] ${
                 isLight
-                  ? 'bg-[#0A0B0E] text-amber-400'
-                  : 'bg-white text-[#0A0B0E]'
+                  ? 'text-[#9A7018]'
+                  : 'text-[#F3E5AB]'
               }`}
             >
-              PRO
+              Pro
             </span>
           </div>
-          {subtitle && (
+          {shouldShowSubtitle && subtitle && (
             <span
-              className={`${subSize} font-semibold uppercase text-neutral-400 mt-1`}
+              className={`${subSize} font-mono font-medium uppercase text-neutral-400/90 mt-1.5`}
             >
               {subtitle}
             </span>
@@ -141,3 +185,4 @@ export const AdobeMetaProLogo: React.FC<LogoProps> = ({
     </div>
   );
 };
+

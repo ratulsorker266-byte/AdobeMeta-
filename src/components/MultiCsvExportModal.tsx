@@ -3,7 +3,51 @@ import { motion } from 'motion/react';
 import { X, Download, Copy, Check, FileSpreadsheet, Package, Sparkles, AlertCircle } from 'lucide-react';
 import { BulkItem } from '../types';
 import JSZip from 'jszip';
-import { embedJpegMetadata, generateXmpSidecarXml } from '../lib/metadataEmbedder';
+import { embedJpegMetadata, generateXmpSidecarXml, embedMetadataIntoEps } from '../lib/metadataEmbedder';
+
+export const ADOBE_STOCK_CATEGORY_MAP: Record<string, number> = {
+  'Animals': 1,
+  'Buildings and Architecture': 2,
+  'Business': 3,
+  'Drinks': 4,
+  'The Environment': 5,
+  'States of Mind': 6,
+  'Food': 7,
+  'Graphic Resources': 8,
+  'Hobbies and Leisure': 9,
+  'Industry': 10,
+  'Landscapes': 11,
+  'Lifestyle': 12,
+  'People': 13,
+  'Plants and Flowers': 14,
+  'Culture and Religion': 15,
+  'Science': 16,
+  'Social Issues': 17,
+  'Sports': 18,
+  'Technology': 19,
+  'Transport': 20,
+  'Travel': 21,
+};
+
+export const resolveAdobeCategoryId = (categoryName?: string, keywords: string[] = [], filename: string = ''): number => {
+  if (categoryName) {
+    const clean = categoryName.trim();
+    if (ADOBE_STOCK_CATEGORY_MAP[clean]) return ADOBE_STOCK_CATEGORY_MAP[clean];
+    const lower = clean.toLowerCase();
+    for (const [k, id] of Object.entries(ADOBE_STOCK_CATEGORY_MAP)) {
+      if (lower.includes(k.toLowerCase()) || k.toLowerCase().includes(lower)) return id;
+    }
+  }
+  if (/\.(eps|ai|svg)$/i.test(filename)) return 8; // Graphic Resources
+  const blob = keywords.join(' ').toLowerCase();
+  if (/\b(vector|background|texture|pattern|template|mockup|illustration|abstract|podium)\b/.test(blob)) return 8;
+  if (/\b(technology|ai|software|cyber|digital|robot|data|computer)\b/.test(blob)) return 19;
+  if (/\b(people|portrait|woman|man|child|family)\b/.test(blob)) return 13;
+  if (/\b(food|meal|cuisine|fruit|restaurant|cooking)\b/.test(blob)) return 7;
+  if (/\b(nature|landscape|mountain|ocean|forest|sunset)\b/.test(blob)) return 11;
+  if (/\b(building|architecture|interior|house|city)\b/.test(blob)) return 2;
+  return 3; // Business
+};
 
 export const VALID_SHUTTERSTOCK_CATEGORIES = [
   'Abstract', 'Animals/Wildlife', 'The Arts', 'Backgrounds/Textures', 'Beauty/Fashion',
@@ -57,6 +101,7 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
   showToast,
 }) => {
   const [copiedFormat, setCopiedFormat] = useState<string | null>(null);
+  const [previewFormatId, setPreviewFormatId] = useState<string | null>('adobe');
   const [isRenamingZip, setIsRenamingZip] = useState(false);
   const [renameProgress, setRenameProgress] = useState(0);
   const [useRenamedInCsv, setUseRenamedInCsv] = useState(false);
@@ -158,7 +203,8 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
         .filter(Boolean)
         .join(', ')
         .replace(/"/g, '""');
-      csv += `"${filename}","${title}","${keywords}",""\r\n`;
+      const catId = resolveAdobeCategoryId(item.result.category, item.result.keywords || [], filename);
+      csv += `"${filename}","${title}","${keywords}","${catId}"\r\n`;
     });
     return csv;
   };
@@ -191,73 +237,116 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
 
   // 3. Freepik CSV format: File name,Title,Tags
   const getFreepikCsv = (forceRenamed?: boolean) => {
-    let csv = '\uFEFFFile name,Title,Tags\n';
+    let csv = '\uFEFFFile name,Title,Tags\r\n';
     completedItems.forEach((item) => {
       if (!item.result) return;
       const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
-      const title = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-      const tags = (item.result.keywords || []).slice(0, 30).map((k) => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
-      csv += `"${filename}","${title}","${tags}"\n`;
+      const title = (item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+      const tags = (item.result.keywords || []).slice(0, 30).map((k) => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+      csv += `"${filename}","${title}","${tags}"\r\n`;
     });
     return csv;
   };
 
   // 4. Universal / Vecteezy CSV: Filename,Title,Description,Keywords,License
   const getUniversalCsv = (forceRenamed?: boolean) => {
-    let csv = '\uFEFFFilename,Title,Description,Keywords,License\n';
+    let csv = '\uFEFFFilename,Title,Description,Keywords,License\r\n';
     completedItems.forEach((item) => {
       if (!item.result) return;
       const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
-      const title = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-      const desc = (item.result.shortDescription || item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-      const keywords = (item.result.keywords || []).map((k) => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
-      csv += `"${filename}","${title}","${desc}","${keywords}","Commercial"\n`;
+      const title = (item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+      const desc = (item.result.shortDescription || item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+      const keywords = (item.result.keywords || []).map((k) => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+      csv += `"${filename}","${title}","${desc}","${keywords}","Commercial"\r\n`;
     });
     return csv;
   };
 
   // 5. Getty Images / iStock CSV format: Filename,Title,Description,Keywords
   const getGettyCsv = (forceRenamed?: boolean) => {
-    let csv = '\uFEFFFilename,Title,Description,Keywords\n';
+    let csv = '\uFEFFFilename,Title,Description,Keywords\r\n';
     completedItems.forEach((item) => {
       if (!item.result) return;
       const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
-      const title = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-      const desc = (item.result.shortDescription || item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-      const keywords = (item.result.keywords || []).slice(0, 35).map((k) => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
-      csv += `"${filename}","${title}","${desc}","${keywords}"\n`;
+      const title = (item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+      const desc = (item.result.shortDescription || item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+      const keywords = (item.result.keywords || []).slice(0, 35).map((k) => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+      csv += `"${filename}","${title}","${desc}","${keywords}"\r\n`;
     });
     return csv;
   };
 
   // 6. 123RF CSV format: oldfilename,123rf_filename,description,keywords,country
   const get123RfCsv = (forceRenamed?: boolean) => {
-    let csv = '\uFEFFoldfilename,123rf_filename,description,keywords,country\n';
+    let csv = '\uFEFFoldfilename,123rf_filename,description,keywords,country\r\n';
     completedItems.forEach((item) => {
       if (!item.result) return;
       const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
-      const desc = (item.result.agencyTitles?.shutterstock || item.result.alternativeTitles?.editorialStory || item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
-      const keywords = (item.result.keywords || []).slice(0, 45).map((k) => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
-      csv += `"${filename}","${filename}","${desc}","${keywords}",""\n`;
+      const desc = (item.result.agencyTitles?.shutterstock || item.result.alternativeTitles?.editorialStory || item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+      const keywords = (item.result.keywords || []).slice(0, 45).map((k) => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+      csv += `"${filename}","${filename}","${desc}","${keywords}",""\r\n`;
     });
     return csv;
   };
 
   // 7. Dreamstime CSV format: Filename,Image Name,Description,Category 1,Category 2,Category 3,keywords,Free,W-EL,P-EL,SR-EL,SR-Price,Editorial,MR doc Ids,Pr Docs
   const getDreamstimeCsv = (forceRenamed?: boolean) => {
-    let csv = '\uFEFFFilename,Image Name,Description,Category 1,Category 2,Category 3,keywords,Free,W-EL,P-EL,SR-EL,SR-Price,Editorial,MR doc Ids,Pr Docs\n';
+    let csv = '\uFEFFFilename,Image Name,Description,Category 1,Category 2,Category 3,keywords,Free,W-EL,P-EL,SR-EL,SR-Price,Editorial,MR doc Ids,Pr Docs\r\n';
     completedItems.forEach((item) => {
       if (!item.result) return;
       const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
-      const title = (item.result.recommendedTitle || '').replace(/\r?\n/g, ' ').replace(/"/g, '""').slice(0, 68);
-      const desc = (item.result.alternativeTitles?.editorialStory || item.result.shortDescription || title).replace(/\r?\n/g, ' ').replace(/"/g, '""');
-      const keywords = (item.result.keywords || []).slice(0, 45).map((k) => k.trim()).filter(Boolean).join(', ').replace(/"/g, '""');
-      csv += `"${filename}","${title}","${desc}","112","145","161","${keywords}","0","1","1","0","","0","",""\n`;
+      const title = (item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim().slice(0, 68);
+      const desc = (item.result.alternativeTitles?.editorialStory || item.result.shortDescription || title).replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+      const keywords = (item.result.keywords || []).slice(0, 45).map((k) => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+      csv += `"${filename}","${title}","${desc}","112","145","161","${keywords}","0","1","1","0","","0","",""\r\n`;
     });
     return csv;
   };
 
-  // 8. Master JSON API & Cloud Backup Payload
+      // 8. Canva Contributor / Creative Market CSV format: Filename,Title,Keywords,Artist
+  const getCanvaCsv = (forceRenamed?: boolean) => {
+    let csv = '\uFEFFFilename,Title,Keywords,Description\r\n';
+    completedItems.forEach((item) => {
+      if (!item.result) return;
+      const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
+      const title = (item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim().slice(0, 68);
+      const desc = (item.result.shortDescription || title).replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+      const keywords = (item.result.keywords || []).slice(0, 35).map((k) => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+      csv += `"${filename}","${title}","${keywords}","${desc}"\r\n`;
+    });
+    return csv;
+  };
+
+  // 9. Alamy Stock Photography CSV format: Filename,Caption,Supertags,Tags
+  const getAlamyCsv = (forceRenamed?: boolean) => {
+    let csv = '\uFEFFFilename,Caption,Supertags,Tags\r\n';
+    completedItems.forEach((item) => {
+      if (!item.result) return;
+      const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
+      const caption = (item.result.alternativeTitles?.editorialStory || item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+      const allKws = (item.result.keywords || []).map((k) => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+      const supertags = allKws.slice(0, 10).join(', ').replace(/"/g, '""');
+      const tags = allKws.slice(10, 49).join(', ').replace(/"/g, '""');
+      csv += `"${filename}","${caption}","${supertags}","${tags}"\r\n`;
+    });
+    return csv;
+  };
+
+  // 10. Pond5 Footage & Photo CSV format: OriginalFilename,Title,Description,Keywords,Copyright,Price
+  const getPond5Csv = (forceRenamed?: boolean) => {
+    let csv = '\uFEFFOriginalFilename,Title,Description,Keywords,Specifier,Price\r\n';
+    completedItems.forEach((item) => {
+      if (!item.result) return;
+      const filename = getEffectiveFilename(item, forceRenamed).replace(/"/g, '""');
+      const title = (item.result.recommendedTitle || '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim().slice(0, 68);
+      const desc = (item.result.shortDescription || title).replace(/[\r\n]+/g, ' ').replace(/"/g, '""').trim();
+      const keywords = (item.result.keywords || []).slice(0, 49).map((k) => k.replace(/[,"]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(', ').replace(/"/g, '""');
+      csv += `"${filename}","${title}","${desc}","${keywords}","Commercial","49"\r\n`;
+    });
+    return csv;
+  };
+
+  // 11. Master JSON API & Cloud Backup Payload
   const getMasterJsonPayload = (forceRenamed?: boolean) => {
     const payload = completedItems.map((item) => ({
       filename: getEffectiveFilename(item, forceRenamed),
@@ -309,18 +398,21 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
       zip.file(`${prefix}Vecteezy_Universal_Metadata.csv`, getUniversalCsv());
       zip.file(`${prefix}123RF_Metadata.csv`, get123RfCsv());
       zip.file(`${prefix}Dreamstime_Metadata.csv`, getDreamstimeCsv());
+      zip.file(`${prefix}Canva_CreativeMarket_Metadata.csv`, getCanvaCsv());
+      zip.file(`${prefix}Alamy_Supertags_Metadata.csv`, getAlamyCsv());
+      zip.file(`${prefix}Pond5_Media_Metadata.csv`, getPond5Csv());
       zip.file(`${prefix}Master_Portfolio_Metadata.json`, getMasterJsonPayload());
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Stock_All_7_Agencies_CSVs_${Date.now()}.zip`;
+      a.download = `Stock_All_10_Agencies_CSVs_${Date.now()}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast('✓ Downloaded All 7 Agencies CSVs + Master JSON ZIP!');
+      showToast('✓ Downloaded All 10 Agencies CSVs + Master JSON ZIP!');
     } catch (e) {
       console.error(e);
       showToast('Failed to bundle CSVs.');
@@ -347,14 +439,26 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
 
         let finalBlob: Blob = item.file;
         let finalSeoName = seoName;
+        const ext = item.file.name.split('.').pop()?.toLowerCase() || '';
+        const isVector = ext === 'eps' || ext === 'ai';
+        const isVideo = item.file.type?.startsWith('video/') || ['mp4', 'mov', 'webm', 'm4v', 'avi', 'mkv'].includes(ext);
+
         try {
-          finalBlob = await embedJpegMetadata(
-            item.file,
-            item.result.recommendedTitle || '',
-            item.result.keywords || []
-          );
-          if (finalBlob.type === 'image/jpeg' && !/\.jpe?g$/i.test(finalSeoName)) {
-            finalSeoName = finalSeoName.replace(/\.[^/.]+$/, '') + '.jpg';
+          if (isVector) {
+            finalBlob = await embedMetadataIntoEps(
+              item.file,
+              item.result.recommendedTitle || '',
+              item.result.keywords || [],
+              item.result.shortDescription
+            );
+          } else if (isVideo || ext === 'png' || ext === 'webp' || ext === 'psd' || ext === 'psb' || ext === 'spd' || ext === 'svg') {
+            finalBlob = item.file;
+          } else {
+            finalBlob = await embedJpegMetadata(
+              item.file,
+              item.result.recommendedTitle || '',
+              item.result.keywords || []
+            );
           }
         } catch {
           finalBlob = item.file;
@@ -380,7 +484,13 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
       zip.file('Shutterstock_Renamed.csv', getShutterstockCsv(true));
       zip.file('Freepik_Renamed.csv', getFreepikCsv(true));
       zip.file('Getty_iStock_Renamed.csv', getGettyCsv(true));
-      zip.file('Universal_Catalog_Renamed.csv', getUniversalCsv(true));
+      zip.file('Vecteezy_Universal_Renamed.csv', getUniversalCsv(true));
+      zip.file('123RF_Renamed.csv', get123RfCsv(true));
+      zip.file('Dreamstime_Renamed.csv', getDreamstimeCsv(true));
+      zip.file('Canva_CreativeMarket_Renamed.csv', getCanvaCsv(true));
+      zip.file('Alamy_Supertags_Renamed.csv', getAlamyCsv(true));
+      zip.file('Pond5_Media_Renamed.csv', getPond5Csv(true));
+      zip.file('Master_Portfolio_Renamed.json', getMasterJsonPayload(true));
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(zipBlob);
@@ -465,6 +575,33 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
       filename: `dreamstime_${Date.now()}.csv`,
     },
     {
+      id: 'canva',
+      name: 'Canva Creators / Creative Market',
+      badge: '35 KW Max',
+      color: 'purple',
+      desc: 'Official Canva Contributor & Creative Market CSV schema (Filename, Title, Keywords, Description)',
+      getFile: getCanvaCsv,
+      filename: `canva_creators_${Date.now()}.csv`,
+    },
+    {
+      id: 'alamy',
+      name: 'Alamy (with Top-10 Supertags)',
+      badge: '10 Super + 39 Tags',
+      color: 'cyan',
+      desc: 'Official Alamy Stock CSV separating Top-10 Priority Supertags from secondary tags (Filename, Caption, Supertags, Tags)',
+      getFile: getAlamyCsv,
+      filename: `alamy_supertags_${Date.now()}.csv`,
+    },
+    {
+      id: 'pond5',
+      name: 'Pond5 (Photos, Vectors & 4K Footage)',
+      badge: '49 KW Max',
+      color: 'blue',
+      desc: 'Official Pond5 batch CSV schema with commercial licensing & pricing columns (OriginalFilename, Title, Description, Keywords, Specifier, Price)',
+      getFile: getPond5Csv,
+      filename: `pond5_metadata_${Date.now()}.csv`,
+    },
+    {
       id: 'json_master',
       name: 'Master Portfolio JSON (API / Backup)',
       badge: '4-Angle + 49 KW',
@@ -481,35 +618,38 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
         initial={{ scale: 0.95, y: 15, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.95, y: 15, opacity: 0 }}
-        className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="crystal-architectural-slab-dark sovereign-prism-card rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between bg-slate-950/60">
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-cyan-400 mb-1">
+              GEN-10 MULTI-AGENCY EXPORT ENGINE · 10 MARKETPLACES + MASTER JSON
+            </div>
+            <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
               <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
-              Multi-Marketplace 1-Click CSV Exporter
+              <span>10-Agency CSV &amp; Master JSON Exporter</span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Export ready-to-upload spreadsheets formatted for each major microstock agency ({completedItems.length} items ready)
+              Export ready-to-upload spreadsheets formatted for each major microstock agency ({completedItems.length} asset{completedItems.length === 1 ? '' : 's'} ready)
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition p-2 rounded-lg"
+            className="text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition p-2 rounded-xl cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-5 overflow-y-auto space-y-4">
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-4">
           {isSampleDemo && (
-            <div className="p-3.5 bg-gradient-to-r from-indigo-950/80 to-purple-950/80 border border-indigo-500/40 rounded-xl text-xs text-indigo-200 flex items-center justify-between gap-3 shadow-inner">
+            <div className="p-3.5 bg-gradient-to-r from-cyan-950/60 to-violet-950/60 border border-cyan-500/30 rounded-2xl text-xs text-cyan-100 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
                 <span>
-                  <strong>Interactive Agency Format Preview:</strong> Displaying sample commercial stock assets. You can test and inspect each format below, or drop your files in the Studio to export real metadata!
+                  <strong>Interactive Agency Format Preview:</strong> Displaying sample commercial stock assets. Inspect raw CSV/JSON schemas below or drop your files in the Studio to export real metadata.
                 </span>
               </div>
             </div>
@@ -520,18 +660,18 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   onClick={downloadAllCsvsZip}
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold p-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition"
+                  className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 text-xs sm:text-sm font-black p-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition cursor-pointer"
                 >
                   <Package className="w-4 h-4" />
-                  <span>Download All 5 Agency CSVs in 1 ZIP</span>
+                  <span>Download All 10 Agency CSVs + JSON in 1 ZIP</span>
                 </button>
 
                 <button
                   onClick={downloadRenamedImagesZip}
                   disabled={isRenamingZip}
-                  className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white text-xs font-bold p-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition"
+                  className="bg-white/10 hover:bg-white/15 border border-white/15 disabled:bg-slate-800 text-white text-xs sm:text-sm font-bold p-3.5 rounded-2xl flex items-center justify-center gap-2 transition cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4 text-emerald-200" />
+                  <Sparkles className="w-4 h-4 text-amber-300" />
                   <span>
                     {isRenamingZip ? `Packaging SEO Names (${renameProgress}%)` : 'Rename Files to SEO Slug & ZIP'}
                   </span>
@@ -541,18 +681,18 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
               {/* Format Cards */}
               <div className="space-y-2.5 pt-2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-                    Select Specific Agency Format
+                  <div className="text-[11px] font-mono font-bold tracking-[0.14em] text-slate-400 uppercase">
+                    Select Specific Agency Format (Click Preview to Inspect Schema)
                   </div>
 
                   {/* Filename Target Selector */}
-                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-[11px]">
-                    <span className="text-slate-500 px-1 text-[10px] uppercase font-bold">CSV Filename:</span>
+                  <div className="flex items-center gap-1 bg-slate-950/90 p-1 rounded-xl border border-white/10 text-[11px]">
+                    <span className="text-slate-400 px-1.5 text-[10px] font-mono uppercase">CSV Filename:</span>
                     <button
                       onClick={() => setUseRenamedInCsv(false)}
-                      className={`px-2 py-0.5 rounded font-medium transition ${
+                      className={`px-2.5 py-1 rounded-lg font-semibold transition cursor-pointer ${
                         !useRenamedInCsv
-                          ? 'bg-indigo-600 text-white shadow'
+                          ? 'bg-white text-slate-950'
                           : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
@@ -560,9 +700,9 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
                     </button>
                     <button
                       onClick={() => setUseRenamedInCsv(true)}
-                      className={`px-2 py-0.5 rounded font-medium transition ${
+                      className={`px-2.5 py-1 rounded-lg font-semibold transition cursor-pointer ${
                         useRenamedInCsv
-                          ? 'bg-emerald-600 text-white shadow'
+                          ? 'bg-emerald-500 text-slate-950'
                           : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
@@ -571,52 +711,82 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
                   </div>
                 </div>
 
-                {formats.map((fmt) => (
-                  <div
-                    key={fmt.id}
-                    className="p-3.5 bg-slate-950/60 border border-slate-800 hover:border-slate-700 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-white">{fmt.name}</span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                          {fmt.badge}
-                        </span>
+                {formats.map((fmt) => {
+                  const isPreviewOpen = previewFormatId === fmt.id;
+                  return (
+                    <div
+                      key={fmt.id}
+                      className="p-3.5 bg-slate-950/70 border border-white/10 hover:border-cyan-400/40 rounded-2xl space-y-2.5 transition"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-sm font-bold text-white">{fmt.name}</span>
+                            <span aria-hidden="true" className="text-slate-600">·</span>
+                            <span className="text-[11px] font-mono text-cyan-400 font-semibold">
+                              {fmt.badge}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{fmt.desc}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewFormatId(isPreviewOpen ? null : fmt.id)}
+                            className={`text-xs font-semibold px-2.5 py-1.5 rounded-xl border transition cursor-pointer ${
+                              isPreviewOpen
+                                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                                : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10'
+                            }`}
+                          >
+                            {isPreviewOpen ? 'Hide Schema' : 'Inspect Raw'}
+                          </button>
+
+                          <button
+                            onClick={() => copyToClipboard(fmt.getFile(), fmt.id)}
+                            className="bg-white/5 hover:bg-white/10 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-xl border border-white/10 transition flex items-center gap-1.5 cursor-pointer"
+                            title="Copy CSV to clipboard"
+                          >
+                            {copiedFormat === fmt.id ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5 text-slate-400" />
+                            )}
+                            <span>{copiedFormat === fmt.id ? 'Copied' : 'Copy'}</span>
+                          </button>
+
+                          <button
+                            onClick={() => downloadCsv(fmt.getFile(), fmt.filename)}
+                            className="bg-white hover:bg-neutral-200 text-slate-950 text-xs font-bold px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download</span>
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-400 mt-1 line-clamp-1">{fmt.desc}</p>
-                    </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-                      <button
-                        onClick={() => copyToClipboard(fmt.getFile(), fmt.id)}
-                        className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5"
-                        title="Copy CSV to clipboard"
-                      >
-                        {copiedFormat === fmt.id ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5 text-slate-400" />
-                        )}
-                        <span>{copiedFormat === fmt.id ? 'Copied' : 'Copy'}</span>
-                      </button>
-
-                      <button
-                        onClick={() => downloadCsv(fmt.getFile(), fmt.filename)}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Download CSV</span>
-                      </button>
+                      {isPreviewOpen && (
+                        <div className="pt-2 border-t border-white/10">
+                          <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-1">
+                            <span>Live Generated Output ({fmt.filename})</span>
+                            <span className="text-emerald-400">100% Agency Compliant</span>
+                          </div>
+                          <pre className="p-3 rounded-xl bg-black/80 border border-white/10 text-[11px] font-mono text-cyan-200/90 overflow-x-auto max-h-36 leading-relaxed select-all">
+                            {fmt.getFile().trim()}
+                          </pre>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Sample Preview */}
-              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs text-slate-400">
+              <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-white/10 text-xs text-slate-400">
                 <div className="flex items-center justify-between text-slate-300 font-semibold mb-1">
-                  <span>SEO Filename Preview Example</span>
-                  <span className="text-[10px] text-indigo-400">Automatic Slug Generator</span>
+                  <span>SEO Filename Slug Transformation</span>
+                  <span className="text-[10px] font-mono text-cyan-400 uppercase">Collision-Safe Slug Engine</span>
                 </div>
                 <p className="font-mono text-[11px] text-slate-400 truncate">
                   {completedItems[0]

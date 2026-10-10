@@ -1,1 +1,0 @@
-sed -i 's/const handleSendChat = async () => {/const handleSendChat = async () => {\n    if (planType === "free" \&\& chatUsage >= 7) {\n      showToast("Free trial limit reached (7 messages). Please upgrade to Pro.");\n      setShowProModal(true);\n      return;\n    }/g' src/App.tsx

@@ -471,15 +471,33 @@ const GENERIC_FORMAT_TAGS = new Set([
 export const sanitizeAndPerfectMetadataResult = (
   rawResult: MetadataResult,
   targetMarketplace: TargetMarketplace = 'adobe_stock',
-  excludedList: string[] = []
+  excludedList: string[] = [],
+  customControls?: {
+    targetKeywordCount?: number;
+    maxTitleChars?: number;
+    mustIncludeKeywords?: string;
+    singleWordOnly?: boolean;
+  }
 ): MetadataResult => {
   if (!rawResult) return rawResult;
 
-  const maxKeywords =
+  const defaultMaxKeywords =
     targetMarketplace === 'freepik' ? 30 :
     targetMarketplace === 'getty' || targetMarketplace === 'vecteezy' ? 35 :
     targetMarketplace === '123rf' || targetMarketplace === 'dreamstime' ? 45 :
     targetMarketplace === 'shutterstock' ? 50 : 49;
+
+  const maxKeywords =
+    customControls?.targetKeywordCount && customControls.targetKeywordCount >= 10 && customControls.targetKeywordCount <= 50
+      ? customControls.targetKeywordCount
+      : defaultMaxKeywords;
+
+  const customMaxTitleChars =
+    customControls?.maxTitleChars && customControls.maxTitleChars >= 35
+      ? customControls.maxTitleChars
+      : targetMarketplace === 'adobe_stock'
+      ? 70
+      : 160;
 
   const blacklistSet = new Set(excludedList.map(k => normalizeTerm(k)).filter(Boolean));
 
@@ -521,10 +539,10 @@ export const sanitizeAndPerfectMetadataResult = (
     return parts.join(' ');
   };
 
-  if (targetMarketplace === 'adobe_stock' && cleanTitle.length > 70) {
-    const cut = cleanTitle.substring(0, 68);
+  if (cleanTitle.length > customMaxTitleChars) {
+    const cut = cleanTitle.substring(0, customMaxTitleChars - 2);
     const ls = cut.lastIndexOf(' ');
-    cleanTitle = trimDangling(ls > 28 ? cut.substring(0, ls) : cut);
+    cleanTitle = trimDangling(ls > 24 ? cut.substring(0, ls) : cut);
   }
 
   // 2. Clean & Deduplicate Keywords
@@ -567,7 +585,26 @@ export const sanitizeAndPerfectMetadataResult = (
     return true;
   };
 
-  // Lock core Title nouns in Top 10 first for 100% Title-to-Top-10 alignment
+  // 0. If user specified Must-Include Keywords in Custom Rules, lock them into priority slots first
+  if (customControls?.mustIncludeKeywords && typeof customControls.mustIncludeKeywords === 'string') {
+    const required = customControls.mustIncludeKeywords
+      .split(',')
+      .map((t) => normalizeTerm(t))
+      .filter((t) => t.length >= 2);
+    for (const reqTag of required) {
+      tryPushKw(reqTag, eliteTop10.length < 10);
+    }
+  }
+
+  // 1. Respect caller's Priority Keywords & Top 10 Keywords first so manual Pin #1 and drag-and-drop reordering are preserved
+  for (const pk of (rawResult.priorityKeywords || []).slice(0, 10)) {
+    if (eliteTop10.length < 10) tryPushKw(pk, true);
+  }
+  for (const kw of (rawResult.keywords || []).slice(0, 10)) {
+    if (eliteTop10.length < 10) tryPushKw(kw, true);
+  }
+
+  // 2. Ensure core Title nouns & Primary Subject are included in Top 10 if slots remain
   const titleCoreNouns = cleanTitle
     .toLowerCase()
     .replace(/[^\w\s-]/g, ' ')
@@ -575,13 +612,10 @@ export const sanitizeAndPerfectMetadataResult = (
     .filter(w => w.length >= 3 && !CLIENT_STOP_WORDS.has(w) && !GENERIC_FORMAT_TAGS.has(w));
 
   for (const ps of (rawResult.keywordTaxonomy?.primarySubject || []).slice(0, 2)) {
-    if (eliteTop10.length < 2) tryPushKw(ps, true);
+    if (eliteTop10.length < 10) tryPushKw(ps, true);
   }
   for (const tn of titleCoreNouns.slice(0, 4)) {
-    if (eliteTop10.length < 6) tryPushKw(tn, true);
-  }
-  for (const pk of (rawResult.priorityKeywords || [])) {
-    if (eliteTop10.length < 10) tryPushKw(pk, true);
+    if (eliteTop10.length < 10) tryPushKw(tn, true);
   }
 
   // Push all remaining raw keywords (splitting 4+ word phrases cleanly)
@@ -625,6 +659,23 @@ export const sanitizeAndPerfectMetadataResult = (
           tryPushKw(w, false);
         }
       }
+    }
+  }
+
+  if (customControls?.singleWordOnly) {
+    const atomicList: string[] = [];
+    const atomicSeen = new Set<string>();
+    for (const kw of finalKeywords) {
+      for (const part of kw.split(/\s+/)) {
+        if (part.length >= 3 && !CLIENT_STOP_WORDS.has(part) && !atomicSeen.has(part)) {
+          atomicSeen.add(part);
+          atomicList.push(part);
+        }
+      }
+    }
+    if (atomicList.length >= 10) {
+      finalKeywords.length = 0;
+      finalKeywords.push(...atomicList);
     }
   }
 
