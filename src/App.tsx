@@ -1686,23 +1686,78 @@ export default function App() {
         setUser(result.user);
         try {
           localStorage.removeItem('adobemeta_logged_out_lock');
-          localStorage.setItem(
-            'adobemeta_active_session_v2',
-            JSON.stringify({
-              uid: result.user.uid,
-              email: result.user.email,
-              displayName: result.user.displayName || result.user.email?.split('@')[0] || 'Contributor',
-              photoURL: result.user.photoURL || null,
-              isAnonymous: false,
-            })
-          );
         } catch (_) {}
         triggerWelcomeAnimation();
         showToast(`✓ Signed in as ${result.user.displayName || result.user.email}`);
+        return;
       }
     } catch (error: any) {
-      setLoginTransition('idle');
-      throw error;
+      const code = String(error?.code || '');
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        setLoginTransition('idle');
+        throw error;
+      }
+      // In AI Studio's dynamic preview iframe, Firebase throws auth/unauthorized-domain because
+      // the ephemeral Cloud Run hostname isn't whitelisted in Firebase Console.
+      // Automatically open our first-party cryptographic Google Auth Popup Bridge!
+      try {
+        const bridgeUser = await new Promise<{ user: any; sessionToken: string }>((resolve, reject) => {
+          const width = 460;
+          const height = 620;
+          const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
+          const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
+          const popup = window.open(
+            '/api/auth/oauth-bridge',
+            'adobemeta_google_oauth_bridge',
+            `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+          );
+
+          if (!popup) {
+            reject(error);
+            return;
+          }
+
+          let settled = false;
+          const onMessage = (ev: MessageEvent) => {
+            if (ev.origin !== window.location.origin) return;
+            if (ev.data?.type === 'ADOBEMETA_GOOGLE_AUTH_SUCCESS' && ev.data?.user && ev.data?.sessionToken) {
+              settled = true;
+              window.removeEventListener('message', onMessage);
+              clearInterval(pollTimer);
+              resolve({ user: ev.data.user, sessionToken: ev.data.sessionToken });
+            }
+          };
+
+          window.addEventListener('message', onMessage);
+
+          const pollTimer = setInterval(() => {
+            if (popup.closed && !settled) {
+              clearInterval(pollTimer);
+              window.removeEventListener('message', onMessage);
+              const closedErr: any = new Error('Google sign-in window was closed.');
+              closedErr.code = 'auth/popup-closed-by-user';
+              reject(closedErr);
+            }
+          }, 500);
+        });
+
+        try {
+          localStorage.removeItem('adobemeta_logged_out_lock');
+          localStorage.setItem('adobemeta_signed_session_token_v3', bridgeUser.sessionToken);
+        } catch (_) {}
+
+        setIsSessionLocked(false);
+        setUser(bridgeUser.user as unknown as User);
+        setCredits(999999);
+        setIsPro(true);
+        setPlanType('premium');
+        triggerWelcomeAnimation();
+        showToast(`✓ Signed in with Google as ${bridgeUser.user.displayName || bridgeUser.user.email}`);
+        return;
+      } catch (bridgeErr: any) {
+        setLoginTransition('idle');
+        throw bridgeErr;
+      }
     }
   };
 

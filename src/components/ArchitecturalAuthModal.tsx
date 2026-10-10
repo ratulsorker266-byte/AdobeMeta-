@@ -186,7 +186,7 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
-        className={`fixed inset-0 z-[110] flex items-center justify-center p-4 ${
+        className={`fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6 overflow-y-auto ${
           isLockedOut
             ? isLight
               ? 'bg-[#faf8f5]'
@@ -203,7 +203,7 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
           exit={{ opacity: 0, scale: 0.96, y: 14 }}
           transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
           onClick={(e) => e.stopPropagation()}
-          className={`relative w-full max-w-[900px] rounded-3xl overflow-hidden border shadow-[0_32px_90px_rgba(0,0,0,0.55)] grid grid-cols-1 lg:grid-cols-12 ${
+          className={`relative w-full max-w-[900px] my-auto max-h-[94vh] overflow-y-auto rounded-3xl border shadow-[0_32px_90px_rgba(0,0,0,0.55)] grid grid-cols-1 lg:grid-cols-12 ${
             isLight
               ? 'bg-[#faf8f5] border-neutral-200/90 text-neutral-900'
               : 'bg-[#090b10] border-white/15 text-neutral-100'
@@ -211,7 +211,7 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
         >
           {/* Left Column: 5D Optical Crystal Prism & Architectural Security Visualizer */}
           <div
-            className={`lg:col-span-5 relative p-8 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-r ${
+            className={`lg:col-span-5 relative p-6 sm:p-7 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-r ${
               isLight
                 ? 'bg-gradient-to-br from-[#f3efe8] via-[#ebe5da] to-[#faf8f5] border-neutral-200/80'
                 : 'bg-gradient-to-br from-[#0d1017] via-[#07090e] to-[#111520] border-white/10'
@@ -235,14 +235,14 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
                 theme={isLight ? 'light' : 'dark'}
                 subtitle="IDENTITY VAULT"
               />
-              <p className={`mt-4 text-xs leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
+              <p className={`mt-3 text-xs leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
                 Encrypted contributor authentication with cloud metadata synchronization, custom API vault, and multi-agency export profiles.
               </p>
             </div>
 
             {/* Center 5D Geometric Orbital Prism Animation */}
-            <div className="relative z-10 my-8 flex items-center justify-center py-6">
-              <div className="relative w-44 h-44 flex items-center justify-center">
+            <div className="relative z-10 my-4 flex items-center justify-center py-3">
+              <div className="relative w-36 h-36 flex items-center justify-center">
                 {/* Outer Slow Rotating Architectural Ring */}
                 <motion.div
                   animate={{ rotate: 360 }}
@@ -352,8 +352,8 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
           </div>
 
           {/* Right Column: Clean Executive Auth Controls */}
-          <div className="lg:col-span-7 p-6 sm:p-9 flex flex-col justify-between relative">
-            <div className="flex items-center justify-between mb-6">
+          <div className="lg:col-span-7 p-6 sm:p-7 flex flex-col justify-between relative">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-500 font-semibold block">
                   {isAuthenticated
@@ -534,7 +534,7 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
                 <div className="relative flex items-center justify-center">
                   <div className={`border-t w-full ${isLight ? 'border-neutral-200' : 'border-white/10'}`} />
                   <span
-                    className={`px-3 text-[10px] font-mono uppercase tracking-widest ${
+                    className={`px-3 text-[10px] font-mono uppercase tracking-widest whitespace-nowrap shrink-0 ${
                       isLight ? 'bg-[#faf8f5] text-neutral-400' : 'bg-[#090b10] text-neutral-500'
                     }`}
                   >
