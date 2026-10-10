@@ -158,7 +158,7 @@ export const AdobeMetaProLogo: React.FC<LogoProps> = ({
           <div className="flex items-baseline gap-1.5">
             <span
               className={`${titleSize} font-bold tracking-[-0.03em] transition-opacity duration-300 group-hover:opacity-90 ${
-                isLight ? 'text-[#0A0B0E]' : 'text-[#F8F8FA]'
+                isLight ? 'text-[#0A0B0E]' : 'text-[#F6EED5]'
               }`}
             >
               AdobeMeta
@@ -167,7 +167,7 @@ export const AdobeMetaProLogo: React.FC<LogoProps> = ({
               className={`font-editorial italic font-semibold tracking-[-0.01em] text-[1.16em] ${
                 isLight
                   ? 'text-[#9A7018]'
-                  : 'text-[#F3E5AB]'
+                  : 'text-[#E5C158]'
               }`}
             >
               Pro
@@ -175,7 +175,9 @@ export const AdobeMetaProLogo: React.FC<LogoProps> = ({
           </div>
           {shouldShowSubtitle && subtitle && (
             <span
-              className={`${subSize} font-mono font-medium uppercase text-neutral-400/90 mt-1.5`}
+              className={`${subSize} font-mono font-medium uppercase ${
+                isLight ? 'text-neutral-500' : 'text-[#C5A869]'
+              } mt-1.5`}
             >
               {subtitle}
             </span>

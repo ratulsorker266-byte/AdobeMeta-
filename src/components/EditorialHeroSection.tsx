@@ -805,7 +805,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             <div className="space-y-5">
               {/* Editorial Display Headline with Explicit Line Rhythm (Zero Awkward Word Gaps) */}
               <h1 className={`text-[38px] sm:text-[52px] xl:text-[62px] font-bold tracking-[-0.034em] leading-[1.06] ${
-                isLight ? 'text-neutral-950' : 'text-white'
+                isLight ? 'text-neutral-950' : 'text-[#F6EED5]'
               }`}>
                 <span className="block">
                   Precision Stock{' '}
@@ -815,7 +815,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 </span>
                 <span className="block mt-1">
                   &amp;{' '}
-                  <span className="font-editorial italic font-medium text-[1.06em] tracking-[-0.015em]">
+                  <span className="font-editorial italic font-medium text-[1.06em] luxury-headline-gradient pr-1 tracking-[-0.015em]">
                     Editorial
                   </span>{' '}
                   Craft.
