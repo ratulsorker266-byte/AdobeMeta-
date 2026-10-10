@@ -1508,35 +1508,48 @@ export default function App() {
         }
       } catch (_) {}
 
+      // Purge legacy insecure localStorage mock accounts
+      try {
+        localStorage.removeItem('adobemeta_contributor_accounts_v2');
+        localStorage.removeItem('adobemeta_active_session_v2');
+      } catch (_) {}
+
       if (currentUser) {
         setUser(currentUser);
         setIsSessionLocked(false);
         try {
           localStorage.removeItem('adobemeta_logged_out_lock');
-          localStorage.setItem(
-            'adobemeta_active_session_v2',
-            JSON.stringify({
-              uid: currentUser.uid,
-              email: currentUser.email,
-              displayName: currentUser.displayName || currentUser.email?.split('@')[0] || 'Contributor',
-              photoURL: currentUser.photoURL || null,
-              isAnonymous: false,
-            })
-          );
         } catch (_) {}
       } else {
+        // Verify cryptographically signed server session token if present
+        let verifiedVaultUser: User | null = null;
         try {
-          const savedSession = localStorage.getItem('adobemeta_active_session_v2');
-          if (savedSession) {
-            const parsedUser = JSON.parse(savedSession);
-            if (parsedUser && parsedUser.uid && parsedUser.email) {
-              setUser(parsedUser as User);
-              setIsSessionLocked(false);
-              setIsAuthLoading(false);
-              return;
+          const savedToken = localStorage.getItem('adobemeta_signed_session_token_v3');
+          if (savedToken) {
+            const verifyRes = await fetch('/api/auth/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sessionToken: savedToken }),
+            });
+            if (verifyRes.ok) {
+              const verifyData = await verifyRes.json();
+              if (verifyData?.valid && verifyData?.user?.uid) {
+                verifiedVaultUser = verifyData.user as User;
+              } else {
+                localStorage.removeItem('adobemeta_signed_session_token_v3');
+              }
+            } else {
+              localStorage.removeItem('adobemeta_signed_session_token_v3');
             }
           }
         } catch (_) {}
+
+        if (verifiedVaultUser) {
+          setUser(verifiedVaultUser);
+          setIsSessionLocked(false);
+          setIsAuthLoading(false);
+          return;
+        }
         setUser(null);
       }
       setIsAuthLoading(false);
@@ -1706,126 +1719,71 @@ export default function App() {
       normalizedEmail.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
     try {
-      if (mode === 'signup') {
-        const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, passwordInput);
-        if (resolvedDisplayName && cred.user) {
-          await updateProfile(cred.user, { displayName: resolvedDisplayName });
-        }
-        setIsSessionLocked(false);
-        setUser(cred.user);
-        try {
-          localStorage.removeItem('adobemeta_logged_out_lock');
-          localStorage.setItem(
-            'adobemeta_active_session_v2',
-            JSON.stringify({
-              uid: cred.user.uid,
-              email: cred.user.email,
-              displayName: resolvedDisplayName,
-              photoURL: null,
-              isAnonymous: false,
-            })
-          );
-        } catch (_) {}
-        triggerWelcomeAnimation();
-        showToast(`✓ Account created! Welcome ${resolvedDisplayName}`);
-        return;
-      } else {
-        const cred = await signInWithEmailAndPassword(auth, normalizedEmail, passwordInput);
-        setIsSessionLocked(false);
-        setUser(cred.user);
-        try {
-          localStorage.removeItem('adobemeta_logged_out_lock');
-          localStorage.setItem(
-            'adobemeta_active_session_v2',
-            JSON.stringify({
-              uid: cred.user.uid,
-              email: cred.user.email,
-              displayName: cred.user.displayName || resolvedDisplayName,
-              photoURL: cred.user.photoURL || null,
-              isAnonymous: false,
-            })
-          );
-        } catch (_) {}
-        triggerWelcomeAnimation();
-        showToast(`✓ Welcome back, ${cred.user.displayName || resolvedDisplayName}!`);
-        return;
+      // Primary Cryptographic Server Verification (PBKDF2-SHA256 + 100,000 iterations + Strict Disposable Email Blocker)
+      const endpoint = mode === 'signup' ? '/api/auth/signup' : '/api/auth/signin';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password: passwordInput,
+          fullName: resolvedDisplayName,
+        }),
+      });
+
+      const contentType = res.headers.get('content-type') || '';
+      const data = contentType.includes('application/json') ? await res.json().catch(() => ({})) : {};
+
+      if (!res.ok || !data?.sessionToken || !data?.user?.uid) {
+        setLoginTransition('idle');
+        const authErr: any = new Error(
+          data?.error ||
+            (mode === 'signup'
+              ? 'Could not register contributor account.'
+              : 'Invalid email or password. Please verify your exact registered password.')
+        );
+        authErr.code = data?.code || 'auth/invalid-credential';
+        throw authErr;
       }
-    } catch (error: any) {
-      const code = String(error?.code || '');
-      const msg = String(error?.message || '');
 
-      // If Firebase Email/Password provider is not enabled in the console (auth/operation-not-allowed or auth/configuration-not-found)
-      // or restricted in preview iframe, seamlessly authenticate via Encrypted Contributor Identity Vault
-      const shouldUseIdentityVault =
-        code === 'auth/operation-not-allowed' ||
-        code === 'auth/configuration-not-found' ||
-        code === 'auth/unauthorized-domain' ||
-        code === 'auth/internal-error' ||
-        code === 'auth/network-request-failed' ||
-        code === 'auth/invalid-credential' ||
-        code === 'auth/user-not-found' ||
-        msg.includes('operation-not-allowed') ||
-        msg.includes('configuration-not-found');
+      const verifiedUser = data.user;
+      const sessionToken = data.sessionToken;
 
-      if (shouldUseIdentityVault) {
-        try {
-          const rawAccounts = localStorage.getItem('adobemeta_contributor_accounts_v2');
-          const accounts: Record<
-            string,
-            { uid: string; email: string; displayName: string; passwordHash: string }
-          > = rawAccounts ? JSON.parse(rawAccounts) : {};
-
-          const existingAccount = accounts[normalizedEmail];
-
-          if (mode === 'signin' && existingAccount && existingAccount.passwordHash !== passwordInput) {
-            setLoginTransition('idle');
-            const wrongPassErr: any = new Error('Incorrect password for this contributor email.');
-            wrongPassErr.code = 'auth/wrong-password';
-            throw wrongPassErr;
+      // Also attempt Firebase Auth sync in the background if Email/Password provider is enabled in Firebase Console
+      try {
+        if (mode === 'signup') {
+          const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, passwordInput);
+          if (resolvedDisplayName && cred.user) {
+            await updateProfile(cred.user, { displayName: resolvedDisplayName });
           }
-
-          const finalDisplayName =
-            (fullName && fullName.trim()) ||
-            existingAccount?.displayName ||
-            resolvedDisplayName;
-
-          const vaultUser = {
-            uid: existingAccount?.uid || `vault_${ btoa(normalizedEmail).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16) }`,
-            email: normalizedEmail,
-            displayName: finalDisplayName,
-            photoURL: null,
-            isAnonymous: false,
-          };
-
-          accounts[normalizedEmail] = {
-            uid: vaultUser.uid,
-            email: normalizedEmail,
-            displayName: finalDisplayName,
-            passwordHash: passwordInput,
-          };
-
-          localStorage.removeItem('adobemeta_logged_out_lock');
-          localStorage.setItem('adobemeta_contributor_accounts_v2', JSON.stringify(accounts));
-          localStorage.setItem('adobemeta_active_session_v2', JSON.stringify(vaultUser));
-
-          setIsSessionLocked(false);
-          setUser(vaultUser as unknown as User);
-          setCredits(999999);
-          setIsPro(true);
-          setPlanType('premium');
-          triggerWelcomeAnimation();
-          showToast(
-            mode === 'signup'
-              ? `✓ Account created! Welcome ${finalDisplayName}`
-              : `✓ Welcome back, ${finalDisplayName}!`
-          );
-          return;
-        } catch (vaultErr: any) {
-          setLoginTransition('idle');
-          throw vaultErr;
+        } else {
+          await signInWithEmailAndPassword(auth, normalizedEmail, passwordInput);
         }
+      } catch (_) {
+        // Ignore if Email/Password provider is not manually toggled in Firebase Console; server cryptographic vault is authoritative
       }
 
+      try {
+        localStorage.removeItem('adobemeta_logged_out_lock');
+        localStorage.removeItem('adobemeta_contributor_accounts_v2');
+        localStorage.removeItem('adobemeta_active_session_v2');
+        if (sessionToken) {
+          localStorage.setItem('adobemeta_signed_session_token_v3', sessionToken);
+        }
+      } catch (_) {}
+
+      setIsSessionLocked(false);
+      setUser((auth.currentUser || verifiedUser) as unknown as User);
+      setCredits(999999);
+      setIsPro(true);
+      setPlanType('premium');
+      triggerWelcomeAnimation();
+      showToast(
+        mode === 'signup'
+          ? `✓ Account created & encrypted! Welcome, ${verifiedUser.displayName}`
+          : `✓ Identity verified! Welcome back, ${verifiedUser.displayName}`
+      );
+    } catch (error: any) {
       setLoginTransition('idle');
       throw error;
     }
@@ -1835,6 +1793,8 @@ export default function App() {
     try {
       localStorage.removeItem('adobemeta_guest_user');
       localStorage.removeItem('adobemeta_active_session_v2');
+      localStorage.removeItem('adobemeta_contributor_accounts_v2');
+      localStorage.removeItem('adobemeta_signed_session_token_v3');
       localStorage.setItem('adobemeta_logged_out_lock', 'true');
     } catch (e) {}
     try {

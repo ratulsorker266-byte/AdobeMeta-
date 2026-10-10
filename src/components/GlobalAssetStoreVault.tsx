@@ -209,7 +209,7 @@ export const GLOBAL_COMMERCIAL_PACKS: GlobalStorePack[] = [
       'minimalist architecture', 'coworking space', 'boardroom', 'commercial real estate', 'interior design',
       'green building', 'open plan office', 'contemporary design', 'workplace wellness', 'executive suite',
       'glass partition', 'concrete and wood', 'scandinavian design', 'creative studio', 'business environment',
-      'healthy workplace', 'daylight harvesting', 'acoustic panel', 'ergonomic家具', 'modern furniture',
+      'healthy workplace', 'daylight harvesting', 'acoustic panel', 'ergonomic furniture', 'modern furniture',
       'spatial design', 'commercial interior', 'building interior', 'sunlit room', 'architectural detail',
       'copy space', 'no people', 'wide angle', 'clean lines', 'warm atmosphere',
       'luxury office', 'enterprise campus', 'design inspiration', 'urban architecture', 'calm workspace',

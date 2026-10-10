@@ -77,11 +77,15 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
       setAuthStage('idle');
       const code = String(err?.code || '');
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-        setErrorMsg('Google sign-in window was closed. Click "Continue with Google" again or sign in with your Email below.');
-      } else if (code === 'auth/popup-blocked') {
-        setErrorMsg('Popup was blocked by your browser. Please allow popups or sign in directly with your Email & Password below.');
+        setErrorMsg('Google sign-in popup was closed before completing authentication. Please click "Continue with Google" again.');
+      } else if (code === 'auth/popup-blocked' || code === 'auth/unauthorized-domain' || code === 'auth/operation-not-supported-in-this-environment') {
+        setErrorMsg(
+          'Browser or preview iframe blocked the Google OAuth popup window. Please open the app in a full browser tab (top-right arrow) for Google Popup, or sign in directly below with your Gmail & Password!'
+        );
+      } else if (err?.message) {
+        setErrorMsg(err.message);
       } else {
-        setErrorMsg('Google popup could not complete in this preview window. Please use Email & Password below for instant sign-in.');
+        setErrorMsg('Google OAuth popup was blocked by the embedded preview frame. Please use Email & Password below or open in a new tab.');
       }
     } finally {
       setIsSubmitting(false);
@@ -91,18 +95,43 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
   const handleEmailFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail || !trimmedEmail.includes('@')) {
-      setErrorMsg('Please enter a valid contributor email address.');
+    const trimmedEmail = email.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      setErrorMsg('Please enter a valid, permanent contributor email address.');
       return;
     }
-    if (password.length < 6) {
-      setErrorMsg('Password must be at least 6 characters long.');
+
+    const emailDomain = trimmedEmail.split('@')[1] || '';
+    const blockedTempKeywords = [
+      'tempmail', 'temp-mail', 'throwaway', 'guerrilla', 'mailinator', '10minutemail',
+      '1secmail', 'yopmail', 'trashmail', 'fakemail', 'disposable', 'burner', 'sharklasers',
+      'maildrop', 'getnada', 'mohmal', 'mailnesia', 'fakeinbox', 'tempail', 'tmpmail'
+    ];
+    if (
+      blockedTempKeywords.some((kw) => emailDomain.includes(kw)) ||
+      ['example.com', 'test.com', 'fake.com', 'grr.la', 'pokemail.net', 'spam4.me'].includes(emailDomain)
+    ) {
+      setErrorMsg(
+        `Disposable or temporary email (@${emailDomain}) is strictly prohibited! Please use a real permanent email (Gmail, Outlook, Yahoo, iCloud, or company domain).`
+      );
       return;
     }
-    if (authMode === 'signup' && !fullName.trim()) {
-      setErrorMsg('Please enter your full name or studio name.');
-      return;
+
+    if (authMode === 'signup') {
+      if (!fullName.trim() || fullName.trim().length < 2) {
+        setErrorMsg('Please enter your full name or studio name (at least 2 characters).');
+        return;
+      }
+      if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+        setErrorMsg('Security Requirement: Password must be at least 8 characters long and include both letters and numbers.');
+        return;
+      }
+    } else {
+      if (!password) {
+        setErrorMsg('Please enter your account password.');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -116,15 +145,24 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
     } catch (err: any) {
       setAuthStage('idle');
       const code = String(err?.code || '');
-      if (code === 'auth/wrong-password') {
-        setErrorMsg('Incorrect password for this contributor email. Please double-check your password.');
+      const serverMessage = String(err?.message || '');
+      if (code === 'auth/disposable-email-blocked') {
+        setErrorMsg(serverMessage || 'Temporary or disposable email addresses are strictly prohibited.');
+      } else if (code === 'auth/user-not-found') {
+        setErrorMsg(serverMessage || 'No contributor account exists with this email. Please switch to "Create Account" first.');
+      } else if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+        setErrorMsg(serverMessage || 'Incorrect password! You must enter the exact password set when creating this account.');
       } else if (code === 'auth/email-already-in-use') {
-        setErrorMsg('This email is already registered. Switching to Sign In mode...');
+        setErrorMsg(serverMessage || 'This email is already registered. Please sign in with your existing password.');
         setAuthMode('signin');
+      } else if (code === 'auth/too-many-requests') {
+        setErrorMsg(serverMessage || 'Too many failed password attempts. Account temporarily locked for security.');
       } else if (code === 'auth/weak-password') {
-        setErrorMsg('Please choose a stronger password (at least 6 characters).');
+        setErrorMsg(serverMessage || 'Password must be at least 8 characters long and contain both letters and numbers.');
+      } else if (serverMessage) {
+        setErrorMsg(serverMessage);
       } else {
-        setErrorMsg('Could not verify credentials. Please check your email and password (minimum 6 characters).');
+        setErrorMsg('Authentication failed. Please verify your email and exact password.');
       }
     } finally {
       setIsSubmitting(false);
@@ -551,9 +589,16 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
                   </div>
 
                   <div>
-                    <label className={`text-[11px] font-semibold block mb-1.5 ${isLight ? 'text-neutral-700' : 'text-neutral-300'}`}>
-                      Password
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className={`text-[11px] font-semibold block ${isLight ? 'text-neutral-700' : 'text-neutral-300'}`}>
+                        Password
+                      </label>
+                      {authMode === 'signup' && (
+                        <span className="text-[10px] font-mono text-amber-500">
+                          Min 8 chars (letters + numbers)
+                        </span>
+                      )}
+                    </div>
                     <div className="relative">
                       <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input

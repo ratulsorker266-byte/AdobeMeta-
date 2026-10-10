@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import os from "os";
+import crypto from "crypto";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { createServer as createViteServer } from "vite";
@@ -9,6 +10,182 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { findMonthlyTrends, MONTHLY_TRENDS_KNOWLEDGE } from "./monthlyTrends.js";
 
 const execFileAsync = promisify(execFile);
+const pbkdf2Async = promisify(crypto.pbkdf2);
+
+// Comprehensive Disposable & Temporary Email Domain Blacklist (Zero-Tolerance Security)
+const DISPOSABLE_EMAIL_DOMAINS = new Set([
+  "mailinator.com", "guerrillamail.com", "guerrillamail.net", "guerrillamail.org", "guerrillamailblock.com",
+  "sharklasers.com", "grr.la", "pokemail.net", "spam4.me", "10minutemail.com", "10minutemail.net",
+  "tempmail.com", "temp-mail.org", "temp-mail.io", "tempmailo.com", "tempail.com", "tempr.email",
+  "yopmail.com", "yopmail.fr", "yopmail.net", "cool.fr.nf", "jetable.fr.nf", "courriel.fr.nf",
+  "trashmail.com", "trashmail.net", "trashmail.org", "trashmail.me", "throwawaymail.com", "throam.com",
+  "getnada.com", "nada.email", "abyssmail.com", "boximail.com", "dropmail.me", "fakeinbox.com",
+  "fakemail.net", "fakemailgenerator.com", "mailnesia.com", "maildrop.cc", "mailcatch.com", "mailnull.com",
+  "dispostable.com", "harakirimail.com", "incognitomail.org", "mintemail.com", "mohmal.com",
+  "mohmal.in", "mohmal.im", "mytemp.email", "owlymail.com", "burnermail.io", "guerrillamail.biz",
+  "guerrillamail.de", "emailondeck.com", "throwaway.email", "crazymailing.com", "tempmailaddress.com",
+  "tmpmail.net", "tmpmail.org", "moakt.com", "moakt.ws", "tmail.ws", "disposablemail.com", "spamgourmet.com",
+  "anonbox.net", "binkmail.com", "bobmail.info", "chammy.info", "devnullmail.com", "dodgeit.com",
+  "dodgit.com", "e4ward.com", "emailias.com", "emailwarden.com", "enterto.com", "ephemail.net",
+  "etranquil.com", "filzmail.com", "garbagecollector.com", "getairmail.com", "gishpuppy.com",
+  "haltospam.com", "hatespam.org", "hidemail.de", "hmamail.com", "hochsitze.com",
+  "hulapla.de", "ieatspam.eu", "ihateyoualot.info", "imails.info", "inboxalias.com", "inboxclean.com",
+  "inboxclean.org", "jetable.com", "jetable.net", "jetable.org", "kasmail.com", "kaspop.com",
+  "keepmymail.com", "killmail.com", "killmail.net", "kir.ch.tc", "klassmaster.com", "klzlk.com",
+  "koszmail.pl", "kurzepost.de", "letthemeatspam.com", "lhsdv.com", "lifebyfood.com", "link2mail.net",
+  "litedrop.com", "lol.ovpn.to", "lookugly.com", "lopl.co.cc", "lortemail.dk", "lr78.com",
+  "m4ilweb.info", "maboard.com", "mail-temporaire.fr", "mail.by", "mail.mezimages.net", "mail2rss.org",
+  "mail333.com", "mail4trash.com", "mailbidon.com", "mailblocks.com", "mailbucket.org", "mailcat.biz",
+  "mailde.de", "mailde.info", "maildx.com", "maileater.com", "mailexpire.com", "mailfa.tk",
+  "mailforspam.com", "mailfreeonline.com", "mailfs.com", "mailguard.me", "mailimate.com",
+  "mailin8r.com", "mailinater.com", "mailincubator.com", "mailismagic.com", "mailjunk.cf",
+  "mailmate.com", "mailme.ir", "mailme.lv", "mailme24.com", "mailmetrash.com", "mailmoat.com",
+  "mailnator.com", "mailorg.org", "mailpick.biz", "mailproxsy.com", "mailquack.com",
+  "mailrock.biz", "mailsac.com", "mailscrap.com", "mailseal.de", "mailshell.com", "mailsiphon.com",
+  "mailslapping.com", "mailslite.com", "mailtemp.info", "mailtothis.com", "mailzilla.com",
+  "makemetheking.com", "manybrain.com", "mbx.cc", "mega.zik.dj", "meinspamschutz.de", "meltmail.com",
+  "messagebeamer.de", "mezimages.net", "mierdamail.com", "migmail.pl", "mjukglass.nu",
+  "mobi.web.id", "mobileninja.co.uk", "moburl.com", "moncourrier.fr.nf", "monemail.fr.nf", "monmail.fr.nf",
+  "1secmail.com", "1secmail.org", "1secmail.net", "wwjmp.com", "esiix.com", "xojxe.com", "yoggm.com",
+  "dcctb.com", "laafd.com", "vjuum.com", "txcct.com", "dpptd.com", "rteet.com", "linshiyouxiang.net",
+  "emailfake.com", "generator.email", "guerrillamail.info", "spambox.us", "tempinbox.com",
+  "tempmail.plus", "fexpost.com", "fexbox.org", "fexbox.ru", "mailbox.in.ua", "rover.info",
+  "chitthi.in", "enayu.com", "cuvox.de", "dayrep.com", "einrot.com", "fleckens.hu", "gustr.com",
+  "jourrapide.com", "rhyta.com", "superrito.com", "teleworm.us", "armyspy.com", "sharklasers.com",
+  "spamdecoy.net", "tempail.com", "tempmail.de", "tempmail.it", "tempmail.us", "tempomail.fr",
+  "temporaryemail.net", "temporaryemail.us", "temporaryforwarding.com", "temporaryinbox.com",
+  "temporarymailaddress.com", "thankyou2010.com", "thc.st", "thelimestones.com", "thisisnotmyrealemail.com",
+  "thismail.net", "throwam.com", "tilien.com", "tittbit.in", "tizi.com", "tmailinator.com",
+  "toiea.com", "tokenmail.de", "toomail.biz", "topranklist.de", "tradermail.info", "trash-amil.com",
+  "trash-mail.at", "trash-mail.com", "trash-mail.de", "trash2009.com", "trash2010.com", "trash2011.com",
+  "trashdevil.com", "trashdevil.de", "trashemail.de", "trashymail.com", "trashymail.net", "trbvm.com",
+  "turual.com", "twinmail.de", "tyldd.com", "uggsrock.com", "umail.net", "upliftnow.com", "uplipht.com",
+  "uroid.com", "us.af", "venompen.com", "veryrealemail.com", "viditag.com", "viewcastmedia.com",
+  "viralplays.com", "vkcode.ru", "vomoto.com", "vpn.st", "vsimcard.com", "vubby.com",
+  "wasteland.rfc822.org", "webemail.me", "webm4il.info", "weg-werf-email.de", "wegwerf-email-addressen.de",
+  "wegwerf-emails.de", "wegwerfadresse.de", "wegwerfemail.com", "wegwerfemail.de", "wegwerfmail.de",
+  "wegwerfmail.info", "wegwerfmail.net", "wegwerfmail.org", "wetrainbayarea.com", "wetrainbayarea.org",
+  "wh4f.org", "whatiaas.com", "whatpaas.com", "whyspam.me", "willhackforfood.biz", "willselfdestruct.com",
+  "winemaven.info", "wronghead.com", "wuzup.net", "wuzupmail.net", "wwwnew.eu", "xagloo.com",
+  "xemaps.com", "xents.com", "xmaily.com", "xoxy.net", "yep.it", "yogamaven.com", "yuurok.com",
+  "zehnminuten.de", "zehnminutenmail.de", "zippymail.info", "zoaxe.com", "zoemail.com", "zoemail.net",
+  "zoemail.org", "zomg.info", "duck.com", "internxt.com", "anonaddy.com", "addy.io", "simplelogin.io",
+  "simplelogin.co", "relay.firefox.com", "mozmail.com", "erine.email", "33mail.com", "spamex.com",
+  "trashmail.ws", "trashmail.io", "tempmail.ninja", "tempmail.dev", "tempmail.lol", "tempmail.email",
+  "temp-mail.ru", "temp-mail.de", "inboxes.com", "nada.ltd", "getnada.cc", "mailpoof.com", "yopmail.pp.ua"
+]);
+
+function isDisposableOrFakeEmail(email: string): { blocked: boolean; reason?: string } {
+  const clean = email.trim().toLowerCase();
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(clean)) {
+    return { blocked: true, reason: "Invalid email format. Please provide a real email address." };
+  }
+  const [localPart, domain] = clean.split("@");
+  if (!localPart || !domain || localPart.length < 2) {
+    return { blocked: true, reason: "Invalid email address structure." };
+  }
+  const domainParts = domain.split(".");
+  const tld = domainParts[domainParts.length - 1] || "";
+  // Block known high-abuse free/disposable TLDs often used by temporary mail generators
+  if (["tk", "ml", "ga", "cf", "gq"].includes(tld)) {
+    return {
+      blocked: true,
+      reason: `Disposable top-level domain (.${tld}) is strictly prohibited! Please use a permanent email provider.`
+    };
+  }
+  // Check exact domain and parent domain against disposable blacklist
+  const rootDomain = domainParts.length >= 2 ? domainParts.slice(-2).join(".") : domain;
+  if (DISPOSABLE_EMAIL_DOMAINS.has(domain) || DISPOSABLE_EMAIL_DOMAINS.has(rootDomain)) {
+    return {
+      blocked: true,
+      reason: `Disposable or temporary email provider (@${domain}) is strictly prohibited! Please use a permanent personal or business email (e.g., Gmail, Outlook, Yahoo, iCloud, ProtonMail, or company domain).`
+    };
+  }
+  const blockedSubstrings = [
+    "tempmail", "temp-mail", "throwaway", "guerrilla", "mailinator", "10minutemail",
+    "1secmail", "yopmail", "trashmail", "fakemail", "disposable", "burner",
+    "sharklasers", "spam", "maildrop", "tempinbox", "fakeinbox", "mailnesia",
+    "mohmal", "getnada", "emailondeck", "crazymailing", "tmpmail", "tempail",
+    "dropmail", "harakiri", "incognitomail", "mintemail", "trash-mail", "wegwerf"
+  ];
+  if (
+    blockedSubstrings.some((kw) => domain.includes(kw)) ||
+    domain === "example.com" ||
+    domain === "test.com" ||
+    domain === "fake.com" ||
+    domain === "localhost"
+  ) {
+    return {
+      blocked: true,
+      reason: `Temporary or disposable email domain (@${domain}) is strictly blocked by security policy. Please use a permanent email.`
+    };
+  }
+  return { blocked: false };
+}
+
+const SESSION_HMAC_SECRET = crypto
+  .createHash("sha256")
+  .update(process.env.GEMINI_API_KEY || "adobemeta_sovereign_auth_vault_secret_key_2026")
+  .digest("hex");
+
+function createSignedSessionToken(uid: string, email: string): string {
+  const issuedAt = Date.now();
+  const payload = `${uid}:${email}:${issuedAt}`;
+  const sig = crypto.createHmac("sha256", SESSION_HMAC_SECRET).update(payload).digest("hex");
+  return Buffer.from(`${payload}:${sig}`).toString("base64url");
+}
+
+function verifySignedSessionToken(token: string): { valid: boolean; uid?: string; email?: string } {
+  try {
+    const decoded = Buffer.from(token, "base64url").toString("utf-8");
+    const parts = decoded.split(":");
+    if (parts.length !== 4) return { valid: false };
+    const [uid, email, issuedAtStr, sig] = parts;
+    const payload = `${uid}:${email}:${issuedAtStr}`;
+    const expectedSig = crypto.createHmac("sha256", SESSION_HMAC_SECRET).update(payload).digest("hex");
+    if (sig.length !== expectedSig.length) return { valid: false };
+    const isValid = crypto.timingSafeEqual(Buffer.from(sig, "hex"), Buffer.from(expectedSig, "hex"));
+    if (!isValid) return { valid: false };
+    return { valid: true, uid, email };
+  } catch {
+    return { valid: false };
+  }
+}
+
+interface StoredContributorAccount {
+  uid: string;
+  email: string;
+  displayName: string;
+  salt: string;
+  passwordHash: string;
+  createdAt: number;
+  failedAttempts?: number;
+  lockedUntil?: number;
+}
+
+const AUTH_VAULT_PATH = path.join(process.cwd(), ".contributor_auth_vault.json");
+
+function loadAuthVault(): Record<string, StoredContributorAccount> {
+  try {
+    if (fs.existsSync(AUTH_VAULT_PATH)) {
+      const raw = fs.readFileSync(AUTH_VAULT_PATH, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") return parsed;
+    }
+  } catch (e) {
+    console.warn("Could not read auth vault:", e);
+  }
+  return {};
+}
+
+function saveAuthVault(vault: Record<string, StoredContributorAccount>): void {
+  try {
+    fs.writeFileSync(AUTH_VAULT_PATH, JSON.stringify(vault, null, 2), { mode: 0o600 });
+  } catch (e) {
+    console.warn("Could not write auth vault:", e);
+  }
+}
 
 async function startServer() {
   const app = express();
@@ -42,6 +219,206 @@ async function startServer() {
 
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", uptime: process.uptime() });
+  });
+
+  // ============================================================================
+  // ZERO-TRUST CRYPTOGRAPHIC CONTRIBUTOR AUTHENTICATION ENDPOINTS (PBKDF2-SHA256)
+  // ============================================================================
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const { email, password, fullName } = req.body || {};
+      const cleanEmail = String(email || "").trim().toLowerCase();
+      const rawPassword = String(password || "");
+      const cleanName = String(fullName || "").trim();
+
+      const emailCheck = isDisposableOrFakeEmail(cleanEmail);
+      if (emailCheck.blocked) {
+        return res.status(400).json({
+          code: "auth/disposable-email-blocked",
+          error: emailCheck.reason
+        });
+      }
+
+      if (rawPassword.length < 8 || !/[A-Za-z]/.test(rawPassword) || !/[0-9]/.test(rawPassword)) {
+        return res.status(400).json({
+          code: "auth/weak-password",
+          error: "Password must be at least 8 characters long and contain both letters and numbers."
+        });
+      }
+
+      if (!cleanName || cleanName.length < 2) {
+        return res.status(400).json({
+          code: "auth/missing-name",
+          error: "Please enter your full name or studio name (at least 2 characters)."
+        });
+      }
+
+      const vault = loadAuthVault();
+      if (vault[cleanEmail]) {
+        return res.status(409).json({
+          code: "auth/email-already-in-use",
+          error: "An account with this email already exists. Please switch to 'Sign In' and enter your registered password."
+        });
+      }
+
+      const salt = crypto.randomBytes(16).toString("hex");
+      const derivedKey = await pbkdf2Async(rawPassword, salt, 100000, 64, "sha256");
+      const passwordHash = derivedKey.toString("hex");
+      const uid = "usr_" + crypto.createHash("sha256").update(cleanEmail).digest("hex").slice(0, 20);
+
+      const newAccount: StoredContributorAccount = {
+        uid,
+        email: cleanEmail,
+        displayName: cleanName,
+        salt,
+        passwordHash,
+        createdAt: Date.now(),
+        failedAttempts: 0
+      };
+
+      vault[cleanEmail] = newAccount;
+      saveAuthVault(vault);
+
+      const sessionToken = createSignedSessionToken(newAccount.uid, newAccount.email);
+
+      return res.json({
+        sessionToken,
+        user: {
+          uid: newAccount.uid,
+          email: newAccount.email,
+          displayName: newAccount.displayName,
+          photoURL: null,
+          isAnonymous: false,
+          emailVerified: true
+        }
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        code: "auth/server-error",
+        error: err?.message || "Failed to create contributor account."
+      });
+    }
+  });
+
+  app.post("/api/auth/signin", async (req, res) => {
+    try {
+      const { email, password } = req.body || {};
+      const cleanEmail = String(email || "").trim().toLowerCase();
+      const rawPassword = String(password || "");
+
+      const emailCheck = isDisposableOrFakeEmail(cleanEmail);
+      if (emailCheck.blocked) {
+        return res.status(400).json({
+          code: "auth/disposable-email-blocked",
+          error: emailCheck.reason
+        });
+      }
+
+      if (!rawPassword) {
+        return res.status(400).json({
+          code: "auth/missing-password",
+          error: "Please enter your password."
+        });
+      }
+
+      const vault = loadAuthVault();
+      const account = vault[cleanEmail];
+
+      // STRICT CHECK: Never auto-create or allow unregistered emails during Sign In!
+      if (!account) {
+        return res.status(404).json({
+          code: "auth/user-not-found",
+          error: "No contributor account found with this email address. Please click 'Create Account' first to register."
+        });
+      }
+
+      // Brute-force lockout protection
+      const now = Date.now();
+      if (account.lockedUntil && account.lockedUntil > now) {
+        const waitSec = Math.ceil((account.lockedUntil - now) / 1000);
+        return res.status(429).json({
+          code: "auth/too-many-requests",
+          error: `Account temporarily locked due to multiple failed password attempts. Please try again in ${waitSec} seconds.`
+        });
+      }
+
+      const derivedKey = await pbkdf2Async(rawPassword, account.salt, 100000, 64, "sha256");
+      const candidateHash = derivedKey.toString("hex");
+
+      const expectedBuf = Buffer.from(account.passwordHash, "hex");
+      const candidateBuf = Buffer.from(candidateHash, "hex");
+      const isMatch =
+        expectedBuf.length === candidateBuf.length &&
+        crypto.timingSafeEqual(expectedBuf, candidateBuf);
+
+      if (!isMatch) {
+        account.failedAttempts = (account.failedAttempts || 0) + 1;
+        if (account.failedAttempts >= 5) {
+          account.lockedUntil = Date.now() + 60 * 1000; // 60s lockout after 5 wrong attempts
+          account.failedAttempts = 0;
+        }
+        saveAuthVault(vault);
+        return res.status(401).json({
+          code: "auth/wrong-password",
+          error: "Incorrect password! You must enter the exact password you set when creating this account."
+        });
+      }
+
+      // Reset failed attempts on successful login
+      account.failedAttempts = 0;
+      account.lockedUntil = undefined;
+      saveAuthVault(vault);
+
+      const sessionToken = createSignedSessionToken(account.uid, account.email);
+
+      return res.json({
+        sessionToken,
+        user: {
+          uid: account.uid,
+          email: account.email,
+          displayName: account.displayName,
+          photoURL: null,
+          isAnonymous: false,
+          emailVerified: true
+        }
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        code: "auth/server-error",
+        error: err?.message || "Failed to verify credentials."
+      });
+    }
+  });
+
+  app.post("/api/auth/verify", (req, res) => {
+    try {
+      const { sessionToken } = req.body || {};
+      if (!sessionToken || typeof sessionToken !== "string") {
+        return res.status(401).json({ valid: false });
+      }
+      const check = verifySignedSessionToken(sessionToken);
+      if (!check.valid || !check.email) {
+        return res.status(401).json({ valid: false });
+      }
+      const vault = loadAuthVault();
+      const account = vault[check.email];
+      if (!account || account.uid !== check.uid) {
+        return res.status(401).json({ valid: false });
+      }
+      return res.json({
+        valid: true,
+        user: {
+          uid: account.uid,
+          email: account.email,
+          displayName: account.displayName,
+          photoURL: null,
+          isAnonymous: false,
+          emailVerified: true
+        }
+      });
+    } catch {
+      return res.status(401).json({ valid: false });
+    }
   });
 
   // Google AdSense Authorized Digital Sellers crawler endpoint
