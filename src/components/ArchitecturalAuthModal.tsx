@@ -622,6 +622,42 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+
+                    {/* Live Cryptographic Password Entropy Gauge during Sign Up */}
+                    {authMode === 'signup' && password.length > 0 && (() => {
+                      const hasLen = password.length >= 8;
+                      const hasAlpha = /[A-Za-z]/.test(password);
+                      const hasNum = /[0-9]/.test(password);
+                      const hasSpecialOrLong = /[^A-Za-z0-9]/.test(password) || password.length >= 12;
+                      const score = [hasLen, hasAlpha, hasNum, hasSpecialOrLong].filter(Boolean).length;
+                      const label =
+                        score <= 1 ? 'Weak (Add letters + numbers)' :
+                        score === 2 ? 'Fair (Min 8 chars required)' :
+                        score === 3 ? 'Strong · PBKDF2-SHA256 Ready' :
+                        'Vault-Grade Entropy · 100K Iterations';
+                      const barColor =
+                        score <= 2 ? 'bg-amber-500' : 'bg-emerald-500';
+                      return (
+                        <div className="mt-2 space-y-1">
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {[1, 2, 3, 4].map((step) => (
+                              <div
+                                key={step}
+                                className={`h-1 rounded-full transition-all ${
+                                  step <= score ? barColor : isLight ? 'bg-neutral-200' : 'bg-white/10'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] font-mono">
+                            <span className={score >= 3 ? 'text-emerald-500 font-semibold' : 'text-amber-500'}>
+                              {label}
+                            </span>
+                            <span className="text-neutral-400">{password.length} chars</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {errorMsg && (
@@ -637,7 +673,7 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
                     className={`w-full py-3 px-5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-md ${
                       isLight
                         ? 'bg-neutral-950 hover:bg-black text-white'
-                        : 'bg-gradient-to-r from-amber-400 via-amber-300 to-emerald-400 text-neutral-950 hover:brightness-105'
+                        : 'luxury-gold-bullion-btn'
                     } disabled:opacity-50`}
                   >
                     {isSubmitting ? (

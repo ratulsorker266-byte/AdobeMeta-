@@ -661,6 +661,8 @@ export const GlobalAssetStoreVault: React.FC<GlobalAssetStoreVaultProps> = ({
                   <img
                     src={pack.image}
                     alt={pack.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                     referrerPolicy="no-referrer"
                   />

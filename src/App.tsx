@@ -3868,27 +3868,14 @@ export default function App() {
           }`}
         />
 
-        {/* 1. SUNLIGHT WHITE EDITION (SADA) — Pure White Pearl, Warm Ivory & Sunlit Silk Waves */}
+        {/* 1. SUNLIGHT WHITE EDITION (SADA) — Pure White Pearl & Warm Ivory Radial Lighting (Zero GPU Blur Tax) */}
         {themeMode === 'light' && (
-          <>
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_85%_60%_at_50%_-10%,rgba(255,255,255,0.98),rgba(248,246,240,0.65)_65%,transparent_100%)]" />
-            <div className="absolute -top-36 left-[12%] w-[680px] h-[680px] rounded-full blur-[130px] hyper-5d-orb-1 bg-[radial-gradient(circle,rgba(255,255,255,1)_0%,rgba(254,243,199,0.55)_55%,transparent_75%)]" />
-            <div className="absolute top-[22%] right-[8%] w-[620px] h-[620px] rounded-full blur-[140px] hyper-5d-orb-2 bg-[radial-gradient(circle,rgba(255,255,255,0.95)_0%,rgba(231,229,228,0.65)_55%,transparent_75%)]" />
-            <div className="absolute -bottom-32 left-[28%] w-[720px] h-[520px] rounded-full blur-[150px] hyper-5d-orb-1 bg-[radial-gradient(circle,rgba(255,255,255,0.95)_0%,rgba(253,230,138,0.35)_55%,transparent_75%)]" />
-            {!isLiteMode && (
-              <div className="absolute top-[15%] -left-[10%] w-[120%] h-[380px] rounded-full blur-[110px] luxury-silk-drape bg-gradient-to-r from-white/90 via-amber-100/50 to-white/90" />
-            )}
-          </>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_65%_at_50%_-10%,rgba(255,255,255,0.98),rgba(254,243,199,0.28)_45%,rgba(248,246,240,0.85)_100%)]" />
         )}
 
-        {/* 2. PURE PREMIUM BLACK EDITION (100% PURE OLED BLACK — ZERO COLOR TINT) */}
+        {/* 2. PURE PREMIUM BLACK EDITION (100% PURE OLED BLACK — ZERO GPU BLUR TAX) */}
         {themeMode === 'dark' && (
-          <>
-            <div className="absolute inset-0 bg-[#000000]" />
-            <div className="absolute -top-36 left-[15%] w-[660px] h-[660px] rounded-full blur-[160px] hyper-5d-orb-1 bg-[radial-gradient(circle,rgba(255,255,255,0.035)_0%,rgba(16,16,18,0.18)_55%,transparent_75%)]" />
-            <div className="absolute top-[28%] right-[10%] w-[600px] h-[600px] rounded-full blur-[160px] hyper-5d-orb-2 bg-[radial-gradient(circle,rgba(255,255,255,0.025)_0%,rgba(12,12,14,0.15)_55%,transparent_75%)]" />
-            <div className="absolute -bottom-32 left-[25%] w-[700px] h-[500px] rounded-full blur-[170px] hyper-5d-orb-1 bg-[radial-gradient(circle,rgba(24,24,27,0.35)_0%,transparent_72%)]" />
-          </>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_85%_55%_at_50%_-15%,rgba(212,175,55,0.045)_0%,rgba(12,12,15,0.45)_45%,#000000_100%)]" />
         )}
       </div>
 
@@ -5888,6 +5875,82 @@ export default function App() {
                                     Search SEO
                                   </button>
                                 )}
+                                {item.result.alternativeTitles?.editorialStory && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const nextT = item.result!.alternativeTitles!.editorialStory.slice(0, 70);
+                                      setItems((prev) =>
+                                        prev.map((it) =>
+                                          it.id === item.id && it.result
+                                            ? { ...it, result: { ...it.result, recommendedTitle: nextT } }
+                                            : it
+                                        )
+                                      );
+                                      navigator.clipboard.writeText(nextT);
+                                      showToast('✓ Switched & copied Editorial Narrative Title!');
+                                    }}
+                                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                                      item.result.recommendedTitle === item.result.alternativeTitles.editorialStory.slice(0, 70)
+                                        ? 'bg-amber-500 text-neutral-950 border-amber-500 font-bold'
+                                        : themeMode === 'light'
+                                        ? 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200'
+                                        : 'bg-neutral-950 hover:bg-neutral-800 text-neutral-300 border-neutral-800'
+                                    }`}
+                                    title="Switch to Editorial Narrative Story Title"
+                                  >
+                                    Story Title
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (!item.result) return;
+                                    const currentKws = [...(item.result.keywords || [])];
+                                    const seen = new Set(currentKws.map(k => k.toLowerCase().trim()));
+                                    const addedAtoms: string[] = [];
+                                    for (const phrase of currentKws.slice(0, 15)) {
+                                      const parts = phrase.toLowerCase().split(/\s+/).filter(w => w.length >= 4);
+                                      if (parts.length >= 2) {
+                                        for (const atom of parts) {
+                                          if (!seen.has(atom) && currentKws.length + addedAtoms.length < 49) {
+                                            seen.add(atom);
+                                            addedAtoms.push(atom);
+                                          }
+                                        }
+                                      }
+                                    }
+                                    const reSanitized = sanitizeAndPerfectMetadataResult(
+                                      {
+                                        ...item.result,
+                                        keywords: [...currentKws, ...addedAtoms],
+                                      },
+                                      targetMarketplace,
+                                      excludedKeywords.split(',').map(s => s.trim()).filter(Boolean),
+                                      {
+                                        targetKeywordCount,
+                                        maxTitleChars,
+                                        mustIncludeKeywords,
+                                        singleWordOnly,
+                                      }
+                                    );
+                                    setItems((prev) =>
+                                      prev.map((it) =>
+                                        it.id === item.id ? { ...it, result: reSanitized } : it
+                                      )
+                                    );
+                                    showToast(`✓ Dual-Indexed Top-10 Phrases + Atomic Roots (${reSanitized.keywords.length} verified tags)!`);
+                                  }}
+                                  className={`text-[10px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                                    themeMode === 'light'
+                                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+                                      : 'bg-[#D4AF37]/15 hover:bg-[#D4AF37]/25 text-[#F3E5AB] border-[#D4AF37]/40'
+                                  }`}
+                                  title="1-Click Compound + Atomic Dual-Indexing: Lock Top-10 subject phrases & extract atomic search roots"
+                                >
+                                  <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                                  <span>Dual-Index #10</span>
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => autoFixItem(item.id)}
@@ -7316,507 +7379,555 @@ export default function App() {
       </AnimatePresence>
 
       {/* Professional Contributor Studio Tools Suite Hub Modal */}
-      <StudioToolsHubModal
-        isOpen={showToolsHubModal}
-        onClose={() => setShowToolsHubModal(false)}
-        completedCount={items.filter((i) => i.result).length}
-        onOpenTool={(toolKey) => {
-          switch (toolKey) {
-            case 'vector_studio':
-              setShowVectorStudioModal(true);
-              break;
-            case 'reverse_prompt':
-              setShowReversePromptModal(true);
-              break;
-            case 'trademark_shield':
-              setShowTrademarkModal(true);
-              break;
-            case 'release_inspector':
-              setShowReleaseModal(true);
-              break;
-            case 'rank_predictor':
-              setShowRankModal(true);
-              break;
-            case 'tag_cleaner':
-              setShowCleanerModal(true);
-              break;
-            case 'niche_radar':
-              setShowNicheRadarModal(true);
-              break;
-            case 'search_simulator':
-              setShowSimulatorModal(true);
-              break;
-            case 'multi_csv':
-              setShowMultiCsvModal(true);
-              break;
-            case 'roi_calculator':
-              setShowEarningsModal(true);
-              break;
-            case 'ftp_pipeline':
-              setShowFtpModal(true);
-              break;
-            case 'masterclass':
-              setShowGuideHubModal(true);
-              break;
-            case 'algorithm_booster': {
-              const active = items.find((i) => i.result) || items[0] || null;
-              if (active) {
-                setAlgorithmActiveItem(active);
-                setShowAlgorithmBoosterModal(true);
-              } else {
-                showToast('Upload or process an asset first to optimize Top 10 algorithm ranking!');
+      {showToolsHubModal && (
+        <StudioToolsHubModal
+          isOpen={showToolsHubModal}
+          onClose={() => setShowToolsHubModal(false)}
+          completedCount={items.filter((i) => i.result).length}
+          onOpenTool={(toolKey) => {
+            switch (toolKey) {
+              case 'vector_studio':
+                setShowVectorStudioModal(true);
+                break;
+              case 'reverse_prompt':
+                setShowReversePromptModal(true);
+                break;
+              case 'trademark_shield':
+                setShowTrademarkModal(true);
+                break;
+              case 'release_inspector':
+                setShowReleaseModal(true);
+                break;
+              case 'rank_predictor':
+                setShowRankModal(true);
+                break;
+              case 'tag_cleaner':
+                setShowCleanerModal(true);
+                break;
+              case 'niche_radar':
+                setShowNicheRadarModal(true);
+                break;
+              case 'search_simulator':
+                setShowSimulatorModal(true);
+                break;
+              case 'multi_csv':
+                setShowMultiCsvModal(true);
+                break;
+              case 'roi_calculator':
+                setShowEarningsModal(true);
+                break;
+              case 'ftp_pipeline':
+                setShowFtpModal(true);
+                break;
+              case 'masterclass':
+                setShowGuideHubModal(true);
+                break;
+              case 'algorithm_booster': {
+                const active = items.find((i) => i.result) || items[0] || null;
+                if (active) {
+                  setAlgorithmActiveItem(active);
+                  setShowAlgorithmBoosterModal(true);
+                } else {
+                  showToast('Upload or process an asset first to optimize Top 10 algorithm ranking!');
+                }
+                break;
               }
-              break;
-            }
-            case 'competitor_gap': {
-              const active = items.find((i) => i.result) || items[0] || null;
-              if (active) {
-                setCompetitorActiveItem(active);
-                setShowCompetitorGapModal(true);
-              } else {
-                showToast('Upload or process an asset first to inspect competitor keyword gaps!');
+              case 'competitor_gap': {
+                const active = items.find((i) => i.result) || items[0] || null;
+                if (active) {
+                  setCompetitorActiveItem(active);
+                  setShowCompetitorGapModal(true);
+                } else {
+                  showToast('Upload or process an asset first to inspect competitor keyword gaps!');
+                }
+                break;
               }
-              break;
+              case 'keyword_mixer': {
+                const active =
+                  items.find((i) => selectedItemIds.includes(i.id) && i.result) ||
+                  items.find((i) => i.result) ||
+                  items[0] ||
+                  null;
+                setMixerActiveItem(active);
+                setShowKeywordMixerModal(true);
+                break;
+              }
             }
-            case 'keyword_mixer': {
-              const active =
-                items.find((i) => selectedItemIds.includes(i.id) && i.result) ||
-                items.find((i) => i.result) ||
-                items[0] ||
-                null;
-              setMixerActiveItem(active);
-              setShowKeywordMixerModal(true);
-              break;
-            }
-          }
-        }}
-      />
+          }}
+        />
+      )}
 
       {/* Live Visual Similar Image Keyword Mixer (ImStocker-Style Consensus Engine) */}
-      <VisualKeywordMixerModal
-        isOpen={showKeywordMixerModal}
-        onClose={() => {
-          setShowKeywordMixerModal(false);
-          setMixerActiveItem(null);
-        }}
-        activeItem={mixerActiveItem}
-        itemsCount={items.length}
-        selectedCount={selectedItemIds.length}
-        customApiKey={customApiKey}
-        themeMode={themeMode}
-        onApplyMixedMetadata={({ title, keywords, category, mode }) => {
-          if (items.length === 0) {
-            navigator.clipboard.writeText(`${title}\n\n${keywords.join(', ')}`);
-            showToast(`Copied ${keywords.length} mixed tags & title to clipboard!`);
-            return;
-          }
+      {showKeywordMixerModal && (
+        <VisualKeywordMixerModal
+          isOpen={showKeywordMixerModal}
+          onClose={() => {
+            setShowKeywordMixerModal(false);
+            setMixerActiveItem(null);
+          }}
+          activeItem={mixerActiveItem}
+          itemsCount={items.length}
+          selectedCount={selectedItemIds.length}
+          customApiKey={customApiKey}
+          themeMode={themeMode}
+          onApplyMixedMetadata={({ title, keywords, category, mode }) => {
+            if (items.length === 0) {
+              navigator.clipboard.writeText(`${title}\n\n${keywords.join(', ')}`);
+              showToast(`Copied ${keywords.length} mixed tags & title to clipboard!`);
+              return;
+            }
 
-          let updatedCount = 0;
-          setItems((prev) =>
-            prev.map((it) => {
-              const isTarget =
-                mode === 'apply_all'
-                  ? selectedItemIds.length > 0
-                    ? selectedItemIds.includes(it.id)
-                    : true
-                  : mixerActiveItem
-                  ? it.id === mixerActiveItem.id
-                  : prev[0]?.id === it.id;
+            let updatedCount = 0;
+            setItems((prev) =>
+              prev.map((it) => {
+                const isTarget =
+                  mode === 'apply_all'
+                    ? selectedItemIds.length > 0
+                      ? selectedItemIds.includes(it.id)
+                      : true
+                    : mixerActiveItem
+                    ? it.id === mixerActiveItem.id
+                    : prev[0]?.id === it.id;
 
-              if (!isTarget) return it;
-              updatedCount++;
+                if (!isTarget) return it;
+                updatedCount++;
 
-              const existingKws = it.result?.keywords || [];
-              let finalKws: string[] = [];
+                const existingKws = it.result?.keywords || [];
+                let finalKws: string[] = [];
 
-              if (mode === 'merge_top') {
-                finalKws = Array.from(
-                  new Set([
-                    ...keywords.map((k) => k.toLowerCase().trim()),
-                    ...existingKws.map((k) => k.toLowerCase().trim()),
-                  ])
-                )
-                  .filter(Boolean)
-                  .slice(0, 49);
-              } else {
-                finalKws = keywords.slice(0, 49);
-              }
+                if (mode === 'merge_top') {
+                  finalKws = Array.from(
+                    new Set([
+                      ...keywords.map((k) => k.toLowerCase().trim()),
+                      ...existingKws.map((k) => k.toLowerCase().trim()),
+                    ])
+                  )
+                    .filter(Boolean)
+                    .slice(0, 49);
+                } else {
+                  finalKws = keywords.slice(0, 49);
+                }
 
-              const baseResult: MetadataResult = it.result || {
-                recommendedTitle: title,
-                shortDescription: `${title} designed for commercial stock licensing.`,
-                category: category || 'Graphic Resources',
-                keywords: finalKws,
-                priorityKeywords: finalKws.slice(0, 10),
-                longTailKeywords: [title.toLowerCase()],
-                buyerSearchPhrases: [title.toLowerCase()],
-                visualTruthConfidence: 'HIGH CONFIDENCE',
-                metadataQualityScore: 98,
-                salesPotentialScore: 96,
-                technicalQualityScore: 97,
-                copyrightRiskScore: 0,
-                overallSubmissionRiskScore: 2,
-                acceptanceProbability: 99,
-                rejectionFlags: [],
-                riskLabel: 'Low risk',
-                explanation: 'Synthesized via Live Visual Similar Image Keyword Mixer (ImStocker Consensus Engine)',
-                detectedDefects: [],
-                trademarkRisk: 'none',
-                detectedTrademarks: ['None detected'],
-                modelReleaseRequired: false,
-                propertyReleaseRequired: false,
-                releaseExplanation: 'No recognizable human models or private property detected.',
-                searchWeightIndex: 98,
-                estimatedCpcUSD: '$3.40',
-              };
-
-              return {
-                ...it,
-                status: 'completed',
-                progress: 100,
-                result: {
-                  ...baseResult,
-                  recommendedTitle: title || baseResult.recommendedTitle,
-                  shortDescription: `${title || baseResult.recommendedTitle} designed for commercial stock licensing.`,
-                  category: category || baseResult.category,
+                const baseResult: MetadataResult = it.result || {
+                  recommendedTitle: title,
+                  shortDescription: `${title} designed for commercial stock licensing.`,
+                  category: category || 'Graphic Resources',
                   keywords: finalKws,
                   priorityKeywords: finalKws.slice(0, 10),
-                  metadataQualityScore: Math.max(baseResult.metadataQualityScore || 96, 98),
-                },
-              };
-            })
-          );
+                  longTailKeywords: [title.toLowerCase()],
+                  buyerSearchPhrases: [title.toLowerCase()],
+                  visualTruthConfidence: 'HIGH CONFIDENCE',
+                  metadataQualityScore: 98,
+                  salesPotentialScore: 96,
+                  technicalQualityScore: 97,
+                  copyrightRiskScore: 0,
+                  overallSubmissionRiskScore: 2,
+                  acceptanceProbability: 99,
+                  rejectionFlags: [],
+                  riskLabel: 'Low risk',
+                  explanation: 'Synthesized via Live Visual Similar Image Keyword Mixer (ImStocker Consensus Engine)',
+                  detectedDefects: [],
+                  trademarkRisk: 'none',
+                  detectedTrademarks: ['None detected'],
+                  modelReleaseRequired: false,
+                  propertyReleaseRequired: false,
+                  releaseExplanation: 'No recognizable human models or private property detected.',
+                  searchWeightIndex: 98,
+                  estimatedCpcUSD: '$3.40',
+                };
 
-          showToast(
-            mode === 'apply_all'
-              ? `Applied ${keywords.length} mixed bestseller keywords to ${updatedCount} asset(s)!`
-              : mode === 'merge_top'
-              ? `Merged top consensus keywords into "${mixerActiveItem?.file.name || 'asset'}" (${keywords.length} tags)!`
-              : `Applied ${keywords.length} mixed bestseller keywords & title to "${mixerActiveItem?.file.name || 'asset'}"!`
-          );
-        }}
-        showToast={showToast}
-      />
+                return {
+                  ...it,
+                  status: 'completed',
+                  progress: 100,
+                  result: {
+                    ...baseResult,
+                    recommendedTitle: title || baseResult.recommendedTitle,
+                    shortDescription: `${title || baseResult.recommendedTitle} designed for commercial stock licensing.`,
+                    category: category || baseResult.category,
+                    keywords: finalKws,
+                    priorityKeywords: finalKws.slice(0, 10),
+                    metadataQualityScore: Math.max(baseResult.metadataQualityScore || 96, 98),
+                  },
+                };
+              })
+            );
+
+            showToast(
+              mode === 'apply_all'
+                ? `Applied ${keywords.length} mixed bestseller keywords to ${updatedCount} asset(s)!`
+                : mode === 'merge_top'
+                ? `Merged top consensus keywords into "${mixerActiveItem?.file.name || 'asset'}" (${keywords.length} tags)!`
+                : `Applied ${keywords.length} mixed bestseller keywords & title to "${mixerActiveItem?.file.name || 'asset'}"!`
+            );
+          }}
+          showToast={showToast}
+        />
+      )}
 
       {/* Multi-Marketplace CSV & Rename Modal */}
-      <MultiCsvExportModal
-        isOpen={showMultiCsvModal}
-        onClose={() => setShowMultiCsvModal(false)}
-        items={items}
-        showToast={showToast}
-      />
+      {showMultiCsvModal && (
+        <MultiCsvExportModal
+          isOpen={showMultiCsvModal}
+          onClose={() => setShowMultiCsvModal(false)}
+          items={items}
+          showToast={showToast}
+        />
+      )}
 
       {/* Reverse Prompt Generator Modal */}
-      <ReversePromptModal
-        isOpen={showReversePromptModal}
-        onClose={() => setShowReversePromptModal(false)}
-        customApiKey={customApiKey}
-        showToast={showToast}
-      />
+      {showReversePromptModal && (
+        <ReversePromptModal
+          isOpen={showReversePromptModal}
+          onClose={() => setShowReversePromptModal(false)}
+          customApiKey={customApiKey}
+          showToast={showToast}
+        />
+      )}
 
       {/* Microstock Earnings & ROI Calculator Modal */}
-      <EarningsCalculatorModal
-        isOpen={showEarningsModal}
-        onClose={() => setShowEarningsModal(false)}
-      />
+      {showEarningsModal && (
+        <EarningsCalculatorModal
+          isOpen={showEarningsModal}
+          onClose={() => setShowEarningsModal(false)}
+        />
+      )}
 
       {/* Tag Cleaner & Spam Eliminator Modal */}
-      <KeywordCleanerModal
-        isOpen={showCleanerModal}
-        onClose={() => setShowCleanerModal(false)}
-        showToast={showToast}
-      />
+      {showCleanerModal && (
+        <KeywordCleanerModal
+          isOpen={showCleanerModal}
+          onClose={() => setShowCleanerModal(false)}
+          showToast={showToast}
+        />
+      )}
 
       {/* Stock Contributor Masterclass & SEO Knowledge Hub Modal */}
-      <StockGuideHubModal
-        isOpen={showGuideHubModal}
-        onClose={() => setShowGuideHubModal(false)}
-      />
+      {showGuideHubModal && (
+        <StockGuideHubModal
+          isOpen={showGuideHubModal}
+          onClose={() => setShowGuideHubModal(false)}
+        />
+      )}
 
       {/* Cloud & FTP Direct Submission Guide Modal */}
-      <CloudFtpGuideModal
-        isOpen={showFtpModal}
-        onClose={() => setShowFtpModal(false)}
-        showToast={showToast}
-      />
+      {showFtpModal && (
+        <CloudFtpGuideModal
+          isOpen={showFtpModal}
+          onClose={() => setShowFtpModal(false)}
+          showToast={showToast}
+        />
+      )}
 
       {/* Global Raycast/Linear-Style Command Palette (⌘K) */}
-      <CommandPaletteModal
-        isOpen={showCommandPalette}
-        onClose={() => setShowCommandPalette(false)}
-        onNavigateView={(view) => setCurrentView(view)}
-        onToggleMode={(mode) => {
-          setWorkspaceMode(mode);
-          localStorage.setItem('adobemeta_workspace_mode', mode);
-          showToast(`Switched to ${mode === 'spatial' ? 'Architectural Digital Space' : 'Classic Batch Grid'}`);
-        }}
-        workspaceMode={workspaceMode}
-        onStartProcessing={() => startBulkProcessing()}
-        onExportAdobeCsv={exportBatchCSV}
-        onExportShutterstockCsv={exportBatchCSV}
-        onExportZip={exportBatchZip}
-        onOpenMultiCsv={() => setShowMultiCsvModal(true)}
-        onOpenToolsHub={() => setShowToolsHubModal(true)}
-        onOpenEarning={() => setShowEarningMonetizeModal(true)}
-        onOpenTool={(toolId) => {
-          switch (toolId) {
-            case 'vector_studio':
-              setShowVectorStudioModal(true);
-              break;
-            case 'reverse_prompt':
-              setShowReversePromptModal(true);
-              break;
-            case 'trademark_shield':
-              setShowTrademarkModal(true);
-              break;
-            case 'keyword_cleaner':
-              setShowCleanerModal(true);
-              break;
-            case 'search_simulator':
-              setShowSimulatorModal(true);
-              break;
-            case 'release_inspector':
-              setShowReleaseModal(true);
-              break;
-            case 'rank_predictor':
-              setShowRankModal(true);
-              break;
-            case 'niche_radar':
-              setShowNicheRadarModal(true);
-              break;
-            case 'keyword_mixer': {
-              const active =
-                items.find((i) => selectedItemIds.includes(i.id) && i.result) ||
-                items.find((i) => i.result) ||
-                items[0] ||
-                null;
-              setMixerActiveItem(active);
-              setShowKeywordMixerModal(true);
-              break;
+      {showCommandPalette && (
+        <CommandPaletteModal
+          isOpen={showCommandPalette}
+          onClose={() => setShowCommandPalette(false)}
+          onNavigateView={(view) => setCurrentView(view)}
+          onToggleMode={(mode) => {
+            setWorkspaceMode(mode);
+            localStorage.setItem('adobemeta_workspace_mode', mode);
+            showToast(`Switched to ${mode === 'spatial' ? 'Architectural Digital Space' : 'Classic Batch Grid'}`);
+          }}
+          workspaceMode={workspaceMode}
+          onStartProcessing={() => startBulkProcessing()}
+          onExportAdobeCsv={exportBatchCSV}
+          onExportShutterstockCsv={exportBatchCSV}
+          onExportZip={exportBatchZip}
+          onOpenMultiCsv={() => setShowMultiCsvModal(true)}
+          onOpenToolsHub={() => setShowToolsHubModal(true)}
+          onOpenEarning={() => setShowEarningMonetizeModal(true)}
+          onOpenTool={(toolId) => {
+            switch (toolId) {
+              case 'vector_studio':
+                setShowVectorStudioModal(true);
+                break;
+              case 'reverse_prompt':
+                setShowReversePromptModal(true);
+                break;
+              case 'trademark_shield':
+                setShowTrademarkModal(true);
+                break;
+              case 'keyword_cleaner':
+                setShowCleanerModal(true);
+                break;
+              case 'search_simulator':
+                setShowSimulatorModal(true);
+                break;
+              case 'release_inspector':
+                setShowReleaseModal(true);
+                break;
+              case 'rank_predictor':
+                setShowRankModal(true);
+                break;
+              case 'niche_radar':
+                setShowNicheRadarModal(true);
+                break;
+              case 'keyword_mixer': {
+                const active =
+                  items.find((i) => selectedItemIds.includes(i.id) && i.result) ||
+                  items.find((i) => i.result) ||
+                  items[0] ||
+                  null;
+                setMixerActiveItem(active);
+                setShowKeywordMixerModal(true);
+                break;
+              }
+              default:
+                setShowToolsHubModal(true);
+                break;
             }
-            default:
-              setShowToolsHubModal(true);
-              break;
-          }
-        }}
-        onClearQueue={clearAllItems}
-        onOpenSettings={() => setShowSettings(true)}
-        onOpenAuth={() => setShowAuthModal(true)}
-        onLogout={handleLogout}
-        itemsCount={items.length}
-        completedCount={items.filter((i) => i.result).length}
-        items={items.map((it) => ({
-          id: it.id,
-          fileName: it.file.name,
-          title: it.result?.recommendedTitle,
-          keywords: it.result?.keywords,
-          category: it.result?.category,
-          hasResult: Boolean(it.result),
-        }))}
-        onInspectAsset={(id) => setEpsViewerItemId(id)}
-        onCopyAssetMetadata={(id) => {
-          const found = items.find((i) => i.id === id);
-          if (found && found.result) {
-            copyMetadata(found.result.recommendedTitle, found.result.keywords, found.id);
-          } else if (found) {
-            setEpsViewerItemId(found.id);
-          }
-        }}
-        onCycleTheme={cycleLuxuryTheme}
-      />
+          }}
+          onClearQueue={clearAllItems}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenAuth={() => setShowAuthModal(true)}
+          onLogout={handleLogout}
+          itemsCount={items.length}
+          completedCount={items.filter((i) => i.result).length}
+          items={items.map((it) => ({
+            id: it.id,
+            fileName: it.file.name,
+            title: it.result?.recommendedTitle,
+            keywords: it.result?.keywords,
+            category: it.result?.category,
+            hasResult: Boolean(it.result),
+          }))}
+          onInspectAsset={(id) => setEpsViewerItemId(id)}
+          onCopyAssetMetadata={(id) => {
+            const found = items.find((i) => i.id === id);
+            if (found && found.result) {
+              copyMetadata(found.result.recommendedTitle, found.result.keywords, found.id);
+            } else if (found) {
+              setEpsViewerItemId(found.id);
+            }
+          }}
+          onCycleTheme={cycleLuxuryTheme}
+        />
+      )}
 
       {/* Automated Trademark & IP Shield Modal */}
-      <TrademarkShieldModal
-        isOpen={showTrademarkModal}
-        onClose={() => {
-          setShowTrademarkModal(false);
-          setTrademarkActiveItem(null);
-        }}
-        initialTitle={trademarkActiveItem?.title}
-        initialKeywords={trademarkActiveItem?.keywords}
-        showToast={showToast}
-      />
+      {showTrademarkModal && (
+        <TrademarkShieldModal
+          isOpen={showTrademarkModal}
+          onClose={() => {
+            setShowTrademarkModal(false);
+            setTrademarkActiveItem(null);
+          }}
+          initialTitle={trademarkActiveItem?.title}
+          initialKeywords={trademarkActiveItem?.keywords}
+          showToast={showToast}
+        />
+      )}
 
       {/* Live Algorithmic Rank Predictor Modal */}
-      <LiveRankPredictorModal
-        isOpen={showRankModal}
-        onClose={() => {
-          setShowRankModal(false);
-          setRankActiveItem(null);
-        }}
-        initialTitle={rankActiveItem?.title}
-        initialKeywords={rankActiveItem?.keywords}
-        marketplace={targetMarketplace}
-        showToast={showToast}
-      />
+      {showRankModal && (
+        <LiveRankPredictorModal
+          isOpen={showRankModal}
+          onClose={() => {
+            setShowRankModal(false);
+            setRankActiveItem(null);
+          }}
+          initialTitle={rankActiveItem?.title}
+          initialKeywords={rankActiveItem?.keywords}
+          marketplace={targetMarketplace}
+          showToast={showToast}
+        />
+      )}
 
       {/* Real-Time Niche Opportunity Radar Modal */}
-      <NicheRadarModal
-        isOpen={showNicheRadarModal}
-        onClose={() => setShowNicheRadarModal(false)}
-        onSelectNiche={(concept, keywords) => {
-          setPromptStudioPreloadConcept(concept);
-          setCurrentView('prompts');
-        }}
-        showToast={showToast}
-      />
+      {showNicheRadarModal && (
+        <NicheRadarModal
+          isOpen={showNicheRadarModal}
+          onClose={() => setShowNicheRadarModal(false)}
+          onSelectNiche={(concept, keywords) => {
+            setPromptStudioPreloadConcept(concept);
+            setCurrentView('prompts');
+          }}
+          showToast={showToast}
+        />
+      )}
 
       {/* Model & Property Release AI Inspector Modal */}
-      <ReleaseInspectorModal
-        isOpen={showReleaseModal}
-        onClose={() => setShowReleaseModal(false)}
-        showToast={showToast}
-      />
+      {showReleaseModal && (
+        <ReleaseInspectorModal
+          isOpen={showReleaseModal}
+          onClose={() => setShowReleaseModal(false)}
+          showToast={showToast}
+        />
+      )}
 
       {/* Dual Agency Search Engine Simulator Modal */}
-      <SearchSimulatorModal
-        isOpen={showSimulatorModal}
-        onClose={() => {
-          setShowSimulatorModal(false);
-          setSimulatorActiveItem(null);
-        }}
-        sampleItem={simulatorActiveItem}
-        showToast={showToast}
-      />
+      {showSimulatorModal && (
+        <SearchSimulatorModal
+          isOpen={showSimulatorModal}
+          onClose={() => {
+            setShowSimulatorModal(false);
+            setSimulatorActiveItem(null);
+          }}
+          sampleItem={simulatorActiveItem}
+          showToast={showToast}
+        />
+      )}
 
       {/* Vector EPS & AI Metadata Studio Modal */}
-      <VectorMetadataStudioModal
-        isOpen={showVectorStudioModal}
-        onClose={() => setShowVectorStudioModal(false)}
-        onToast={showToast}
-        customApiKey={customApiKey}
-        isPro={isPro}
-      />
+      {showVectorStudioModal && (
+        <VectorMetadataStudioModal
+          isOpen={showVectorStudioModal}
+          onClose={() => setShowVectorStudioModal(false)}
+          onToast={showToast}
+          customApiKey={customApiKey}
+          isPro={isPro}
+        />
+      )}
 
       {/* Live Marketplace Buyer Mockup Modal */}
-      <MarketplaceMockupModal
-        isOpen={Boolean(mockupItem)}
-        onClose={() => setMockupItem(null)}
-        item={mockupItem}
-        showToast={showToast}
-      />
+      {mockupItem && (
+        <MarketplaceMockupModal
+          isOpen={Boolean(mockupItem)}
+          onClose={() => setMockupItem(null)}
+          item={mockupItem}
+          showToast={showToast}
+        />
+      )}
 
       {/* Marketplace Algorithm Rank Booster (Top 10 Priority) Modal */}
-      <AlgorithmRankBoosterModal
-        item={algorithmActiveItem}
-        isOpen={showAlgorithmBoosterModal}
-        onClose={() => {
-          setShowAlgorithmBoosterModal(false);
-          setAlgorithmActiveItem(null);
-        }}
-        onSave={handleSaveAlgorithmKeywords}
-        showToast={showToast}
-      />
+      {showAlgorithmBoosterModal && (
+        <AlgorithmRankBoosterModal
+          item={algorithmActiveItem}
+          isOpen={showAlgorithmBoosterModal}
+          onClose={() => {
+            setShowAlgorithmBoosterModal(false);
+            setAlgorithmActiveItem(null);
+          }}
+          onSave={handleSaveAlgorithmKeywords}
+          showToast={showToast}
+        />
+      )}
 
       {/* Competitor Keyword Gap Inspector Modal */}
-      <CompetitorTagGapModal
-        item={competitorActiveItem}
-        isOpen={showCompetitorGapModal}
-        onClose={() => {
-          setShowCompetitorGapModal(false);
-          setCompetitorActiveItem(null);
-        }}
-        onAddKeywords={handleAddCompetitorKeywords}
-        showToast={showToast}
-      />
+      {showCompetitorGapModal && (
+        <CompetitorTagGapModal
+          item={competitorActiveItem}
+          isOpen={showCompetitorGapModal}
+          onClose={() => {
+            setShowCompetitorGapModal(false);
+            setCompetitorActiveItem(null);
+          }}
+          onAddKeywords={handleAddCompetitorKeywords}
+          showToast={showToast}
+        />
+      )}
 
       {/* Keyboard Shortcuts Reference Modal */}
-      <KeyboardShortcutsModal
-        isOpen={showShortcutsModal}
-        onClose={() => setShowShortcutsModal(false)}
-      />
+      {showShortcutsModal && (
+        <KeyboardShortcutsModal
+          isOpen={showShortcutsModal}
+          onClose={() => setShowShortcutsModal(false)}
+        />
+      )}
 
       {/* Interactive Contributor Guide Tour Modal */}
-      <InteractiveTourModal
-        isOpen={showTourModal}
-        onClose={() => setShowTourModal(false)}
-        currentStep={tourStep}
-        onNext={() => setTourStep((prev) => Math.min(prev + 1, 4))}
-        onPrev={() => setTourStep((prev) => Math.max(prev - 1, 0))}
-      />
+      {showTourModal && (
+        <InteractiveTourModal
+          isOpen={showTourModal}
+          onClose={() => setShowTourModal(false)}
+          currentStep={tourStep}
+          onNext={() => setTourStep((prev) => Math.min(prev + 1, 4))}
+          onPrev={() => setTourStep((prev) => Math.max(prev - 1, 0))}
+        />
+      )}
 
       {/* Google Monetization & Contributor Earning Center Modal */}
-      <EarningMonetizationModal
-        isOpen={showEarningMonetizeModal}
-        onClose={() => setShowEarningMonetizeModal(false)}
-        onOpenCalculator={() => setShowEarningsModal(true)}
-        onOpenNicheRadar={() => setShowNicheRadarModal(true)}
-        themeMode={themeMode}
-      />
+      {showEarningMonetizeModal && (
+        <EarningMonetizationModal
+          isOpen={showEarningMonetizeModal}
+          onClose={() => setShowEarningMonetizeModal(false)}
+          onOpenCalculator={() => setShowEarningsModal(true)}
+          onOpenNicheRadar={() => setShowNicheRadarModal(true)}
+          themeMode={themeMode}
+        />
+      )}
 
       {/* GDPR & Google AdSense Compliant Cookie Banner */}
       <CookieConsentBanner onOpenPrivacy={() => setShowPrivacyModal(true)} />
 
       {/* Legal & Compliance Modals for AdSense Approval */}
-      <PrivacyPolicyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
-      <TermsOfServiceModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
-      <EarningsDisclaimerModal isOpen={showDisclaimerModal} onClose={() => setShowDisclaimerModal(false)} />
-      <ContactSupportModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />
+      {showPrivacyModal && <PrivacyPolicyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />}
+      {showTermsModal && <TermsOfServiceModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />}
+      {showDisclaimerModal && <EarningsDisclaimerModal isOpen={showDisclaimerModal} onClose={() => setShowDisclaimerModal(false)} />}
+      {showContactModal && <ContactSupportModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />}
 
       {/* Editorial Navigation Modals */}
-      <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
-      <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
-      <ResourcesModal isOpen={showResourcesModal} onClose={() => setShowResourcesModal(false)} />
+      {showAboutModal && <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />}
+      {showPricingModal && <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />}
+      {showResourcesModal && <ResourcesModal isOpen={showResourcesModal} onClose={() => setShowResourcesModal(false)} />}
 
       {/* 5D Architectural Identity & Authentication Modal (Google + Email Sign In / Sign Up / Log Out) */}
-      <ArchitecturalAuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        user={user}
-        onGoogleLogin={handleGoogleLogin}
-        onEmailAuth={handleEmailAuth}
-        onLogout={handleLogout}
-        themeMode={themeMode}
-      />
+      {showAuthModal && (
+        <ArchitecturalAuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          user={user}
+          onGoogleLogin={handleGoogleLogin}
+          onEmailAuth={handleEmailAuth}
+          onLogout={handleLogout}
+          themeMode={themeMode}
+        />
+      )}
 
       {/* 100x Advanced Sovereign AI Co-Pilot 5.0 Drawer & Expandable Studio Command Center */}
-      <SovereignAiAssistantDrawer
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        themeMode={themeMode}
-        chatMessages={chatMessages}
-        chatSessions={chatSessions}
-        activeChatSessionId={activeChatSessionId}
-        showChatHistorySidebar={showChatHistorySidebar}
-        setShowChatHistorySidebar={setShowChatHistorySidebar}
-        onStartNewChat={handleStartNewChat}
-        onSelectChatSession={handleSelectChatSession}
-        onDeleteChatSession={handleDeleteChatSession}
-        chatInput={chatInput}
-        setChatInput={setChatInput}
-        chatAttachedImage={chatAttachedImage}
-        setChatAttachedImage={setChatAttachedImage}
-        onChatImageUpload={handleChatImageUpload}
-        onSendChat={handleSendChat}
-        isChatLoading={isChatLoading}
-        activeMode={aiAssistantMode}
-        setActiveMode={setAiAssistantMode}
-        onPushToStudioQueue={handlePushChatAssetToStudio}
-        activeWorkspaceAsset={
-          items.length > 0
-            ? {
-                fileName: (items.find((i) => i.result) || items[0]).file.name,
-                title: (items.find((i) => i.result) || items[0]).result?.recommendedTitle,
-                keywords: (items.find((i) => i.result) || items[0]).result?.keywords,
-                previewUrl: (items.find((i) => i.result) || items[0]).previewUrl
-              }
-            : null
-        }
-        totalQueueCount={items.length}
-        customApiKey={customApiKey}
-        showToast={showToast}
-      />
+      {isChatOpen && (
+        <SovereignAiAssistantDrawer
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          themeMode={themeMode}
+          chatMessages={chatMessages}
+          chatSessions={chatSessions}
+          activeChatSessionId={activeChatSessionId}
+          showChatHistorySidebar={showChatHistorySidebar}
+          setShowChatHistorySidebar={setShowChatHistorySidebar}
+          onStartNewChat={handleStartNewChat}
+          onSelectChatSession={handleSelectChatSession}
+          onDeleteChatSession={handleDeleteChatSession}
+          chatInput={chatInput}
+          setChatInput={setChatInput}
+          chatAttachedImage={chatAttachedImage}
+          setChatAttachedImage={setChatAttachedImage}
+          onChatImageUpload={handleChatImageUpload}
+          onSendChat={handleSendChat}
+          isChatLoading={isChatLoading}
+          activeMode={aiAssistantMode}
+          setActiveMode={setAiAssistantMode}
+          onPushToStudioQueue={handlePushChatAssetToStudio}
+          activeWorkspaceAsset={
+            items.length > 0
+              ? {
+                  fileName: (items.find((i) => i.result) || items[0]).file.name,
+                  title: (items.find((i) => i.result) || items[0]).result?.recommendedTitle,
+                  keywords: (items.find((i) => i.result) || items[0]).result?.keywords,
+                  previewUrl: (items.find((i) => i.result) || items[0]).previewUrl
+                }
+              : null
+          }
+          totalQueueCount={items.length}
+          customApiKey={customApiKey}
+          showToast={showToast}
+        />
+      )}
 
       {/* Contributor Pre-Submission Checker, Rejection Reason Helper, AI Disclosure & Earnings Tracker */}
-      <ContributorProToolkitModal
-        isOpen={showProToolkitModal}
-        onClose={() => setShowProToolkitModal(false)}
-        initialTab={proToolkitTab}
-        uiLang="en"
-        onToggleLang={() => {}}
-        themeMode={themeMode}
-        showToast={showToast}
-      />
+      {showProToolkitModal && (
+        <ContributorProToolkitModal
+          isOpen={showProToolkitModal}
+          onClose={() => setShowProToolkitModal(false)}
+          initialTab={proToolkitTab}
+          uiLang="en"
+          onToggleLang={() => {}}
+          themeMode={themeMode}
+          showToast={showToast}
+        />
+      )}
 
       {/* Full-Screen EPS Vector & Adobe Stock Metadata Viewer Modal */}
       {epsViewerItemId && (

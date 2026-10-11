@@ -129,6 +129,61 @@ const SESSION_HMAC_SECRET = crypto
   .update(process.env.GEMINI_API_KEY || "adobemeta_sovereign_auth_vault_secret_key_2026")
   .digest("hex");
 
+const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30-day cryptographic session TTL
+
+// OWASP Top Weak / Breached Passwords Blacklist
+const COMMON_BREACHED_PASSWORDS = new Set([
+  "password1", "password123", "password1234", "12345678a", "123456789a", "qwerty123",
+  "qwertyuiop1", "admin123", "admin1234", "welcome123", "letmein123", "iloveyou1",
+  "abc12345", "abc123456", "abcd1234", "passw0rd", "p@ssw0rd", "p@ssword123",
+  "1q2w3e4r", "1q2w3e4r5t", "zaq12wsx", "football1", "baseball1", "superman1"
+]);
+
+function validateStrongPasswordPolicy(rawPassword: string, email: string): { valid: boolean; reason?: string } {
+  if (rawPassword.length < 8) {
+    return { valid: false, reason: "Security Policy: Password must be at least 8 characters long." };
+  }
+  if (rawPassword.length > 128) {
+    return { valid: false, reason: "Security Policy: Password cannot exceed 128 characters." };
+  }
+  if (!/[A-Za-z]/.test(rawPassword) || !/[0-9]/.test(rawPassword)) {
+    return { valid: false, reason: "Security Policy: Password must contain both letters and numbers." };
+  }
+  const lowerPass = rawPassword.toLowerCase();
+  if (COMMON_BREACHED_PASSWORDS.has(lowerPass)) {
+    return {
+      valid: false,
+      reason: "Security Policy: This password appears on known breached password lists (e.g., 'password123'). Please choose a unique password."
+    };
+  }
+  const emailPrefix = email.split("@")[0]?.toLowerCase() || "";
+  if (emailPrefix.length >= 4 && lowerPass.includes(emailPrefix)) {
+    return {
+      valid: false,
+      reason: "Security Policy: Password must not contain your email username for your protection."
+    };
+  }
+  return { valid: true };
+}
+
+// In-Memory Sliding Window IP Rate Limiter (Protects Auth & API from Brute-Force / DDoS)
+const ipRateBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function checkIpRateLimit(ip: string, bucketKey: string, maxRequests: number, windowMs: number): { allowed: boolean; retryAfterSec?: number } {
+  const now = Date.now();
+  const compositeKey = `${bucketKey}:${ip}`;
+  const entry = ipRateBuckets.get(compositeKey);
+  if (!entry || now > entry.resetAt) {
+    ipRateBuckets.set(compositeKey, { count: 1, resetAt: now + windowMs });
+    return { allowed: true };
+  }
+  if (entry.count >= maxRequests) {
+    return { allowed: false, retryAfterSec: Math.max(1, Math.ceil((entry.resetAt - now) / 1000)) };
+  }
+  entry.count += 1;
+  return { allowed: true };
+}
+
 function createSignedSessionToken(uid: string, email: string): string {
   const issuedAt = Date.now();
   const payload = `${uid}:${email}:${issuedAt}`;
@@ -142,6 +197,10 @@ function verifySignedSessionToken(token: string): { valid: boolean; uid?: string
     const parts = decoded.split(":");
     if (parts.length !== 4) return { valid: false };
     const [uid, email, issuedAtStr, sig] = parts;
+    const issuedAt = Number(issuedAtStr);
+    if (!Number.isFinite(issuedAt) || Date.now() - issuedAt > SESSION_MAX_AGE_MS || issuedAt > Date.now() + 60000) {
+      return { valid: false };
+    }
     const payload = `${uid}:${email}:${issuedAtStr}`;
     const expectedSig = crypto.createHmac("sha256", SESSION_HMAC_SECRET).update(payload).digest("hex");
     if (sig.length !== expectedSig.length) return { valid: false };
@@ -212,8 +271,10 @@ async function startServer() {
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(self), geolocation=()");
+    res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     // Rate limit header signaling
-    res.setHeader("X-RateLimit-Policy", "stockmeta-anti-abuse-v1");
+    res.setHeader("X-RateLimit-Policy", "stockmeta-zero-trust-v2");
     next();
   });
 
@@ -341,6 +402,15 @@ async function startServer() {
       const rawPassword = String(password || "");
       const cleanName = String(fullName || cleanEmail.split("@")[0] || "Contributor").trim();
 
+      const clientIp = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+      const ipLimit = checkIpRateLimit(clientIp, "auth", 15, 60 * 1000);
+      if (!ipLimit.allowed) {
+        return res.status(429).json({
+          code: "auth/too-many-requests",
+          error: `Too many authentication requests from your network. Please wait ${ipLimit.retryAfterSec}s.`
+        });
+      }
+
       const emailCheck = isDisposableOrFakeEmail(cleanEmail);
       if (emailCheck.blocked) {
         return res.status(400).json({
@@ -349,10 +419,11 @@ async function startServer() {
         });
       }
 
-      if (rawPassword.length < 8 || !/[A-Za-z]/.test(rawPassword) || !/[0-9]/.test(rawPassword)) {
+      const passPolicy = validateStrongPasswordPolicy(rawPassword, cleanEmail);
+      if (!passPolicy.valid) {
         return res.status(400).json({
           code: "auth/weak-password",
-          error: "Security Policy: Password must be at least 8 characters long and contain both letters and numbers."
+          error: passPolicy.reason
         });
       }
 
@@ -456,6 +527,15 @@ async function startServer() {
       const rawPassword = String(password || "");
       const cleanName = String(fullName || "").trim();
 
+      const clientIp = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+      const ipLimit = checkIpRateLimit(clientIp, "auth", 15, 60 * 1000);
+      if (!ipLimit.allowed) {
+        return res.status(429).json({
+          code: "auth/too-many-requests",
+          error: `Too many authentication requests from your network. Please wait ${ipLimit.retryAfterSec}s.`
+        });
+      }
+
       const emailCheck = isDisposableOrFakeEmail(cleanEmail);
       if (emailCheck.blocked) {
         return res.status(400).json({
@@ -464,17 +544,18 @@ async function startServer() {
         });
       }
 
-      if (rawPassword.length < 8 || !/[A-Za-z]/.test(rawPassword) || !/[0-9]/.test(rawPassword)) {
+      const passPolicy = validateStrongPasswordPolicy(rawPassword, cleanEmail);
+      if (!passPolicy.valid) {
         return res.status(400).json({
           code: "auth/weak-password",
-          error: "Password must be at least 8 characters long and contain both letters and numbers."
+          error: passPolicy.reason
         });
       }
 
-      if (!cleanName || cleanName.length < 2) {
+      if (!cleanName || cleanName.length < 2 || cleanName.length > 100) {
         return res.status(400).json({
           code: "auth/missing-name",
-          error: "Please enter your full name or studio name (at least 2 characters)."
+          error: "Please enter your full name or studio name (2 to 100 characters)."
         });
       }
 
@@ -530,6 +611,15 @@ async function startServer() {
       const { email, password } = req.body || {};
       const cleanEmail = String(email || "").trim().toLowerCase();
       const rawPassword = String(password || "");
+
+      const clientIp = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+      const ipLimit = checkIpRateLimit(clientIp, "auth", 15, 60 * 1000);
+      if (!ipLimit.allowed) {
+        return res.status(429).json({
+          code: "auth/too-many-requests",
+          error: `Too many sign-in attempts from your network. Please wait ${ipLimit.retryAfterSec}s.`
+        });
+      }
 
       const emailCheck = isDisposableOrFakeEmail(cleanEmail);
       if (emailCheck.blocked) {
@@ -2774,24 +2864,36 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
       ${regenDirectives}
       
       ABSOLUTE ZERO-ERROR & ZERO-IRRELEVANT METADATA CONSTITUTION (CRITICAL):
-      1. 100% VISUAL GROUND-TRUTH ONLY (NO HALLUCINATIONS, NO UNRELATED WORDS):
-         - Inspect the actual image pixels carefully. Every single word in the Title and every single tag in the Keywords MUST be 100% true to what is visibly inside the image.
+      1. 14-TIER VISUAL SEMANTIC GROUND-TRUTH (ZERO HALLUCINATIONS, ZERO UNRELATED WORDS):
+         - Inspect the actual image pixels across all 14 visual dimensions:
+           (1) Exact Primary Subject & Species/Object, (2) Secondary Objects & Props, (3) Action, Pose & Motion State,
+           (4) Setting, Location & Architecture, (5) Lighting, Time of Day & Atmosphere, (6) Color Palette & Tonal Mood,
+           (7) Surface Texture & Material Finish, (8) Camera Angle, Perspective & Framing, (9) Copy Space & Layout Utility,
+           (10) Art Medium & Render Technique, (11) People Count & Authentic Demographics (or "no people"),
+           (12) Emotional Resonance & Conceptual Theme, (13) Buyer Industry & Commercial Application, (14) High-Velocity 2-Word Search Phrases.
          - NEVER inject unrelated corporate/tech buzzwords ("business, fintech, saas, corporate, startup, technology, cloud, finance, office, strategy") unless the image literally depicts business, finance, or technology!
          - If the image shows nature, an animal, food, flowers, a religious festival (e.g., Ramadan, Eid, Christmas), a t-shirt design, a vintage emblem, a background pattern, or a lifestyle portrait, 100% of the Title and all Keywords MUST belong strictly to that exact visual subject!
          - If there are NO people in the image, NEVER include human tags ("man, woman, person, people, businessman, smiling, team, portrait")—include "no people" instead.
          - NEVER include meaningless filler words, subjective adjectives ("best, amazing, stunning, gorgeous, awesome, cool, nice, quality, view, scene, thing, stuff"), camera file codes ("img, dsc, 4k, 8k, hd"), or brand trademarks.
       
-      2. SUBJECT-FIRST COMMERCIAL TITLE FORMULA:
+      2. SUBJECT-FIRST COMMERCIAL TITLE FORMULA (50–68 CHARACTERS SWEET SPOT):
          ${marketConfig.titleDirectives}
-         - Structure: [Exact Primary Visual Subject] + [Action / Pose / Arrangement] + [Background / Style / Context]
+         - Structure: [Exact Primary Visual Subject + Key Attribute] + [Action / Pose / Arrangement] + [Background / Style / Copy Space]
+         - First 4 words MUST name the exact primary visual subject so agency search engines assign maximum relevance weight.
          - Keep it factual, crystal clear, natural English, with zero fluff and zero repetition.
-         - For Adobe Stock: Strictly 40 to 68 characters (5 to 10 words), capitalized first letter, NO trailing period.
+         - For Adobe Stock: Strictly 45 to 68 characters (6 to 10 words), capitalized first letter, NO trailing period.
       
-      3. PRECISION KEYWORD HIERARCHY (Generate ${marketConfig.maxKeywords} 100% relevant, zero-garbage keywords):
+      3. PRECISION KEYWORD HIERARCHY & COMPOUND + ATOMIC DUAL-INDEXING (Generate ${marketConfig.maxKeywords} 100% relevant keywords):
          ${marketConfig.keywordDirectives}
-         - SLOTS 1 TO 10 (75% SEARCH RANKING WEIGHT): Must be the 10 most literal, undeniable primary nouns, main title words, exact subject, and core visual concept.
-         - SLOTS 11 TO 25 (VISUAL & CONTEXTUAL ATTRIBUTES): Specific secondary objects visible in the frame, exact colors, textures, lighting/background ("isolated on white", "copy space", "dark background"), and people count ("no people", "one person", "two people").
-         - SLOTS 26 TO ${marketConfig.maxKeywords} (BUYER SEARCH SYNONYMS & MEDIUM): Accurate synonyms of the subject, artistic style/composition ("close up", "flat design", "minimalist", "seamless pattern", "vector illustration"), and real commercial applications directly fitting this specific image.
+         - SLOTS 1 TO 10 (75% SEARCH RANKING WEIGHT):
+           * Slot #1: Exact Primary Subject Noun / Phrase matching the first words of the Title.
+           * Slot #2: Primary Subject Synonym or Specific Category.
+           * Slot #3: Core Action, Pose, or Visual State.
+           * Slot #4: Distinct Visual Style or Medium.
+           * Slot #5: Key Setting, Background, or Lighting Context.
+           * Slots #6–#10: High-Converting 2-Word Buyer Search Phrases & Core Commercial Concepts directly visible in the frame.
+         - SLOTS 11 TO 25 (VISUAL & CONTEXTUAL ATTRIBUTES): Secondary objects visible in the frame, exact colors, textures, composition ("isolated on white", "copy space", "close up", "top view"), and people count ("no people", "one person", "two people").
+         - SLOTS 26 TO ${marketConfig.maxKeywords} (COMPOUND + ATOMIC DUAL-INDEXING): Balance high-converting 2-word buyer phrases with strong single-word atomic nouns so the asset ranks in both broad and exact-match agency queries.
          - SEPARATE DESCRIPTIVE ELEMENTS: Keep keywords concise (1 to 2 words, max 3 words for established compound nouns like "lunar new year" or "hot air balloon"). Never output 4+ word sentences as a keyword.
          - ZERO DUPLICATES OR PLURAL REPETITIONS: Never output both singular and plural of the same noun (e.g., do NOT include both "flower" and "flowers", or "leaf" and "leaves").
       

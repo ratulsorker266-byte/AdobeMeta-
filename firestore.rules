@@ -2,12 +2,56 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to read and write their own root document and all subcollections
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // =========================================================================
+    // ZERO-TRUST CRYPTOGRAPHIC HELPER PRIMITIVES
+    // =========================================================================
+    function isAuthenticated() {
+      return request.auth != null && request.auth.uid is string && request.auth.uid.size() > 0;
     }
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().size() <= 16
+        && (!('email' in data) || (data.email is string && data.email.size() <= 256))
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
+        && (!('credits' in data) || (data.credits is number && data.credits >= 0))
+        && (!('dailyUsage' in data) || (data.dailyUsage is number && data.dailyUsage >= 0))
+        && (!('chatUsage' in data) || (data.chatUsage is number && data.chatUsage >= 0))
+        && (!('trendsUsage' in data) || (data.trendsUsage is number && data.trendsUsage >= 0))
+        && (!('planType' in data) || (data.planType in ['free', 'premium']))
+        && (!('isPro' in data) || (data.isPro is bool));
+    }
+
+    function isValidAssetDocument(data) {
+      return data.keys().size() <= 16
+        && (!('fileName' in data) || (data.fileName is string && data.fileName.size() <= 512))
+        && (!('mimeType' in data) || (data.mimeType is string && data.mimeType.size() <= 128))
+        && (!('previewUrl' in data) || (data.previewUrl is string && data.previewUrl.size() <= 1048576))
+        && (!('result' in data) || (data.result is map && data.result.keys().size() <= 40));
+    }
+
+    // Root Contributor Profile Document
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow delete: if isOwner(userId);
+
+      // Contributor Asset Metadata History Subcollection
+      match /assets/{assetId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidAssetDocument(request.resource.data);
+        allow update: if isOwner(userId) && isValidAssetDocument(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // Default Deny-All for any other collection path
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

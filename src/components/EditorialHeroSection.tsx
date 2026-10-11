@@ -108,44 +108,29 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   showToast
 }) => {
   const [activeDepartment, setActiveDepartment] = useState<'all' | 'metadata' | 'creative' | 'monetize'>('all');
+  const [showGlobalVaultExpanded, setShowGlobalVaultExpanded] = useState<boolean>(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewStoreIdx, setPreviewStoreIdx] = useState<number>(0);
   const [isHoveringSpecimen, setIsHoveringSpecimen] = useState<boolean>(false);
   const [showHeaderControlsMenu, setShowHeaderControlsMenu] = useState<boolean>(false);
   const [isHeroDragging, setIsHeroDragging] = useState<boolean>(false);
-  const [mouseSpotlight, setMouseSpotlight] = useState<{ x: number; y: number }>({ x: 650, y: 260 });
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
-  const [countedWeight, setCountedWeight] = useState<number>(0);
-  const [countedTags, setCountedTags] = useState<number>(0);
   const [activeSpecimenAgency, setActiveSpecimenAgency] = useState<'adobe' | 'shutterstock' | 'freepik' | 'getty' | 'vecteezy'>('adobe');
   const [customSpecimenTitle, setCustomSpecimenTitle] = useState<string>('');
   const [customSpecimenTags, setCustomSpecimenTags] = useState<string[]>([]);
-  const [heroTilt, setHeroTilt] = useState<{ rx: number; ry: number }>({ rx: 0, ry: 0 });
 
   const isLight = themeMode === 'light';
   const isBn = false;
 
-  // Intelligent Navigation State & Smooth Counting Magic Moment on Awakening
+  // Lightweight Passive Scroll Listener (Zero Interval Re-renders)
   useEffect(() => {
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 24);
+      const scrolled = window.scrollY > 24;
+      setIsScrolled((prev) => (prev === scrolled ? prev : scrolled));
     };
     window.addEventListener('scroll', onScroll, { passive: true });
-
-    let frame = 0;
-    const totalFrames = 36;
-    const counterTimer = setInterval(() => {
-      frame += 1;
-      const progress = Math.min(1, frame / totalFrames);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCountedWeight(Math.round(75 * eased));
-      setCountedTags(Math.round(49 * eased));
-      if (frame >= totalFrames) clearInterval(counterTimer);
-    }, 24);
-
     return () => {
       window.removeEventListener('scroll', onScroll);
-      clearInterval(counterTimer);
     };
   }, []);
 
@@ -320,17 +305,17 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
         orbOne: 'bg-white/90',
         orbTwo: 'bg-amber-100/45',
         orbThree: 'bg-stone-200/40',
-        horizonBeam: 'from-transparent via-amber-700/25 to-transparent',
-        spotlightColor: 'rgba(255, 255, 255, 0.5)',
+        horizonBeam: 'from-transparent via-amber-700/35 to-transparent',
+        spotlightColor: 'rgba(212, 175, 55, 0.09)',
         accentBadge: 'text-amber-900 border-amber-400/50 bg-amber-500/10',
       }
     : {
         orbOne: 'bg-white/[0.025]',
         orbTwo: 'bg-neutral-900/40',
         orbThree: 'bg-white/[0.015]',
-        horizonBeam: 'from-transparent via-white/35 to-transparent',
-        spotlightColor: 'rgba(255, 255, 255, 0.045)',
-        accentBadge: 'text-white border-white/25 bg-white/10',
+        horizonBeam: 'from-transparent via-[#f3e5ab]/55 to-transparent',
+        spotlightColor: 'rgba(212, 175, 55, 0.075)',
+        accentBadge: 'text-[#f6eed5] border-[#d4af37]/35 bg-[#d4af37]/10',
       };
 
   return (
@@ -702,10 +687,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
             <button
               onClick={() => onNavigateView('upload')}
-              className={`lumina-tactile-button text-[11px] font-semibold tracking-[0.04em] px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-xs group shrink-0 ${
+              className={`lumina-tactile-button text-[11px] font-bold tracking-[0.04em] px-4 py-1.5 rounded-xl flex items-center gap-1.5 cursor-pointer whitespace-nowrap group shrink-0 ${
                 isLight
-                  ? 'bg-neutral-950 hover:bg-black text-white'
-                  : 'bg-white hover:bg-neutral-200 text-black'
+                  ? 'bg-neutral-950 hover:bg-black text-white shadow-sm'
+                  : 'luxury-gold-bullion-btn'
               }`}
             >
               <span className="transition-transform duration-200 group-hover:-translate-x-0.5">{isBn ? 'স্টুডিও খুলুন' : 'Open Studio'}</span>
@@ -720,48 +705,41 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       {/* REFINED ARCHITECTURAL LUXURY HERO MONOLITH                   */}
       {/* ============================================================ */}
       <div className="relative z-10 pt-12 sm:pt-16 pb-28 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14">
-        <motion.div
-          initial={{ opacity: 0, y: 14, scale: 0.992 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+        <div
           onMouseMove={(e) => {
+            if (isLiteMode) return;
             const rect = e.currentTarget.getBoundingClientRect();
-            setMouseSpotlight({
-              x: e.clientX - rect.left,
-              y: e.clientY - rect.top,
-            });
+            e.currentTarget.style.setProperty('--spot-x', `${e.clientX - rect.left}px`);
+            e.currentTarget.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
           }}
-          className={`rounded-[32px] p-7 sm:p-12 lg:p-16 xl:p-20 relative overflow-hidden transition-all duration-500 sovereign-prism-card ${
+          style={{ '--spot-x': '650px', '--spot-y': '260px' } as React.CSSProperties}
+          className={`rounded-[32px] p-7 sm:p-12 lg:p-16 xl:p-20 relative overflow-hidden transition-colors duration-300 sovereign-prism-card ${
             isLight ? 'crystal-architectural-slab-light' : 'crystal-architectural-slab-dark'
           }`}
         >
-          {/* Interactive Cursor-Tracking Warm Champagne AmbientCaustic Spotlight */}
+          {/* Interactive Cursor-Tracking Warm Champagne AmbientCaustic Spotlight (Zero React Re-render) */}
           {!isLiteMode && (
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 transition-opacity duration-500"
+              className="pointer-events-none absolute inset-0"
               style={{
-                background: `radial-gradient(640px circle at ${mouseSpotlight.x}px ${mouseSpotlight.y}px, ${skinPalette.spotlightColor}, transparent 70%)`,
+                background: `radial-gradient(600px circle at var(--spot-x, 650px) var(--spot-y, 260px), ${skinPalette.spotlightColor}, transparent 70%)`,
               }}
             />
           )}
 
-          {/* Top-Left & Bottom-Right Warm Champagne & Velvet Refraction Orbs */}
+          {/* Top-Left & Bottom-Right Warm Champagne & Velvet Refraction Gradients (Zero-Blur GPU Composited) */}
           <div
             aria-hidden="true"
-            className={`pointer-events-none absolute -top-28 -left-24 w-[440px] h-[440px] rounded-full blur-[115px] ${skinPalette.orbOne}`}
+            className={`pointer-events-none absolute top-0 inset-x-10 h-[1.5px] bg-gradient-to-r ${
+              isLight ? 'from-transparent via-amber-600/45 to-transparent' : 'from-transparent via-[#f3e5ab]/65 to-transparent'
+            }`}
           />
           <div
             aria-hidden="true"
-            className={`pointer-events-none absolute -bottom-28 -right-24 w-[440px] h-[440px] rounded-full blur-[125px] ${skinPalette.orbTwo}`}
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute top-0 inset-x-10 h-[1px] bg-gradient-to-r from-transparent via-white/35 to-transparent"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 inset-x-24 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent"
+            className={`pointer-events-none absolute bottom-0 inset-x-24 h-[1px] bg-gradient-to-r ${
+              isLight ? 'from-transparent via-amber-500/25 to-transparent' : 'from-transparent via-[#d4af37]/35 to-transparent'
+            }`}
           />
 
           {/* Minimalist Editorial Kicker at Top of Hero */}
@@ -892,10 +870,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   >
                     Load Sample
                   </button>
-                  <span className={`lumina-tactile-button px-4.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md ${
+                  <span className={`lumina-tactile-button px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md ${
                     isLight
                       ? 'bg-neutral-950 text-white'
-                      : 'bg-white text-black hover:bg-neutral-200'
+                      : 'luxury-gold-bullion-btn'
                   }`}>
                     <span>Select Files</span>
                     <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -1246,7 +1224,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* ============================================================ */}
         {/* MINIMALIST ARCHITECTURAL DIRECTORY HEADER & FILTER BAR       */}
@@ -1350,6 +1328,8 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                     <img
                       src={store.image}
                       alt={store.title}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
                       referrerPolicy="no-referrer"
                     />
@@ -1419,17 +1399,59 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       {/* ============================================================ */}
       {/* GLOBAL COMMERCIAL METADATA, PROMPT & NICHE STORE VAULT       */}
       {/* ============================================================ */}
-      <GlobalAssetStoreVault
-        isLight={isLight}
-        showToast={showToast}
-        onLoadPackIntoWorkbench={(pack) => {
-          if (onLoadStorePack) {
-            onLoadStorePack(pack);
-          } else {
-            onNavigateView('upload');
-          }
-        }}
-      />
+      <div id="global-commercial-store-vault" className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14 pb-24">
+        <div className={`rounded-3xl p-6 sm:p-8 border transition-all ${
+          isLight
+            ? 'crystal-glass-panel-light border-neutral-200/80'
+            : 'crystal-glass-panel-dark border-white/10'
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-[10.5px] font-mono tracking-[0.18em] uppercase text-neutral-400">
+                <span>02. READY-TO-EXPORT COMMERCIAL VAULT</span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                  12 Master Packs · 588 Verified Tags
+                </span>
+              </div>
+              <h3 className={`text-lg sm:text-xl font-bold tracking-tight ${isLight ? 'text-neutral-950' : 'text-white'}`}>
+                Pre-Calibrated Commercial Metadata &amp; Midjourney Prompt Bundles
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowGlobalVaultExpanded((prev) => !prev)}
+              className={`lumina-tactile-button px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer shrink-0 ${
+                showGlobalVaultExpanded
+                  ? isLight
+                    ? 'bg-neutral-200 text-neutral-900'
+                    : 'bg-white/10 text-white border border-white/20'
+                  : isLight
+                  ? 'bg-neutral-950 text-white'
+                  : 'luxury-gold-bullion-btn'
+              }`}
+            >
+              <span>{showGlobalVaultExpanded ? 'Hide Commercial Vault' : 'Explore 12 Commercial Packs (588 Tags)'}</span>
+              <ArrowUpRight className={`w-3.5 h-3.5 transition-transform duration-200 ${showGlobalVaultExpanded ? 'rotate-90' : ''}`} />
+            </button>
+          </div>
+
+          {showGlobalVaultExpanded && (
+            <div className="mt-8 pt-6 border-t border-neutral-200/60 dark:border-white/10">
+              <GlobalAssetStoreVault
+                isLight={isLight}
+                showToast={showToast}
+                onLoadPackIntoWorkbench={(pack) => {
+                  if (onLoadStorePack) {
+                    onLoadStorePack(pack);
+                  } else {
+                    onNavigateView('upload');
+                  }
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
 
     </div>
   );

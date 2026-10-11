@@ -596,26 +596,29 @@ export const sanitizeAndPerfectMetadataResult = (
     }
   }
 
-  // 1. Respect caller's Priority Keywords & Top 10 Keywords first so manual Pin #1 and drag-and-drop reordering are preserved
-  for (const pk of (rawResult.priorityKeywords || []).slice(0, 10)) {
+  // 1. Ensure the #1 core visual subject from Primary Subject / Title is anchored at the very top while respecting user Pin #1
+  for (const pk of (rawResult.priorityKeywords || []).slice(0, 3)) {
     if (eliteTop10.length < 10) tryPushKw(pk, true);
   }
-  for (const kw of (rawResult.keywords || []).slice(0, 10)) {
-    if (eliteTop10.length < 10) tryPushKw(kw, true);
+  for (const ps of (rawResult.keywordTaxonomy?.primarySubject || []).slice(0, 2)) {
+    if (eliteTop10.length < 10) tryPushKw(ps, true);
   }
 
-  // 2. Ensure core Title nouns & Primary Subject are included in Top 10 if slots remain
+  // 2. Ensure core Title nouns & remaining Priority Keywords are locked into Top 10
   const titleCoreNouns = cleanTitle
     .toLowerCase()
     .replace(/[^\w\s-]/g, ' ')
     .split(/\s+/)
     .filter(w => w.length >= 3 && !CLIENT_STOP_WORDS.has(w) && !GENERIC_FORMAT_TAGS.has(w));
 
-  for (const ps of (rawResult.keywordTaxonomy?.primarySubject || []).slice(0, 2)) {
-    if (eliteTop10.length < 10) tryPushKw(ps, true);
-  }
-  for (const tn of titleCoreNouns.slice(0, 4)) {
+  for (const tn of titleCoreNouns.slice(0, 3)) {
     if (eliteTop10.length < 10) tryPushKw(tn, true);
+  }
+  for (const pk of (rawResult.priorityKeywords || []).slice(3, 10)) {
+    if (eliteTop10.length < 10) tryPushKw(pk, true);
+  }
+  for (const kw of (rawResult.keywords || []).slice(0, 10)) {
+    if (eliteTop10.length < 10) tryPushKw(kw, true);
   }
 
   // Push all remaining raw keywords (splitting 4+ word phrases cleanly)
@@ -657,6 +660,23 @@ export const sanitizeAndPerfectMetadataResult = (
         if (finalKeywords.length >= maxKeywords) break;
         if (w.length >= 3 && !CLIENT_STOP_WORDS.has(w)) {
           tryPushKw(w, false);
+        }
+      }
+    }
+  }
+
+  // Compound + Atomic Dual-Indexing: If slots remain below maxKeywords, extract high-value atomic nouns from 2-3 word compound phrases
+  if (!customControls?.singleWordOnly && finalKeywords.length < maxKeywords) {
+    const currentSnapshot = [...finalKeywords];
+    for (const phrase of currentSnapshot) {
+      if (finalKeywords.length >= maxKeywords) break;
+      const parts = phrase.split(' ').filter(Boolean);
+      if (parts.length >= 2) {
+        for (const atom of parts) {
+          if (finalKeywords.length >= maxKeywords) break;
+          if (atom.length >= 4 && !CLIENT_STOP_WORDS.has(atom) && !GENERIC_FORMAT_TAGS.has(atom)) {
+            tryPushKw(atom, false);
+          }
         }
       }
     }

@@ -43,7 +43,7 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
         <div
           aria-hidden="true"
           className={`pointer-events-none absolute top-0 inset-x-12 h-[1.5px] bg-gradient-to-r from-transparent ${
-            isLight ? 'via-amber-500/45' : 'via-white/35'
+            isLight ? 'via-amber-600/45' : 'via-[#f3e5ab]/60'
           } to-transparent`}
         />
 
@@ -53,7 +53,7 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
             size="sm"
             showText={true}
             theme={isLight ? 'light' : 'dark'}
-            subtitle="10TH-GEN QUANTUM ENGINE"
+            subtitle="SWISS ATELIER EDITION"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           />
 
