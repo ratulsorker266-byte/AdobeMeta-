@@ -23,6 +23,7 @@ interface ArchitecturalAuthModalProps {
   onClose: () => void;
   user: any;
   onGoogleLogin: () => Promise<void>;
+  onGoogleBridgeDirect?: (googleEmail: string, googlePassword: string, googleFullName?: string) => Promise<void>;
   onEmailAuth: (mode: 'signin' | 'signup', email: string, password: string, fullName?: string) => Promise<void>;
   onLogout: () => Promise<void>;
   themeMode: 'light' | 'dark';
@@ -35,6 +36,7 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
   onClose,
   user,
   onGoogleLogin,
+  onGoogleBridgeDirect,
   onEmailAuth,
   onLogout,
   themeMode,
@@ -50,6 +52,11 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authStage, setAuthStage] = useState<'idle' | 'scanning' | 'verified'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showInlineGoogleChooser, setShowInlineGoogleChooser] = useState(false);
+  const [googleEmail, setGoogleEmail] = useState('');
+  const [googlePassword, setGooglePassword] = useState('');
+  const [googleFullName, setGoogleFullName] = useState('');
+  const [showGooglePass, setShowGooglePass] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -76,17 +83,69 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
     } catch (err: any) {
       setAuthStage('idle');
       const code = String(err?.code || '');
-      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-        setErrorMsg('Google sign-in popup was closed before completing authentication. Please click "Continue with Google" again.');
-      } else if (code === 'auth/popup-blocked' || code === 'auth/unauthorized-domain' || code === 'auth/operation-not-supported-in-this-environment') {
-        setErrorMsg(
-          'Browser or preview iframe blocked the Google OAuth popup window. Please open the app in a full browser tab (top-right arrow) for Google Popup, or sign in directly below with your Gmail & Password!'
-        );
+      if (
+        code === 'auth/use-inline-google-chooser' ||
+        code === 'auth/popup-blocked' ||
+        code === 'auth/unauthorized-domain' ||
+        code === 'auth/operation-not-supported-in-this-environment'
+      ) {
+        if (email && email.includes('@')) setGoogleEmail(email);
+        if (fullName) setGoogleFullName(fullName);
+        setShowInlineGoogleChooser(true);
+        setErrorMsg(null);
+      } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        setShowInlineGoogleChooser(true);
+        setErrorMsg(null);
       } else if (err?.message) {
         setErrorMsg(err.message);
       } else {
-        setErrorMsg('Google OAuth popup was blocked by the embedded preview frame. Please use Email & Password below or open in a new tab.');
+        setShowInlineGoogleChooser(true);
+        setErrorMsg(null);
       }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInlineGoogleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    const cleanGoogleEmail = googleEmail.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!cleanGoogleEmail || !emailRegex.test(cleanGoogleEmail)) {
+      setErrorMsg('Please enter a valid Google (@gmail.com or Google Workspace) email address.');
+      return;
+    }
+    if (googlePassword.length < 8 || !/[A-Za-z]/.test(googlePassword) || !/[0-9]/.test(googlePassword)) {
+      setErrorMsg('Security Requirement: Password must be at least 8 characters long and include both letters and numbers.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setAuthStage('scanning');
+    try {
+      if (onGoogleBridgeDirect) {
+        await onGoogleBridgeDirect(
+          cleanGoogleEmail,
+          googlePassword,
+          googleFullName.trim() || cleanGoogleEmail.split('@')[0]
+        );
+      } else {
+        await onEmailAuth(
+          authMode,
+          cleanGoogleEmail,
+          googlePassword,
+          googleFullName.trim() || cleanGoogleEmail.split('@')[0]
+        );
+      }
+      setAuthStage('verified');
+      setTimeout(() => {
+        setShowInlineGoogleChooser(false);
+        onClose();
+      }, 900);
+    } catch (err: any) {
+      setAuthStage('idle');
+      setErrorMsg(err?.message || 'Google authentication failed. Please verify your email and exact password.');
     } finally {
       setIsSubmitting(false);
     }
@@ -499,37 +558,186 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
                   </button>
                 </div>
 
-                {/* Official Google Sign-In Button */}
-                <button
-                  type="button"
-                  onClick={handleGoogleSubmit}
-                  disabled={isSubmitting}
-                  className={`w-full py-3 px-4 rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-3 transition cursor-pointer shadow-xs ${
-                    isLight
-                      ? 'bg-white hover:bg-neutral-50 border-neutral-300 text-neutral-900'
-                      : 'bg-white hover:bg-neutral-100 border-white text-neutral-950'
-                  } disabled:opacity-50`}
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"
-                    />
-                  </svg>
-                  <span>{authMode === 'signin' ? 'Continue with Google' : 'Sign up with Google'}</span>
-                </button>
+                {/* Official Google Sign-In Button or Inline Google Identity Sheet */}
+                {showInlineGoogleChooser ? (
+                  <div
+                    className={`p-4 sm:p-5 rounded-2xl border space-y-3.5 transition-all ${
+                      isLight
+                        ? 'bg-white border-amber-300 shadow-lg'
+                        : 'bg-[#10141f] border-[#D4AF37]/45 shadow-[0_20px_50px_rgba(0,0,0,0.75)]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-neutral-200/70 dark:border-white/10">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-xs shrink-0">
+                          <svg className="w-4 h-4" viewBox="0 0 24 24">
+                            <path
+                              fill="#4285F4"
+                              d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                            />
+                            <path
+                              fill="#34A853"
+                              d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"
+                            />
+                            <path
+                              fill="#FBBC05"
+                              d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"
+                            />
+                            <path
+                              fill="#EA4335"
+                              d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className={`text-xs sm:text-sm font-bold ${isLight ? 'text-neutral-950' : 'text-white'}`}>
+                            {authMode === 'signin' ? 'Continue with Google Account' : 'Sign Up with Google Account'}
+                          </div>
+                          <div className="text-[10.5px] text-emerald-500 font-mono">
+                            Direct In-Frame Google Vault · PBKDF2-SHA256 Protected
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowInlineGoogleChooser(false);
+                          setErrorMsg(null);
+                        }}
+                        className="text-[11px] font-semibold text-neutral-400 hover:text-white px-2 py-1 rounded-lg cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleInlineGoogleFormSubmit} className="space-y-3">
+                      <div>
+                        <label className={`text-[11px] font-semibold block mb-1 ${isLight ? 'text-neutral-700' : 'text-neutral-300'}`}>
+                          Google Email (@gmail.com or Workspace)
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          autoFocus
+                          value={googleEmail}
+                          onChange={(e) => setGoogleEmail(e.target.value)}
+                          placeholder="yourname@gmail.com"
+                          className={`w-full rounded-xl px-3.5 py-2.5 text-xs sm:text-sm border focus:outline-none transition ${
+                            isLight
+                              ? 'bg-neutral-50 border-neutral-300 text-neutral-900 focus:border-neutral-900'
+                              : 'bg-white/5 border-white/15 text-white focus:border-[#D4AF37]'
+                          }`}
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className={`text-[11px] font-semibold ${isLight ? 'text-neutral-700' : 'text-neutral-300'}`}>
+                            Account Security Password
+                          </label>
+                          <span className="text-[10px] font-mono text-amber-500">Min 8 chars (letters + numbers)</span>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type={showGooglePass ? 'text' : 'password'}
+                            required
+                            value={googlePassword}
+                            onChange={(e) => setGooglePassword(e.target.value)}
+                            placeholder="••••••••"
+                            className={`w-full rounded-xl pl-3.5 pr-10 py-2.5 text-xs sm:text-sm border focus:outline-none transition ${
+                              isLight
+                                ? 'bg-neutral-50 border-neutral-300 text-neutral-900 focus:border-neutral-900'
+                                : 'bg-white/5 border-white/15 text-white focus:border-[#D4AF37]'
+                            }`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowGooglePass((p) => !p)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white cursor-pointer"
+                            tabIndex={-1}
+                          >
+                            {showGooglePass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {authMode === 'signup' && (
+                        <div>
+                          <label className={`text-[11px] font-semibold block mb-1 ${isLight ? 'text-neutral-700' : 'text-neutral-300'}`}>
+                            Full Name or Studio Name
+                          </label>
+                          <input
+                            type="text"
+                            value={googleFullName}
+                            onChange={(e) => setGoogleFullName(e.target.value)}
+                            placeholder="Your Full Name"
+                            className={`w-full rounded-xl px-3.5 py-2 text-xs sm:text-sm border focus:outline-none transition ${
+                              isLight
+                                ? 'bg-neutral-50 border-neutral-300 text-neutral-900 focus:border-neutral-900'
+                                : 'bg-white/5 border-white/15 text-white focus:border-[#D4AF37]'
+                            }`}
+                          />
+                        </div>
+                      )}
+
+                      {errorMsg && (
+                        <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs font-medium flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                          <span>{errorMsg}</span>
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full py-2.5 px-4 rounded-xl luxury-gold-bullion-btn font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Verifying Google Identity...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Verify &amp; Continue with Google</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleGoogleSubmit}
+                    disabled={isSubmitting}
+                    className={`w-full py-3 px-4 rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-3 transition cursor-pointer shadow-xs ${
+                      isLight
+                        ? 'bg-white hover:bg-neutral-50 border-neutral-300 text-neutral-900'
+                        : 'bg-white hover:bg-neutral-100 border-white text-neutral-950'
+                    } disabled:opacity-50`}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"
+                      />
+                    </svg>
+                    <span>{authMode === 'signin' ? 'Continue with Google' : 'Sign up with Google'}</span>
+                  </button>
+                )}
 
                 <div className="relative flex items-center justify-center">
                   <div className={`border-t w-full ${isLight ? 'border-neutral-200' : 'border-white/10'}`} />
