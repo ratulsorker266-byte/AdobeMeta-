@@ -42,8 +42,8 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
         {/* Top Specular Platinum & Crystal Glass Rim Line */}
         <div
           aria-hidden="true"
-          className={`pointer-events-none absolute top-0 inset-x-12 h-[1.5px] bg-gradient-to-r from-transparent ${
-            isLight ? 'via-amber-600/45' : 'via-[#f3e5ab]/60'
+          className={`pointer-events-none absolute top-0 inset-x-12 h-[1px] bg-gradient-to-r from-transparent ${
+            isLight ? 'via-neutral-300' : 'via-white/20'
           } to-transparent`}
         />
 
@@ -122,6 +122,17 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
             >
               Disclaimer
             </button>
+            <a
+              href="/ads.txt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`lumina-directional-link cursor-pointer font-mono ${
+                isLight ? 'hover:text-black text-emerald-700' : 'hover:text-white text-emerald-400'
+              }`}
+              title="Google AdSense Authorized Digital Sellers File"
+            >
+              ads.txt
+            </a>
             <button
               type="button"
               onClick={onOpenContact}

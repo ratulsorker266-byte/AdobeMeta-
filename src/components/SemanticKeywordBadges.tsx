@@ -534,23 +534,23 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
 
             let badgeClasses = '';
             if (isDragTarget) {
-              badgeClasses = 'border-[#D4AF37] bg-[#D4AF37]/25 scale-105 ring-2 ring-[#D4AF37]/50';
+              badgeClasses = 'border-white bg-white/20 scale-105 ring-2 ring-white/40';
             } else if (item.index === 1) {
               badgeClasses = isLight
                 ? 'bg-neutral-950 text-white border-neutral-950 font-bold shadow-xs'
-                : 'luxury-gold-bullion-btn font-black shadow-[0_4px_14px_rgba(212,175,55,0.28)]';
+                : 'bg-white text-neutral-950 border-white font-bold shadow-sm';
             } else if (item.index <= 5) {
               badgeClasses = isLight
-                ? 'bg-amber-50 text-neutral-950 border-amber-300 font-semibold hover:bg-amber-100'
-                : 'bg-[#D4AF37]/15 text-[#FFFDF5] border-[#D4AF37]/45 font-semibold hover:bg-[#D4AF37]/25';
+                ? 'bg-neutral-200 text-neutral-950 border-neutral-300 font-semibold hover:bg-neutral-300'
+                : 'bg-white/15 text-white border-white/30 font-semibold hover:bg-white/25';
             } else if (item.isTop10) {
               badgeClasses = isLight
-                ? 'bg-neutral-100 text-neutral-950 border-neutral-300 font-medium hover:bg-neutral-200'
-                : 'bg-white/[0.07] text-[#F3E5AB] border-[#D4AF37]/25 font-medium hover:bg-white/[0.12]';
+                ? 'bg-neutral-100 text-neutral-900 border-neutral-200 font-medium hover:bg-neutral-200'
+                : 'bg-white/[0.08] text-neutral-200 border-white/15 font-medium hover:bg-white/[0.14]';
             } else {
               badgeClasses = isLight
                 ? 'bg-white text-neutral-700 border-neutral-200/80 hover:border-neutral-400 hover:text-black'
-                : 'bg-[#070709] text-neutral-300 border-white/10 hover:border-[#D4AF37]/35 hover:text-white';
+                : 'bg-[#0b0c10] text-neutral-300 border-white/10 hover:border-white/25 hover:text-white';
             }
 
             return (

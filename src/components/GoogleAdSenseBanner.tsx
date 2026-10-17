@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, Sparkles, TrendingUp } from 'lucide-react';
+import { ExternalLink, Sparkles, TrendingUp, DollarSign, X, CheckCircle2, ChevronUp } from 'lucide-react';
 
 interface GoogleAdSenseBannerProps {
   slotId?: string;
@@ -14,41 +14,65 @@ interface SponsorCreative {
   badge: string;
   ctaText: string;
   url: string;
+  revenueTag?: string;
 }
 
-const IN_FEED_CREATIVES: SponsorCreative[] = [
+const SPONSOR_CREATIVES: SponsorCreative[] = [
   {
     title: 'Wirestock 1-Click Multi-Agency Sync',
-    desc: 'Auto-publish this metadata to Adobe Stock, Shutterstock, Freepik, Getty & Pond5 simultaneously. Earn 85% royalties.',
-    badge: 'Contributor Partner',
+    desc: 'Auto-publish this metadata to Adobe Stock, Shutterstock, Freepik, Getty & Pond5 simultaneously. Earn 85% royalties without manual uploads.',
+    badge: 'Official Contributor Partner',
     ctaText: 'Sync All Agencies',
     url: 'https://wirestock.io/?ref=adobemeta',
+    revenueTag: 'High Yield ($1.80 RPD)'
   },
   {
-    title: 'Topaz Gigapixel AI: Upscale to 8K',
+    title: 'Topaz Gigapixel AI: Upscale to 8K Commercial Resolution',
     desc: 'Bypass stock rejection for low resolution. Turn 2K AI generated art into razor-sharp 300 DPI commercial vector & photos.',
     badge: 'Asset Quality Booster',
     ctaText: 'Get 20% Discount',
     url: 'https://www.topazlabs.com/gigapixel-ai',
+    revenueTag: 'Rejection Shield'
   },
   {
-    title: 'Adobe Stock Contributor VIP Portal',
+    title: 'Adobe Stock Contributor VIP Royalty Portal',
     desc: 'Earn high-paying enterprise royalties and join the GenAI bonus payout program for accepted commercial visuals.',
     badge: 'Official Market',
-    ctaText: 'Start Uploading',
+    ctaText: 'Start Uploading & Earning',
     url: 'https://stock.adobe.com/contributor',
+    revenueTag: '33% Royalty Rate'
+  },
+  {
+    title: 'Shutterstock Contributor Level 6 Earnings Boost',
+    desc: 'Scale from 15% up to 40% royalties per download. Leverage high-volume B2B buyer subscriptions worldwide.',
+    badge: 'Agency Partner',
+    ctaText: 'Submit to Shutterstock',
+    url: 'https://submit.shutterstock.com/',
+    revenueTag: 'Up to 40% Payout'
   }
 ];
 
 export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
+  slotId = '6892019482',
   format = 'leaderboard',
   themeMode = 'light',
 }) => {
   const [adDismissed, setAdDismissed] = useState(false);
-  const [creativeIdx] = useState(0);
+  const [creativeIdx, setCreativeIdx] = useState(0);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [publisherId, setPublisherId] = useState<string>('ca-pub-4920194820194820');
   const isLight = themeMode === 'light';
 
   useEffect(() => {
+    // Check for user-configured custom AdSense publisher ID in localStorage
+    try {
+      const storedPub = localStorage.getItem('adobemeta_adsense_pub_id');
+      if (storedPub && storedPub.trim().length > 5) {
+        setPublisherId(storedPub.trim());
+      }
+    } catch (_) {}
+
+    // Safe trigger of Google AdSense client script
     if (typeof window !== 'undefined') {
       try {
         ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
@@ -58,36 +82,49 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
 
   if (adDismissed) return null;
 
-  // IN-FEED NATIVE AD: Naturally inserted between metadata asset cards
-  if (format === 'in-feed') {
-    const creative = IN_FEED_CREATIVES[creativeIdx % IN_FEED_CREATIVES.length];
+  const creative = SPONSOR_CREATIVES[creativeIdx % SPONSOR_CREATIVES.length];
 
+  // ==========================================
+  // IN-FEED NATIVE AD (Embedded between assets)
+  // ==========================================
+  if (format === 'in-feed') {
     return (
-      <div className={`w-full my-3 ${
+      <div className={`w-full my-4 ${
         isLight 
           ? 'bg-white border-neutral-200/90 shadow-2xs' 
-          : 'bg-[#111319] border-neutral-800 shadow-md'
-      } border rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 transition-all duration-200`}>
-        <div className="flex items-center gap-3.5">
-          <div className={`w-10 h-10 rounded-xl ${
-            isLight ? 'bg-[#f6f5f2] text-neutral-900 border border-neutral-200/80' : 'bg-neutral-800 text-neutral-100 border border-neutral-700'
+          : 'bg-[#0a0d14] border-white/10 shadow-md'
+      } border rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 transition-all duration-200 sovereign-prism-card relative overflow-hidden`}>
+        {/* Prismatic Cyan Accent Edge */}
+        <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
+        
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className={`w-11 h-11 rounded-xl ${
+            isLight ? 'bg-cyan-50 text-cyan-700 border border-cyan-200/80' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
           } flex items-center justify-center shrink-0`}>
-            <Sparkles className="w-4 h-4 text-amber-500" />
+            <Sparkles className="w-5 h-5 text-cyan-400" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 mb-0.5 text-[10.5px] font-mono uppercase tracking-wider">
-              <span className={`font-semibold ${isLight ? 'text-amber-700' : 'text-amber-400'}`}>
+              <span className={`font-semibold ${isLight ? 'text-cyan-800' : 'text-cyan-300'}`}>
                 {creative.badge}
               </span>
               <span className="text-neutral-400">·</span>
               <span className="text-neutral-400">
-                Sponsored
+                Google AdSense High-RPM Partner
               </span>
+              {creative.revenueTag && (
+                <>
+                  <span className="text-neutral-400 hidden sm:inline">·</span>
+                  <span className="text-emerald-500 font-bold hidden sm:inline">
+                    {creative.revenueTag}
+                  </span>
+                </>
+              )}
             </div>
-            <h4 className={`text-sm font-bold ${isLight ? 'text-neutral-900' : 'text-white'} tracking-tight`}>
+            <h4 className={`text-sm font-bold ${isLight ? 'text-neutral-900' : 'text-white'} tracking-tight truncate`}>
               {creative.title}
             </h4>
-            <p className={`text-xs ${isLight ? 'text-neutral-500' : 'text-neutral-400'} max-w-xl mt-0.5 line-clamp-2`}>
+            <p className={`text-xs ${isLight ? 'text-neutral-500' : 'text-neutral-400'} max-w-xl mt-0.5 line-clamp-1`}>
               {creative.desc}
             </p>
           </div>
@@ -101,8 +138,8 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
             className={`${
               isLight 
                 ? 'bg-neutral-950 hover:bg-black text-white' 
-                : 'bg-white hover:bg-neutral-200 text-neutral-950'
-            } text-xs font-bold px-4 py-2 rounded-full transition flex items-center gap-1.5 shadow-2xs cursor-pointer`}
+                : 'bg-white hover:bg-neutral-100 text-neutral-950 font-bold shadow-sm'
+            } text-xs font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-2xs cursor-pointer`}
           >
             <span>{creative.ctaText}</span>
             <ExternalLink className="w-3 h-3" />
@@ -112,41 +149,125 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
             className={`${isLight ? 'text-neutral-400 hover:text-neutral-700' : 'text-neutral-500 hover:text-neutral-300'} p-1.5 rounded-lg text-xs transition cursor-pointer`}
             title="Dismiss ad"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
       </div>
     );
   }
 
-  // TOP LEADERBOARD BANNER
+  // ==========================================
+  // TOP LEADERBOARD BANNER (728x90 Adaptive)
+  // ==========================================
   if (format === 'leaderboard') {
     return (
-      <div className="w-full my-2 flex flex-col items-center justify-center">
+      <div className="w-full my-3 flex flex-col items-center justify-center">
         <div className={`w-full ${
           isLight 
             ? 'bg-white border-neutral-200/90 shadow-2xs' 
-            : 'bg-[#111319] border-neutral-800 shadow-md'
-        } border rounded-2xl p-3.5 sm:px-5 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-3`}>
-          <div className="flex items-center gap-3">
-            <div className={`p-2 ${
-              isLight ? 'bg-[#f6f5f2] border-neutral-200/80 text-neutral-800' : 'bg-neutral-800 border-neutral-700 text-neutral-200'
+            : 'bg-[#0a0d14] border-white/10 shadow-lg'
+        } border rounded-2xl p-3.5 sm:px-6 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-3 sovereign-prism-card`}>
+          
+          {/* Subtle Ambient Cyan / Platinum Hairline */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/35 to-transparent"
+          />
+
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className={`p-2.5 ${
+              isLight ? 'bg-emerald-50 border-emerald-200/80 text-emerald-800' : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400'
             } border rounded-xl shrink-0`}>
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
+              <TrendingUp className="w-4 h-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 text-xs">
                 <span className={`font-bold ${isLight ? 'text-neutral-900' : 'text-white'} tracking-tight`}>
-                  Featured Creator Partner
+                  Google Monetized Publisher Unit
                 </span>
                 <span className="text-neutral-400">·</span>
-                <span className="text-[10.5px] font-mono uppercase tracking-wider text-neutral-400">
-                  Google AdSense Verified
+                <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-500 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  ads.txt Verified
                 </span>
               </div>
-              <p className={`text-xs ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
-                Unlock 4K AI Upscaling &amp; Automated Multi-Agency Distribution with 25% Off Contributor Pro.
+              <p className={`text-xs ${isLight ? 'text-neutral-600' : 'text-neutral-300'} mt-0.5 truncate max-w-xl`}>
+                High-RPM Contributor Deal: Distribute to Adobe Stock, Shutterstock &amp; Freepik with 100% automated metadata sync.
               </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <a
+              href="https://stock.adobe.com/contributor"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${
+                isLight 
+                  ? 'bg-neutral-950 hover:bg-black text-white' 
+                  : 'bg-white hover:bg-neutral-100 text-neutral-950 font-bold shadow-sm'
+              } text-xs font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer`}
+            >
+              <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Start Earning</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+            <button
+              onClick={() => setAdDismissed(true)}
+              className={`${isLight ? 'text-neutral-400 hover:text-neutral-700' : 'text-neutral-500 hover:text-neutral-300'} text-xs p-1.5 cursor-pointer`}
+              title="Close Ad"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // STICKY FOOTER ANCHOR AD (High Viewability)
+  // ==========================================
+  if (format === 'sticky-footer') {
+    if (isMinimized) {
+      return (
+        <div className="fixed bottom-3 right-4 z-40">
+          <button
+            onClick={() => setIsMinimized(false)}
+            className={`px-3 py-1.5 rounded-full text-[11px] font-mono font-bold flex items-center gap-1.5 shadow-xl border cursor-pointer ${
+              isLight
+                ? 'bg-white text-neutral-800 border-neutral-300 hover:border-neutral-500'
+                : 'bg-[#0f1118] text-white border-white/20 hover:border-white/40'
+            }`}
+          >
+            <Sparkles className="w-3 h-3 text-amber-500" />
+            <span>Google Monetize Hub</span>
+            <ChevronUp className="w-3 h-3" />
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="fixed bottom-0 inset-x-0 z-40 p-2 sm:p-3 pointer-events-none">
+        <div className={`max-w-4xl mx-auto pointer-events-auto rounded-2xl p-3 sm:px-5 border shadow-2xl transition-all duration-300 flex items-center justify-between gap-3 ${
+          isLight
+            ? 'crystal-glass-panel-light text-neutral-900 border-neutral-300/80'
+            : 'crystal-glass-panel-dark text-white border-white/20'
+        }`}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center shrink-0">
+              <DollarSign className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div className="min-w-0 text-left">
+              <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+                <span>Google AdSense Slot {slotId}</span>
+                <span>·</span>
+                <span className="text-emerald-500 font-bold">Active Monetization</span>
+              </div>
+              <div className="text-xs font-bold truncate">
+                Adobe Stock &amp; Microstock Contributor Bonus Program · Earn $0.85 - $3.50+ RPD
+              </div>
             </div>
           </div>
 
@@ -155,21 +276,19 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
               href="https://stock.adobe.com/contributor"
               target="_blank"
               rel="noopener noreferrer"
-              className={`${
-                isLight 
-                  ? 'bg-neutral-950 hover:bg-black text-white' 
-                  : 'bg-white hover:bg-neutral-200 text-neutral-950'
-              } text-xs font-bold px-4 py-1.5 rounded-full transition flex items-center gap-1.5 cursor-pointer`}
+              className={`text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1 cursor-pointer ${
+                isLight ? 'bg-neutral-950 text-white' : 'bg-white hover:bg-zinc-200 text-black font-semibold'
+              }`}
             >
-              <span>Explore Deals</span>
+              <span>Explore Earnings</span>
               <ExternalLink className="w-3 h-3" />
             </a>
             <button
-              onClick={() => setAdDismissed(true)}
-              className={`${isLight ? 'text-neutral-400 hover:text-neutral-700' : 'text-neutral-500 hover:text-neutral-300'} text-xs p-1 cursor-pointer`}
-              title="Close Ad"
+              onClick={() => setIsMinimized(true)}
+              className="text-xs p-1 text-neutral-400 hover:text-white cursor-pointer"
+              title="Minimize banner"
             >
-              ✕
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -177,28 +296,30 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
     );
   }
 
-  // STICKY FOOTER ANCHOR AD (Subtle, non-overlapping bottom-left pill)
-  if (format === 'sticky-footer') {
-    return null;
-  }
-
-  // RECTANGLE FORMAT
+  // ==========================================
+  // RECTANGLE FORMAT (Sidebar / Dashboard Box)
+  // ==========================================
   return (
-    <div className={`${isLight ? 'bg-white border-neutral-200/90 text-neutral-800 shadow-2xs' : 'bg-[#111319] border-neutral-800 text-neutral-200'} border rounded-2xl p-4 text-center space-y-2`}>
+    <div className={`${isLight ? 'bg-white border-neutral-200/90 text-neutral-800 shadow-2xs' : 'bg-[#0f1118] border-neutral-800 text-neutral-200'} border rounded-2xl p-4 text-center space-y-2 sovereign-prism-card`}>
       <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-        <span>Sponsored</span>
-        <button onClick={() => setAdDismissed(true)} className="hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">✕</button>
+        <span>Sponsored Publisher Slot</span>
+        <button onClick={() => setAdDismissed(true)} className="hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">
+          <X className="w-3 h-3" />
+        </button>
       </div>
-      <p className="text-xs font-semibold">
-        Best Microstock AI Cameras &amp; Vector Workflows for 2026
+      <p className="text-xs font-bold">
+        {creative.title}
+      </p>
+      <p className="text-[11px] text-neutral-400 line-clamp-2">
+        {creative.desc}
       </p>
       <a
-        href="https://stock.adobe.com/contributor"
+        href={creative.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-block text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+        className="inline-block text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer pt-1"
       >
-        View Recommended Deals
+        {creative.ctaText} →
       </a>
     </div>
   );

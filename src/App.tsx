@@ -1092,8 +1092,8 @@ export default function App() {
   const [gen10Skin, setGen10Skin] = useState<'velvet' | 'black'>(() => {
     try {
       const saved = localStorage.getItem('adobemeta_gen10_skin_v3');
-      if (saved === 'velvet' || saved === 'black') {
-        return saved;
+      if (saved === 'black') {
+        return 'black';
       }
     } catch {}
     return 'black';
@@ -3864,9 +3864,13 @@ export default function App() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_65%_at_50%_-10%,rgba(255,255,255,0.98),rgba(254,243,199,0.28)_45%,rgba(248,246,240,0.85)_100%)]" />
         )}
 
-        {/* 2. PURE PREMIUM BLACK EDITION (100% PURE OLED BLACK — ZERO GPU BLUR TAX) */}
+        {/* 2. HAUTE-COUTURE OBSIDIAN SILK & SUBTLE AURORA MESH (ZERO GPU TAX) */}
         {themeMode === 'dark' && (
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_85%_55%_at_50%_-15%,rgba(212,175,55,0.045)_0%,rgba(12,12,15,0.45)_45%,#000000_100%)]" />
+          <>
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_85%_55%_at_50%_-15%,rgba(255,255,255,0.035)_0%,rgba(148,163,184,0.02)_40%,#060709_100%)]" />
+            <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full bg-white/[0.015] blur-3xl pointer-events-none" />
+            <div className="absolute top-1/3 -right-32 w-96 h-96 rounded-full bg-slate-400/[0.015] blur-3xl pointer-events-none" />
+          </>
         )}
       </div>
 
@@ -5934,12 +5938,12 @@ export default function App() {
                                   }}
                                   className={`text-[10px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded-md border transition cursor-pointer ${
                                     themeMode === 'light'
-                                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
-                                      : 'bg-[#D4AF37]/15 hover:bg-[#D4AF37]/25 text-[#F3E5AB] border-[#D4AF37]/40'
+                                      ? 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border-neutral-300'
+                                      : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
                                   }`}
                                   title="1-Click Compound + Atomic Dual-Indexing: Lock Top-10 subject phrases & extract atomic search roots"
                                 >
-                                  <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                                  <Sparkles className="w-3 h-3 text-emerald-400" />
                                   <span>Dual-Index #10</span>
                                 </button>
                                 <button

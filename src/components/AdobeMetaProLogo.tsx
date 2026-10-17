@@ -78,12 +78,12 @@ export const AdobeMetaProLogo: React.FC<LogoProps> = ({
               <stop offset="100%" stopColor="#030305" />
             </linearGradient>
 
-            {/* Liquid Champagne 24K Gold Foil */}
+            {/* Liquid Platinum & Chromium Foil */}
             <linearGradient id={`champagneFoil_${uid}`} x1="10" y1="8" x2="38" y2="40" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#FFF6D6" />
-              <stop offset="35%" stopColor="#F3E5AB" />
-              <stop offset="70%" stopColor="#D4AF37" />
-              <stop offset="100%" stopColor="#AA8222" />
+              <stop offset="0%" stopColor="#FFFFFF" />
+              <stop offset="35%" stopColor="#F4F4F6" />
+              <stop offset="70%" stopColor="#D4D4D8" />
+              <stop offset="100%" stopColor="#A1A1AA" />
             </linearGradient>
 
             {/* Platinum Ivory Highlight for Primary Pillar */}
@@ -95,9 +95,9 @@ export const AdobeMetaProLogo: React.FC<LogoProps> = ({
 
             {/* Outer Rim Specular Sheen */}
             <linearGradient id={`rimSheen_${uid}`} x1="2" y1="2" x2="46" y2="46" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="rgba(243, 229, 171, 0.55)" />
+              <stop offset="0%" stopColor="rgba(255, 255, 255, 0.45)" />
               <stop offset="45%" stopColor="rgba(255, 255, 255, 0.12)" />
-              <stop offset="100%" stopColor="rgba(212, 175, 55, 0.38)" />
+              <stop offset="100%" stopColor="rgba(255, 255, 255, 0.3)" />
             </linearGradient>
           </defs>
 
@@ -120,7 +120,7 @@ export const AdobeMetaProLogo: React.FC<LogoProps> = ({
             width="38.5"
             height="38.5"
             rx="9.25"
-            stroke="rgba(243, 229, 171, 0.12)"
+            stroke="rgba(255, 255, 255, 0.12)"
             strokeWidth="0.75"
           />
 
@@ -158,7 +158,7 @@ export const AdobeMetaProLogo: React.FC<LogoProps> = ({
           <div className="flex items-baseline gap-1.5">
             <span
               className={`${titleSize} font-bold tracking-[-0.03em] transition-opacity duration-300 group-hover:opacity-90 ${
-                isLight ? 'text-[#0A0B0E]' : 'text-[#F6EED5]'
+                isLight ? 'text-[#0A0B0E]' : 'text-white'
               }`}
             >
               AdobeMeta
@@ -166,8 +166,8 @@ export const AdobeMetaProLogo: React.FC<LogoProps> = ({
             <span
               className={`font-editorial italic font-semibold tracking-[-0.01em] text-[1.16em] ${
                 isLight
-                  ? 'text-[#9A7018]'
-                  : 'text-[#E5C158]'
+                  ? 'text-neutral-700'
+                  : 'text-zinc-300'
               }`}
             >
               Pro
@@ -176,7 +176,7 @@ export const AdobeMetaProLogo: React.FC<LogoProps> = ({
           {shouldShowSubtitle && subtitle && (
             <span
               className={`${subSize} font-mono font-medium uppercase ${
-                isLight ? 'text-neutral-500' : 'text-[#C5A869]'
+                isLight ? 'text-neutral-500' : 'text-zinc-400'
               } mt-1.5`}
             >
               {subtitle}
