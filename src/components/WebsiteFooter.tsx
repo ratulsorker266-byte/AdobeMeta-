@@ -50,10 +50,10 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
           {/* Left: Brand Logo */}
           <AdobeMetaProLogo
-            size="sm"
+            size="md"
             showText={true}
             theme={isLight ? 'light' : 'dark'}
-            subtitle="SWISS ATELIER EDITION"
+            subtitle="GLOBAL STOCK & MONETIZATION ATELIER"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           />
 

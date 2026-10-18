@@ -112,21 +112,21 @@ export const CommercialReadinessGauge: React.FC<CommercialReadinessGaugeProps> =
           <div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className={`font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>
-                Download Conversion &amp; SEO Score
+                {totalScore >= 95 ? '100% Adobe Stock SEO Certified' : 'Adobe Stock SEO Compliance Score'}
               </span>
               <span className="text-neutral-400">·</span>
               <span className={`font-mono text-[11px] font-semibold ${textColor}`}>
-                {totalScore >= 92 ? 'Rank #1 Ready (Outperforms Xplics)' : 'Commercial Ready'}
+                {totalScore >= 95 ? '100% Official Guidelines Pass' : totalScore >= 90 ? 'Rank #1 Calibrated' : 'Commercial Ready'}
               </span>
             </div>
             <div className={`flex flex-wrap items-center gap-2 text-[11px] mt-0.5 ${
               isLight ? 'text-neutral-600' : 'text-neutral-400'
             }`}>
-              <span className="font-mono tabular-nums">{titleChars}/70 chars</span>
+              <span className="font-mono tabular-nums">{titleChars}/70 chars ({titleWords} words)</span>
               <span>·</span>
-              <span className="font-mono tabular-nums">{kwCount}/49 weighted tags</span>
+              <span className="font-mono tabular-nums">{kwCount}/49 keywords</span>
               <span>·</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-medium">Top-10 75% Weight Locked</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium">Slots 1-10 Weighted (75% influence)</span>
             </div>
           </div>
         </div>

@@ -637,21 +637,24 @@ export const GlobalAssetStoreVault: React.FC<GlobalAssetStoreVaultProps> = ({
                 setSelectedPackId(pack.id);
                 setIsInspectorExpanded(true);
               }}
-              className={`group cursor-pointer rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 sovereign-prism-card relative overflow-hidden ${
+              className={`group cursor-pointer rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 sovereign-prism-card relative overflow-hidden gallery-card-glow ${
                 isSelected
                   ? isLight
                     ? 'bg-white border-neutral-950 shadow-xl'
-                    : 'bg-[#0a0a0d] border-white/50 shadow-2xl'
+                    : 'bg-[#0a0a0d] border-cyan-400/60 shadow-2xl'
                   : isLight
                   ? 'crystal-glass-panel-light hover:border-neutral-900'
-                  : 'crystal-glass-panel-dark hover:border-white/35'
+                  : 'crystal-glass-panel-dark'
               }`}
             >
-              <div className="space-y-4">
+              {/* Prismatic Cyan Edge Caustic */}
+              <div aria-hidden="true" className="prismatic-edge-caustic opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+              <div className="space-y-4 relative z-10">
                 {/* Clean Unboxed Kicker */}
                 <div className="flex items-center justify-between text-[10px] font-mono tabular-nums tracking-[0.14em] uppercase text-neutral-400">
                   <span>{pack.code} · {pack.adobeCategory}</span>
-                  <span className={isLight ? 'text-neutral-900 font-semibold' : 'text-white font-semibold'}>
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 font-mono text-[10.5px] font-bold">
                     {pack.cpcEstimate}
                   </span>
                 </div>

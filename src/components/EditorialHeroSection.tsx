@@ -22,7 +22,14 @@ import {
   Settings,
   LogOut,
   User as UserIcon,
-  DollarSign
+  DollarSign,
+  Menu,
+  X,
+  Search,
+  Compass,
+  Layers,
+  Calendar,
+  TrendingUp
 } from 'lucide-react';
 import { AdobeMetaProLogo } from './AdobeMetaProLogo';
 import { GlobalAssetStoreVault, GlobalStorePack } from './GlobalAssetStoreVault';
@@ -117,6 +124,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   const [previewStoreIdx, setPreviewStoreIdx] = useState<number>(0);
   const [isHoveringSpecimen, setIsHoveringSpecimen] = useState<boolean>(false);
   const [showHeaderControlsMenu, setShowHeaderControlsMenu] = useState<boolean>(false);
+  const [showMobileNav, setShowMobileNav] = useState<boolean>(false);
   const [isHeroDragging, setIsHeroDragging] = useState<boolean>(false);
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [activeSpecimenAgency, setActiveSpecimenAgency] = useState<'adobe' | 'shutterstock' | 'freepik' | 'getty' | 'vecteezy'>('adobe');
@@ -173,142 +181,230 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     };
   }, []);
 
-  // 8 Specialized Creative Modules in the Enterprise Workspace Directory
+  // 8 Specialized Creative Modules in the Enterprise Workspace Directory (100% Adobe Stock SEO & Manual Curation)
   const marketStores: BoutiqueStoreItem[] = [
     {
       id: 'store-metadata',
-      storeNumber: '01 · CORE ENGINE',
-      title: 'Metadata & EPS Vector Studio',
+      storeNumber: '01 · CORE WORKBENCH',
+      title: 'Manual Metadata & EPS Vector Studio',
       category: 'METADATA · GHOSTSCRIPT EPS · 49 WEIGHTED TAGS',
       department: 'metadata',
       image: store01MetadataEps,
       badge: 'CORE STUDIO',
-      statLabel: `${itemsCount > 0 ? `${itemsCount} Queued` : '49-Tag Compliance'}`,
-      description: 'Generate vision-verified titles and 49 rank-ordered keywords with native EPS vector rendering and direct IPTC/XMP embedding.',
+      statLabel: `${itemsCount > 0 ? `${itemsCount} Queued` : '49-Tag SEO Ready'}`,
+      description: 'Craft subject-first commercial titles and 49 rank-ordered keywords with native EPS vector preview and direct IPTC/XMP file embedding.',
       features: ['EPS Vector Preview', '49 Weighted Tags', 'Direct IPTC & XMP'],
       ctaText: 'Open Studio',
       actionType: 'view',
       targetView: 'upload',
-      sampleTitle: 'Isometric Cloud Security Server Architecture Vector Illustration',
-      sampleKeywords: ['isometric cloud security', 'cyber infrastructure', 'enterprise server', 'digital transformation', 'data protection', 'network firewall', 'cloud computing', 'editable vector', 'eps 10', 'commercial illustration']
+      sampleTitle: 'Cloud Computing Server Architecture in Modern Datacenter',
+      sampleKeywords: [
+        'cloud computing', 'datacenter', 'server', 'network', 'cyber security',
+        'database', 'technology', 'storage', 'hardware', 'no people',
+        'hosting', 'infrastructure', 'internet', 'mainframe', 'telecommunication',
+        'digital', 'system', 'connection', 'rack', 'computer',
+        'information', 'communication', 'equipment', 'backup', 'ethernet',
+        'switch', 'processor', 'cables', 'center', 'room',
+        'electronic', 'power', 'business', 'enterprise', 'modern',
+        'interior', 'wire', 'cooling', 'engineering', 'maintenance',
+        'safety', 'access', 'led', 'light', 'industrial',
+        'speed', 'bandwidth', 'fiber optic', 'security'
+      ]
     },
     {
       id: 'store-calendar',
       storeNumber: '02 · PLANNING',
-      title: 'Seasonal Demand Calendar',
-      category: 'CALENDAR · 12-MONTH EVENTS · BUYER TIMELINE',
+      title: 'Seasonal Commercial Demand Calendar',
+      category: 'CALENDAR · 12-MONTH BUYER TIMELINE · SEASONAL EVENTS',
       department: 'creative',
       image: storeCalendarHub,
       badge: 'DEMAND FORECAST',
       statLabel: '12-Month Lead Time',
-      description: 'Plan commercial production around global seasonal events and agency purchasing cycles 60 days ahead of peak buyer demand.',
-      features: ['60-Day Lead Window', 'Holiday Niches', 'Prompt Sync'],
+      description: 'Plan commercial photo and vector production around global purchasing cycles and seasonal holidays 60 days ahead of peak buyer demand.',
+      features: ['60-Day Lead Window', 'Holiday Niches', 'Manual Event Sync'],
       ctaText: 'Open Calendar',
       actionType: 'view',
       targetView: 'calendar',
-      sampleTitle: 'Black Friday E-Commerce Retail Promotion Banner With Copy Space',
-      sampleKeywords: ['autumn harvest festival', 'black friday sale banner', 'cyber monday retail', 'new year celebration', 'corporate annual report', 'holiday shopping', 'seasonal promotion', 'retail discount']
+      sampleTitle: 'Autumn Harvest Festival Banner with Seasonal Ripe Pumpkins',
+      sampleKeywords: [
+        'pumpkin', 'autumn', 'harvest', 'thanksgiving', 'halloween',
+        'squash', 'october', 'november', 'fall', 'no people',
+        'gourd', 'orange', 'seasonal', 'vegetable', 'agriculture',
+        'holiday', 'decoration', 'rustic', 'food', 'market',
+        'farm', 'nature', 'ripe', 'fresh', 'raw',
+        'organic', 'wood', 'table', 'tradition', 'celebration',
+        'abundance', 'leaves', 'foliage', 'cinnamon', 'cozy',
+        'warm', 'copy space', 'still life', 'background', 'arrangement',
+        'plant', 'produce', 'healthy', 'ingredient', 'yellow',
+        'golden', 'wooden', 'top view', 'horizontal'
+      ]
     },
     {
       id: 'store-prompts',
-      storeNumber: '03 · SYNTHESIS',
-      title: 'Commercial Prompt Lab',
-      category: 'PROMPT MAKER · MIDJOURNEY V6 · FIREFLY 3',
+      storeNumber: '03 · DIRECTION',
+      title: 'Composition & Creative Direction Atelier',
+      category: 'COMMERCIAL BRIEFS · COMPOSITION · COPY SPACE FRAMING',
       department: 'creative',
       image: storePromptStudio,
-      badge: 'PROMPT STUDIO',
+      badge: 'CREATIVE ATELIER',
       statLabel: 'Agency Compliant',
-      description: 'Build structured commercial stock photography, 3D render, and clean vector prompts formatted for Midjourney, Firefly, and Flux.',
-      features: ['Zero-Artifact Formula', 'Copy-Space Framing', 'Midjourney & Firefly'],
-      ctaText: 'Open Prompt Lab',
+      description: 'Structure commercial photography scenes, studio lighting angles, and negative copy-space framing aligned with corporate buyer needs.',
+      features: ['Subject-First Framing', 'Copy-Space Rules', 'Lighting Blueprints'],
+      ctaText: 'Open Creative Atelier',
       actionType: 'view',
       targetView: 'prompts',
-      sampleTitle: 'Minimalist Ceramic Product Podium In Warm Sunlight With Copy Space',
-      sampleKeywords: ['minimalist studio lighting', 'isolated on white', 'commercial copy space', '8k octane render', 'flat vector illustration', 'product podium', 'architectural shadows', 'clean background']
+      sampleTitle: 'Natural Travertine Stone Cylinder Product Display Podium',
+      sampleKeywords: [
+        'podium', 'pedestal', 'travertine', 'stone', 'cylinder',
+        'display', 'minimalist', 'sunlight', 'shadow', 'no people',
+        'mockup', 'cosmetics', 'packaging', 'marble', 'luxury',
+        'stage', 'platform', 'geometry', 'architectural', 'clean',
+        'modern', 'neutral', 'beige', 'texture', 'empty',
+        'showcase', 'presentation', 'botanical', 'studio', 'product photography',
+        'contemporary', 'simple', 'aesthetic', 'round', 'composition',
+        'copy space', 'elegance', 'dappled light', 'earthy', 'organic',
+        'beauty', 'skincare', 'stand', 'plaster', 'warm',
+        'horizontal', 'front view', 'interior', 'still life'
+      ]
     },
     {
       id: 'store-monetize',
       storeNumber: '04 · ANALYTICS',
-      title: 'Royalty & AdSense Analytics',
+      title: 'Royalty & Google AdSense Revenue Engine',
       category: 'MONETIZATION · ADSENSE HUB · ROYALTY SIMULATOR',
       department: 'monetize',
       image: storeMonetizeVault,
       badge: 'REVENUE MODEL',
       statLabel: 'Portfolio Yield',
-      description: 'Forecast microstock download royalties alongside Google AdSense display revenue and generate compliant ads.txt configurations.',
-      features: ['AdSense Simulator', 'Official ads.txt', 'High-CPC Keywords'],
-      ctaText: 'Open Analytics',
+      description: 'Calculate microstock download earnings alongside Google AdSense display income with verified ads.txt digital authorization.',
+      features: ['AdSense Simulator', 'Official ads.txt', 'High-CPC Niches'],
+      ctaText: 'Open Revenue Hub',
       actionType: 'view',
       targetView: 'monetize',
-      sampleTitle: 'Fintech Wealth Management Dashboard And Biometric Banking Security',
-      sampleKeywords: ['fintech banking security', 'renewable solar grid', 'enterprise cloud ai', 'biotech laboratory', 'wealth management', 'financial analytics', 'passive income', 'digital investment']
+      sampleTitle: 'Modern Biometric Digital Banking Interface on Mobile Device',
+      sampleKeywords: [
+        'digital banking', 'fintech', 'mobile banking', 'smartphone', 'biometric',
+        'security', 'finance', 'payment', 'transaction', 'one person',
+        'fingerprint', 'authentication', 'banking app', 'online payment', 'investment',
+        'money', 'credit card', 'technology', 'touchscreen', 'wealth',
+        'account', 'transfer', 'savings', 'holding', 'hand',
+        'screen', 'interface', 'application', 'modern', 'business',
+        'economy', 'commerce', 'cashless', 'smart', 'connection',
+        'cellular', 'lifestyle', 'close up', 'adult', 'male',
+        'female', 'indoors', 'daylight', 'protection', 'safe',
+        'encrypted', 'data', 'concept', 'wallet'
+      ]
     },
     {
       id: 'store-seo-rank',
       storeNumber: '05 · OPTIMIZATION',
-      title: 'Title & Top-10 Keyword Calibrator',
+      title: 'Title & Top-10 Keyword Ranking Calibrator',
       category: 'SEARCH RELEVANCE · TOP 10 SLOTS · KEYWORD QUALITY',
       department: 'metadata',
       image: store05Rank1Seo,
       badge: 'SEARCH CALIBRATOR',
       statLabel: 'First-10 Weighting',
-      description: 'Align your primary visual subject with the first 4 title words and top 10 keyword slots for Adobe Stock and Shutterstock search.',
+      description: 'Ensure your primary subject matches the first 4 title words and top-10 keyword slots where ~80% of Adobe Stock search weight resides.',
       features: ['Keyword Quality Score', '<70 Char Calibrator', 'Relevance Audit'],
       ctaText: 'Open Calibrator',
       actionType: 'view',
       targetView: 'seo-rank',
-      sampleTitle: 'Sustainable Alpine Forest With Golden Sunbeams And Morning Mist',
-      sampleKeywords: ['sustainable alpine forest', 'golden sun rays', 'scenic wilderness', 'carbon neutral nature', 'ecological conservation', 'environmental protection', 'clean ecosystem', 'forest canopy']
+      sampleTitle: 'Alpine Mountain Lake and Green Pine Forest at Sunrise',
+      sampleKeywords: [
+        'mountain', 'lake', 'forest', 'pine tree', 'sunrise',
+        'reflection', 'nature', 'alpine', 'wilderness', 'no people',
+        'scenic', 'landscape', 'water', 'tranquility', 'travel',
+        'outdoors', 'calm', 'serene', 'sky', 'sunlight',
+        'morning', 'peak', 'snow', 'rock', 'fir',
+        'evergreen', 'clear', 'blue', 'green', 'valley',
+        'national park', 'environment', 'conservation', 'fresh', 'pure',
+        'hiking', 'tourism', 'destination', 'peaceful', 'horizon',
+        'clean', 'panoramic', 'view', 'majestic', 'pristine',
+        'adventure', 'earth', 'horizontal', 'daylight'
+      ]
     },
     {
       id: 'store-trends',
-      storeNumber: '06 · INTELLIGENCE',
-      title: 'Market Trends & Niche Research',
-      category: 'TRENDS · RISING SEARCHES · BUYER DEMAND',
+      storeNumber: '06 · RESEARCH',
+      title: 'Commercial Market Niche Intelligence',
+      category: 'TRENDS · COMMERCIAL DEMAND · BUYER VOLUME',
       department: 'creative',
       image: store06MarketTrends,
       badge: 'MARKET RESEARCH',
       statLabel: 'Search Demand',
-      description: 'Research high-demand commercial topics, emerging enterprise concepts, and low-competition visual niches across major agencies.',
-      features: ['Breakout Queries', 'Style Forecast', '1-Click Tag Copy'],
+      description: 'Discover high-demand commercial topics, corporate B2B requirements, and low-competition gaps across major microstock agencies.',
+      features: ['High-Intent Queries', 'Commercial Demand', '1-Click Tag Copy'],
       ctaText: 'Explore Trends',
       actionType: 'view',
       targetView: 'trends',
-      sampleTitle: 'Biophilic Modern Office Interior With Natural Sunlight And Plants',
-      sampleKeywords: ['biophilic office interior', 'neural network node', 'sustainable packaging', 'electric mobility', 'clean energy grid', 'modern workspace', 'green architecture', 'future technology']
+      sampleTitle: 'Biophilic Modern Corporate Office with Natural Wood and Plants',
+      sampleKeywords: [
+        'office', 'interior', 'biophilic', 'architecture', 'workspace',
+        'indoor plants', 'sustainable', 'modern', 'timber', 'no people',
+        'corporate', 'business', 'boardroom', 'green building', 'natural light',
+        'desk', 'furniture', 'contemporary', 'environment', 'workplace',
+        'minimalist', 'open plan', 'wood', 'plant', 'commercial real estate',
+        'wellness', 'headquarters', 'empty', 'spacious', 'window',
+        'building', 'design', 'urban', 'professional', 'calm',
+        'ergonomic', 'glass', 'concrete', 'leaf', 'clean',
+        'daylight', 'bright', 'eco friendly', 'company', 'industry',
+        'healthy', 'concept', 'horizontal', 'wide angle'
+      ]
     },
     {
       id: 'store-competitor',
       storeNumber: '07 · BENCHMARK',
-      title: 'Reverse Image & Tag Inspector',
-      category: 'COMPETITOR SPY · REVERSE TAGS · GAP ANALYSIS',
+      title: 'Commercial Competitor Tag & Framing Inspector',
+      category: 'COMPETITOR BENCHMARK · REVERSE TAGS · GAP ANALYSIS',
       department: 'metadata',
       image: storeCompetitorSpy,
       badge: 'BENCHMARK TOOL',
       statLabel: 'Metadata Extraction',
-      description: 'Inspect top-performing stock visuals in any category to analyze their subject framing, title structure, and keyword taxonomy.',
-      features: ['Bestseller Tag Spy', 'Strategy Breakdown', 'Instant Copy'],
+      description: 'Analyze best-selling commercial stock visuals to deconstruct their subject framing, title mechanics, and top-ranked keyword orders.',
+      features: ['Bestseller Tag Analysis', 'Strategy Breakdown', 'Instant Copy'],
       ctaText: 'Open Inspector',
       actionType: 'view',
       targetView: 'competitor',
-      sampleTitle: 'Global Supply Chain Logistics And Automated Warehouse Robotics',
-      sampleKeywords: ['corporate leadership', 'global supply chain', 'digital transformation', 'automated warehouse', 'smart logistics', 'freight distribution', 'commercial transport', 'business strategy']
+      sampleTitle: 'Automated Logistics Warehouse Forklift Moving Cargo Pallets',
+      sampleKeywords: [
+        'warehouse', 'logistics', 'forklift', 'cargo', 'pallet',
+        'shipping', 'storage', 'distribution', 'freight', 'one person',
+        'supply chain', 'industrial', 'commercial', 'transport', 'package',
+        'delivery', 'box', 'rack', 'shelves', 'inventory',
+        'storehouse', 'worker', 'operator', 'machinery', 'driving',
+        'indoor', 'facility', 'automation', 'management', 'order',
+        'fulfillment', 'heavy equipment', 'trade', 'economy', 'safety',
+        'container', 'depot', 'carrying', 'handling', 'goods',
+        'retail', 'import', 'export', 'wholesale', 'business',
+        'modern', 'service', 'job', 'horizontal'
+      ]
     },
     {
       id: 'store-csv-export',
       storeNumber: '08 · DISTRIBUTION',
-      title: '7-Agency CSV & Compliance Hub',
+      title: '7-Agency CSV & IPTC Direct Embed Hub',
       category: 'EXPORT HUB · ADOBE · SHUTTERSTOCK · FREEPIK · GETTY',
       department: 'monetize',
       image: store08MultiCsvHub,
       badge: '7-AGENCY SUITE',
       statLabel: '7 Agencies + JSON',
-      description: 'Export formatted metadata CSVs for Adobe Stock, Shutterstock, Freepik, Getty, Vecteezy, 123RF, and Dreamstime in 1 click.',
-      features: ['7-Agency CSV Hub', 'SEO Slug Renamer', 'Master JSON Export'],
-      ctaText: 'Open 7-Agency CSV Hub',
+      description: 'Export verified commercial metadata CSVs for Adobe Stock, Shutterstock, Freepik, Getty, Vecteezy, 123RF, and Dreamstime in 1 click.',
+      features: ['7-Agency CSV Hub', 'SEO File Renamer', 'Master JSON Export'],
+      ctaText: 'Open 7-Agency Hub',
       actionType: 'modal_csv',
-      sampleTitle: 'Luxury Embossed Gold Foil Stationery Mockup On Travertine Stone',
-      sampleKeywords: ['luxury stationery mockup', 'embossed gold foil', 'travertine stone', 'corporate identity', 'minimalist branding', 'editorial presentation', 'brand guidelines', 'paper texture']
+      sampleTitle: 'Travertine Marble Stone Desk with Stationery Business Card',
+      sampleKeywords: [
+        'business card', 'stationery', 'mockup', 'travertine', 'stone',
+        'branding', 'identity', 'marble', 'minimalist', 'no people',
+        'corporate identity', 'paper', 'card', 'desk', 'table',
+        'presentation', 'template', 'elegant', 'luxury', 'texture',
+        'clean', 'modern', 'copy space', 'empty', 'blank',
+        'studio', 'craft', 'graphic design', 'layout', 'print',
+        'professional', 'surface', 'neutral', 'beige', 'shadow',
+        'sunlight', 'simple', 'contemporary', 'brand', 'marketing',
+        'office', 'workspace', 'flat lay', 'top view', 'still life',
+        'horizontal', 'aesthetic', 'art', 'stationery mockup'
+      ]
     }
   ];
 
@@ -367,22 +463,23 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       {/* ============================================================ */}
       {/* FLOATING 3D OPTICAL CRYSTAL GLASS HEADER (DAY & NIGHT MODE) */}
       {/* ============================================================ */}
-      <header className={`sticky top-0 z-50 w-full px-4 sm:px-8 lg:px-14 transition-all duration-300 ${
-        isScrolled ? 'pt-2' : 'pt-4'
+      <header className={`sticky top-0 z-50 w-full px-3 sm:px-6 lg:px-10 xl:px-14 transition-all duration-300 ${
+        isScrolled ? 'pt-2' : 'pt-3 sm:pt-4'
       }`}>
-        <div className={`max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-7 rounded-2xl flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300 ${
-          isScrolled ? 'h-14 shadow-2xl' : 'h-16'
+        <div className={`max-w-[1440px] mx-auto px-3.5 sm:px-6 lg:px-7 rounded-2xl flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300 ${
+          isScrolled ? 'h-14 shadow-2xl' : 'h-15 sm:h-16'
         } ${
           isLight
             ? 'crystal-glass-panel-light'
             : 'crystal-glass-panel-dark'
         }`}>
           
-          {/* Zone 1: Brand Identity */}
+          {/* Zone 1: Brand Identity (Clean, compact, no huge subtitle pushing links) */}
           <div className="flex items-center shrink-0 min-w-0">
             <AdobeMetaProLogo
-              size="sm"
+              size="md"
               showText={true}
+              showSubtitle={false}
               layout="horizontal"
               theme={isLight ? 'light' : 'dark'}
               onClick={() => {
@@ -393,7 +490,8 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           </div>
 
           {/* Zone 2: Clean Editorial Navigation Links with Generous Spacing */}
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-[13px] font-sans font-medium tracking-[0.02em] min-w-0">
+          {/* Desktop XL+ (1280px+): All 6 links */}
+          <nav className="hidden xl:flex items-center gap-6 2xl:gap-8 text-[13px] font-sans font-medium tracking-[0.02em] shrink-0">
             <button
               onClick={() => {
                 setActiveDepartment('all');
@@ -460,19 +558,53 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             </button>
           </nav>
 
-          {/* Zone 3: Minimalist Command Trigger + System Menu + Day/Night Mode + Primary Studio CTA */}
+          {/* Medium Screens (768px - 1279px): 3 essential links with ample room */}
+          <nav className="hidden md:flex xl:hidden items-center gap-4 lg:gap-6 text-[12.5px] font-sans font-medium tracking-[0.02em] shrink-0">
+            <button
+              onClick={() => {
+                const storeEl = document.getElementById('global-commercial-store-vault');
+                if (storeEl) storeEl.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 ${
+                isLight ? 'text-neutral-900 hover:text-black font-semibold' : 'text-zinc-200 hover:text-white font-medium'
+              }`}
+            >
+              <span>Global Store</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateView('upload')}
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 ${
+                isLight ? 'text-neutral-600 hover:text-black' : 'text-zinc-300 hover:text-white'
+              }`}
+            >
+              <span>Studio</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateView('monetize')}
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 ${
+                isLight ? 'text-neutral-600 hover:text-black' : 'text-zinc-300 hover:text-white'
+              }`}
+            >
+              <span>Monetize</span>
+            </button>
+          </nav>
+
+          {/* Zone 3: Clean, Non-Overlapping Controls (Search + System + Theme + Open Studio + Mobile Hamburger) */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 relative">
             {onOpenCommandPalette && (
               <button
                 type="button"
                 onClick={onOpenCommandPalette}
-                className={`lumina-tactile-button px-2.5 py-1.5 rounded-xl text-[11px] font-mono hidden md:flex items-center gap-2 border cursor-pointer ${
+                className={`lumina-tactile-button px-2.5 py-1.5 rounded-xl text-[11px] font-mono hidden lg:flex items-center gap-2 border cursor-pointer shrink-0 ${
                   isLight
                     ? 'bg-[#faf8f5] hover:bg-neutral-100 text-neutral-600 hover:text-neutral-950 border-neutral-200/90'
                     : 'bg-white/[0.03] hover:bg-white/[0.08] text-neutral-400 hover:text-white border-white/10'
                 }`}
                 title="Quick Command & Search Palette (⌘K or Ctrl+K)"
               >
+                <Search className="w-3 h-3 text-neutral-400" />
                 <span>Search</span>
                 <kbd className={`px-1.5 py-0.5 text-[9.5px] rounded font-mono ${
                   isLight ? 'bg-neutral-200/70 text-neutral-700' : 'bg-white/10 text-neutral-300'
@@ -481,11 +613,14 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             )}
 
             {/* Consolidated System, Audit, Studio Desk & Account Menu */}
-            <div className="relative">
+            <div className="relative hidden sm:block">
               <button
                 type="button"
-                onClick={() => setShowHeaderControlsMenu((prev) => !prev)}
-                className={`lumina-tactile-button px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border cursor-pointer relative ${
+                onClick={() => {
+                  setShowHeaderControlsMenu((prev) => !prev);
+                  setShowMobileNav(false);
+                }}
+                className={`lumina-tactile-button px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border cursor-pointer shrink-0 relative ${
                   showHeaderControlsMenu
                     ? isLight
                       ? 'bg-neutral-900 text-white border-neutral-900'
@@ -497,7 +632,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 title="Pre-Check Audit, Studio Desk, Performance & Account Settings"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{isBn ? 'কন্ট্রোল' : 'System'}</span>
+                <span>{isBn ? 'কন্ট্রোল' : 'System'}</span>
               </button>
 
               <AnimatePresence>
@@ -554,7 +689,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                         >
                           <span className="flex items-center gap-2">
                             <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-                            <span>{isBn ? 'স্টুডিও ডেস্ক' : 'Studio Desk & Concierge'}</span>
+                            <span>{isBn ? 'স্টুডিও ডেস্ক' : 'Studio Desk & Guidelines'}</span>
                           </span>
                           <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
                         </button>
@@ -596,7 +731,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                             isLight ? 'hover:bg-neutral-100' : 'hover:bg-neutral-800/80'
                           }`}
                         >
-                          <span>{isBn ? 'প্রম্পট ও অ্যাবাউট গাইড' : 'About & Studio Guide'}</span>
+                          <span>{isBn ? 'অ্যাবাউট ও কনট্রিবিউটর গাইড' : 'About & Adobe Stock Guide'}</span>
                           <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
                         </button>
                       )}
@@ -683,22 +818,6 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                             </span>
                             <ArrowUpRight className="w-3.5 h-3.5 opacity-70" />
                           </button>
-
-                          {onLogout && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowHeaderControlsMenu(false);
-                                onLogout();
-                              }}
-                              className="w-full px-3 py-1.5 rounded-xl text-left text-[11px] font-semibold flex items-center justify-between text-red-500 dark:text-red-400 hover:bg-red-500/10 border border-red-500/20 transition cursor-pointer"
-                            >
-                              <span className="flex items-center gap-2">
-                                <LogOut className="w-3.5 h-3.5" />
-                                <span>{isBn ? 'লগ আউট / সেশন রিসেট' : 'Log Out / Clear Session'}</span>
-                              </span>
-                            </button>
-                          )}
                         </div>
                       )}
                     </motion.div>
@@ -707,10 +826,11 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               </AnimatePresence>
             </div>
 
+            {/* Day / Night Mode Toggle */}
             <button
               onClick={onToggleTheme}
               aria-label="Toggle theme mode (Pure Black / Warm Sunlight)"
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer shrink-0 ${
                 isLight 
                   ? 'text-neutral-700 hover:text-black hover:bg-neutral-200/50' 
                   : 'text-neutral-300 hover:text-white hover:bg-white/10'
@@ -724,9 +844,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               {isLight ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </button>
 
+            {/* Primary Workbench CTA */}
             <button
               onClick={() => onNavigateView('upload')}
-              className={`text-[12px] font-bold tracking-[0.02em] px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer whitespace-nowrap group shrink-0 transition-all duration-200 ${
+              className={`text-[12px] font-bold tracking-[0.02em] px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl hidden sm:flex items-center gap-1.5 cursor-pointer whitespace-nowrap group shrink-0 transition-all duration-200 ${
                 isLight
                   ? 'bg-neutral-950 hover:bg-black text-white shadow-sm'
                   : 'cyan-glow-button'
@@ -735,9 +856,196 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               <span className="transition-transform duration-200 group-hover:-translate-x-0.5">{isBn ? 'স্টুডিও খুলুন' : 'Open Studio'}</span>
               <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
             </button>
+
+            {/* Mobile / Tablet Menu Button (Zero Overlap Guaranteed!) */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowMobileNav((prev) => !prev);
+                setShowHeaderControlsMenu(false);
+              }}
+              className={`p-2 rounded-xl flex xl:hidden items-center justify-center border cursor-pointer shrink-0 transition ${
+                showMobileNav
+                  ? isLight
+                    ? 'bg-neutral-900 text-white border-neutral-900'
+                    : 'bg-white text-black border-white'
+                  : isLight
+                  ? 'bg-white/80 hover:bg-white text-neutral-800 border-neutral-200/90'
+                  : 'bg-white/5 hover:bg-white/10 text-neutral-200 border-white/15'
+              }`}
+              aria-label="Toggle navigation menu"
+              title="Menu"
+            >
+              {showMobileNav ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
 
         </div>
+
+        {/* Responsive Mobile / Tablet Dropdown Drawer (Zero Clutter, Completely Accessible) */}
+        <AnimatePresence>
+          {showMobileNav && (
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+              className={`max-w-[1440px] mx-auto mt-2 p-4 rounded-2xl border shadow-2xl z-50 xl:hidden ${
+                isLight
+                  ? 'bg-white/95 border-neutral-200 text-neutral-900'
+                  : 'bg-[#0b0e14]/95 border-neutral-800 text-neutral-100'
+              } backdrop-blur-2xl space-y-3`}
+            >
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileNav(false);
+                    setActiveDepartment('all');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className={`p-2.5 rounded-xl text-left border flex items-center gap-2 cursor-pointer transition ${
+                    isLight ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200/80' : 'bg-neutral-900/60 hover:bg-neutral-900 border-white/10'
+                  }`}
+                >
+                  <Compass className="w-4 h-4 text-cyan-400" />
+                  <span>Workspace</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileNav(false);
+                    const storeEl = document.getElementById('global-commercial-store-vault');
+                    if (storeEl) storeEl.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`p-2.5 rounded-xl text-left border flex items-center gap-2 cursor-pointer transition ${
+                    isLight ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200/80' : 'bg-neutral-900/60 hover:bg-neutral-900 border-white/10'
+                  }`}
+                >
+                  <Layers className="w-4 h-4 text-emerald-400" />
+                  <span>Global Store</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileNav(false);
+                    onNavigateView('upload');
+                  }}
+                  className={`p-2.5 rounded-xl text-left border flex items-center gap-2 cursor-pointer transition ${
+                    isLight ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200/80' : 'bg-neutral-900/60 hover:bg-neutral-900 border-white/10'
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                  <span>Studio Workbench</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileNav(false);
+                    onNavigateView('seo-rank');
+                  }}
+                  className={`p-2.5 rounded-xl text-left border flex items-center gap-2 cursor-pointer transition ${
+                    isLight ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200/80' : 'bg-neutral-900/60 hover:bg-neutral-900 border-white/10'
+                  }`}
+                >
+                  <TrendingUp className="w-4 h-4 text-sky-400" />
+                  <span>Search SEO</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileNav(false);
+                    onNavigateView('calendar');
+                  }}
+                  className={`p-2.5 rounded-xl text-left border flex items-center gap-2 cursor-pointer transition ${
+                    isLight ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200/80' : 'bg-neutral-900/60 hover:bg-neutral-900 border-white/10'
+                  }`}
+                >
+                  <Calendar className="w-4 h-4 text-rose-400" />
+                  <span>Seasonal Calendar</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileNav(false);
+                    onNavigateView('monetize');
+                  }}
+                  className={`p-2.5 rounded-xl text-left border flex items-center gap-2 cursor-pointer transition ${
+                    isLight ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200/80' : 'bg-neutral-900/60 hover:bg-neutral-900 border-white/10'
+                  }`}
+                >
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                  <span>Monetize Hub</span>
+                </button>
+              </div>
+
+              <div className="pt-2 border-t border-neutral-200/70 dark:border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+                {onOpenCommandPalette && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMobileNav(false);
+                      onOpenCommandPalette();
+                    }}
+                    className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 cursor-pointer ${
+                      isLight ? 'bg-neutral-100 text-neutral-800 border-neutral-200' : 'bg-white/5 text-neutral-200 border-white/10'
+                    }`}
+                  >
+                    <Search className="w-3.5 h-3.5 text-neutral-400" />
+                    <span>Search (⌘K)</span>
+                  </button>
+                )}
+
+                {onOpenProToolkit && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMobileNav(false);
+                      onOpenProToolkit('presubmit');
+                    }}
+                    className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 cursor-pointer ${
+                      isLight ? 'bg-neutral-100 text-neutral-800 border-neutral-200' : 'bg-white/5 text-neutral-200 border-white/10'
+                    }`}
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Pre-Submit Audit</span>
+                  </button>
+                )}
+
+                {user ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMobileNav(false);
+                      if (onLogout) onLogout();
+                    }}
+                    className="px-3 py-1.5 rounded-xl border border-red-500/30 text-red-500 font-semibold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Log Out</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMobileNav(false);
+                      onOpenLogin();
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <UserIcon className="w-3.5 h-3.5" />
+                    <span>Sign In</span>
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* ============================================================ */}
@@ -765,25 +1073,31 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               src={alpineLakeHero}
               alt="Cinematic commercial background"
               className={`w-full h-full object-cover object-center transition-all duration-700 ${
-                isLight ? 'opacity-20 filter contrast-125' : 'opacity-45 filter brightness-90 contrast-125'
+                isLight ? 'opacity-85 filter contrast-105 saturate-115 brightness-100' : 'opacity-50 filter brightness-95 contrast-125'
               }`}
             />
-            {/* Deep Contrast Scrim Gradient ensuring WCAG AA legibility */}
+            {/* Ambient Aurora Glow Mesh (Celestial Cyan & Soft Violet Aurora) - Only in Dark Theme */}
+            {!isLight && <div aria-hidden="true" className="hero-aurora-mesh" />}
+            {/* Contrast Scrim Gradient ensuring WCAG AA legibility while revealing the alpine landscape */}
             <div
               className={`absolute inset-0 ${
                 isLight
-                  ? 'bg-gradient-to-t from-[#fcfaf5] via-[#fcfaf5]/85 to-[#fcfaf5]/55'
+                  ? 'bg-gradient-to-r from-white/92 via-white/60 to-white/15'
                   : 'bg-gradient-to-t from-[#05060A] via-[#05060A]/85 to-[#05060A]/50'
               }`}
             />
+            {/* Subtle light-mode bottom fade so workbench and dropzone blend effortlessly */}
+            {isLight && (
+              <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent pointer-events-none" />
+            )}
           </div>
-          {/* Interactive Cursor-Tracking Warm Champagne AmbientCaustic Spotlight (Zero React Re-render) */}
+          {/* Interactive Cursor-Tracking Warm Ambient Caustic Spotlight */}
           {!isLiteMode && (
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0"
+              className="pointer-events-none absolute inset-0 z-[2]"
               style={{
-                background: `radial-gradient(600px circle at var(--spot-x, 650px) var(--spot-y, 260px), ${skinPalette.spotlightColor}, transparent 70%)`,
+                background: `radial-gradient(650px circle at var(--spot-x, 650px) var(--spot-y, 260px), ${skinPalette.spotlightColor}, transparent 70%)`,
               }}
             />
           )}
@@ -791,43 +1105,53 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           {/* Top-Left & Bottom-Right Subtle Specular Hairlines */}
           <div
             aria-hidden="true"
-            className={`pointer-events-none absolute top-0 inset-x-10 h-[1px] bg-gradient-to-r ${
-              isLight ? 'from-transparent via-neutral-300 to-transparent' : 'from-transparent via-white/20 to-transparent'
+            className={`pointer-events-none absolute top-0 inset-x-10 h-[1.5px] bg-gradient-to-r z-[3] ${
+              isLight ? 'from-transparent via-neutral-300 to-transparent' : 'from-transparent via-cyan-400/40 to-transparent'
             }`}
           />
           <div
             aria-hidden="true"
-            className={`pointer-events-none absolute bottom-0 inset-x-24 h-[1px] bg-gradient-to-r ${
+            className={`pointer-events-none absolute bottom-0 inset-x-24 h-[1px] bg-gradient-to-r z-[3] ${
               isLight ? 'from-transparent via-neutral-200 to-transparent' : 'from-transparent via-white/10 to-transparent'
             }`}
           />
 
-          {/* Minimalist Editorial Kicker at Top of Hero */}
+          {/* Luminous Live Market Intelligence & Contributor Status Ticker */}
           <div className={`mb-7 sm:mb-8 pb-4 border-b flex flex-wrap items-center justify-between gap-3 relative z-10 ${
             isLight ? 'border-neutral-200/70' : 'border-white/10'
           }`}>
-            <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono tracking-[0.12em] uppercase tabular-nums">
-              <span className={isLight ? 'text-neutral-950 font-semibold' : 'text-white font-semibold'}>
-                CONTRIBUTOR ATELIER
-              </span>
-              <span aria-hidden="true" className="opacity-30">·</span>
-              <span className={isLight ? 'text-neutral-600' : 'text-neutral-300'}>
-                49 Weighted Keywords
-              </span>
-              <span aria-hidden="true" className="opacity-30">·</span>
-              <span className={isLight ? 'text-neutral-600' : 'text-neutral-300'}>
-                Top-10 Priority Control
-              </span>
-              <span aria-hidden="true" className="opacity-30 hidden sm:inline">·</span>
-              <span className={isLight ? 'hidden sm:inline text-neutral-700' : 'hidden sm:inline text-neutral-300'}>
-                7-Agency CSV &amp; IPTC
-              </span>
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+              <div className="luminous-market-ticker px-3.5 py-1.5 rounded-full flex items-center gap-2 text-[10.5px] font-mono tracking-wider uppercase text-cyan-300">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 cyan-pulse-dot shrink-0" />
+                <span className="font-semibold text-white tracking-widest">LIVE ATELIER INDEX</span>
+                <span className="opacity-40 text-cyan-200">|</span>
+                <span className="text-cyan-300 font-bold">$1,940/DAY YIELD</span>
+                <span className="opacity-40 text-cyan-200 hidden sm:inline">|</span>
+                <span className="text-emerald-400 font-semibold hidden sm:inline">7 AGENCIES READY</span>
+              </div>
+
+              <div className="hidden lg:flex items-center gap-2 text-[11px] font-mono tracking-wider text-neutral-300">
+                <span className="opacity-40">·</span>
+                <span>49 Weighted Keywords</span>
+                <span className="opacity-40">·</span>
+                <span>Top-10 Rank Control</span>
+                <span className="opacity-40">·</span>
+                <span>IPTC Direct Embed</span>
+              </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-2.5 text-[10.5px] font-mono tabular-nums text-neutral-400">
-              <span>Vector EPS · JPG · 4K</span>
-              <span aria-hidden="true">·</span>
-              <span className={isLight ? 'text-neutral-900 font-medium' : 'text-white font-medium'}>Direct Embed</span>
+            <div className="hidden md:flex items-center gap-2.5 text-[10.5px] font-mono tabular-nums text-neutral-300">
+              <span className="px-2 py-0.5 rounded bg-white/[0.06] border border-white/10 text-white font-semibold">
+                Vector EPS · JPG · 4K
+              </span>
+              <button
+                type="button"
+                onClick={() => onNavigateView('monetize')}
+                className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-semibold transition cursor-pointer"
+              >
+                <span>Google Monetize Hub</span>
+                <ArrowUpRight className="w-3 h-3" />
+              </button>
             </div>
           </div>
 
@@ -842,7 +1166,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           >
             <div className="space-y-5">
               {/* Grand Cinematic Headline with Cormorant Garamond and Electric Cyan Sheen */}
-              <h1 className={`text-[44px] sm:text-[62px] xl:text-[76px] font-serif font-bold tracking-[-0.025em] leading-[1.04] ${
+              <h1 className={`text-[46px] sm:text-[66px] xl:text-[80px] font-serif font-bold tracking-[-0.025em] leading-[1.03] ${
                 isLight ? 'text-neutral-950' : 'text-white'
               }`}>
                 <span className="block">
@@ -852,8 +1176,8 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   </span>
                 </span>
                 <span className="block mt-1 sm:mt-1.5">
-                  <span className={isLight ? 'text-neutral-500' : 'text-zinc-500'}>&amp;</span>{' '}
-                  <span className={`font-serif italic font-normal text-[1.08em] ${isLight ? 'text-neutral-700' : 'text-zinc-200'} pr-1`}>
+                  <span className={isLight ? 'text-neutral-500' : 'text-cyan-400 font-mono text-[0.8em]'}>&amp;</span>{' '}
+                  <span className={`font-serif italic font-normal text-[1.08em] ${isLight ? 'text-neutral-700' : 'wow-text-platinum'} pr-1`}>
                     Editorial
                   </span>{' '}
                   <span className={isLight ? 'text-neutral-950' : 'wow-text-cyan'}>Excellence.</span>
@@ -868,7 +1192,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             </div>
 
             <div className="space-y-4">
-              {/* Instant Minimalist Executive Dropzone Bar */}
+              {/* Instant Minimalist Executive Dropzone Bar with Prismatic Cyan Border */}
               <div
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -887,19 +1211,22 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   }
                 }}
                 onClick={onStartGenerating}
-                className={`p-5 sm:p-6 rounded-2xl transition-all duration-200 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 sovereign-prism-card group ${
+                className={`p-5 sm:p-6 rounded-2xl transition-all duration-300 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 sovereign-prism-card group relative overflow-hidden ${
                   isHeroDragging
-                    ? 'border-white bg-white/10'
+                    ? 'border-cyan-400 bg-cyan-500/10 shadow-[0_0_40px_rgba(0,240,255,0.3)]'
                     : isLight
                     ? 'crystal-glass-panel-light hover:border-neutral-900'
-                    : 'crystal-glass-panel-dark hover:border-white/35'
+                    : 'crystal-glass-panel-dark hover:border-cyan-400/50 hover:shadow-[0_0_35px_rgba(0,240,255,0.18)]'
                 }`}
               >
+                {/* Prismatic Top Edge Caustic */}
+                <div aria-hidden="true" className="prismatic-edge-caustic opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
                 <div className="flex items-center gap-3.5 relative z-10">
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border transition-all ${
                     isLight
                       ? 'bg-neutral-950 text-white border-neutral-800'
-                      : 'bg-white/[0.06] text-white border-white/15'
+                      : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 group-hover:bg-cyan-500/20 group-hover:border-cyan-400/60'
                   }`}>
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
@@ -1014,24 +1341,29 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   : 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
                 transition: tilt.active ? 'transform 0.08s ease-out' : 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
               }}
-              className={`rounded-2xl p-6 sm:p-7 relative overflow-hidden phantom-monolith-card sovereign-prism-card flex-1 flex flex-col justify-between ${
+              className={`rounded-2xl p-6 sm:p-7 relative overflow-hidden phantom-monolith-card sovereign-prism-card flex-1 flex flex-col justify-between transition-all duration-300 ${
               isLight
                 ? 'crystal-glass-panel-light'
-                : 'crystal-glass-panel-dark'
+                : 'crystal-glass-panel-dark border-cyan-500/25 hover:border-cyan-400/60 shadow-[0_0_35px_rgba(0,240,255,0.14)]'
             }`}>
+              {/* Prismatic Cyan Edge Caustic */}
+              <div aria-hidden="true" className="prismatic-edge-caustic" />
               {/* Dynamic 3D Electric Cyan & Platinum Specular Light Following Cursor */}
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 transition-opacity duration-300"
                 style={{
                   opacity: tilt.active ? 1 : 0,
-                  background: `radial-gradient(circle 350px at ${specularPos.x}% ${specularPos.y}%, rgba(0, 240, 255, 0.18), transparent 70%)`,
+                  background: `radial-gradient(circle 350px at ${specularPos.x}% ${specularPos.y}%, rgba(0, 240, 255, 0.22), transparent 70%)`,
                 }}
               />
               {/* Top Specimen Header + Minimalist Agency Selector */}
               <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-neutral-200/60 dark:border-white/10 gap-2">
-                <div className="flex items-center gap-2 text-[10.5px] font-mono tracking-[0.08em] uppercase tabular-nums text-neutral-400 truncate">
-                  <span>{activePreviewStore.storeNumber}</span>
+                <div className="flex items-center gap-2 text-[10.5px] font-mono tracking-[0.08em] uppercase tabular-nums truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 cyan-pulse-dot shrink-0" />
+                  <span className="text-cyan-300 font-bold">{activePreviewStore.storeNumber}</span>
+                  <span className="text-neutral-500">·</span>
+                  <span className="text-neutral-300 font-medium hidden sm:inline">LIVE SPECIMEN SANDBOX</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <select
@@ -1398,10 +1730,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   if (foundIdx !== -1) setPreviewStoreIdx(foundIdx);
                 }}
                 onClick={() => handleOpenStore(store)}
-                className={`min-w-[290px] sm:min-w-[330px] md:min-w-[360px] max-w-[360px] shrink-0 snap-start group cursor-pointer rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 sovereign-prism-card relative overflow-hidden ${
+                className={`min-w-[290px] sm:min-w-[330px] md:min-w-[360px] max-w-[360px] shrink-0 snap-start group cursor-pointer rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 sovereign-prism-card relative overflow-hidden gallery-card-glow ${
                   isLight
                     ? 'crystal-glass-panel-light hover:border-neutral-900'
-                    : 'crystal-glass-panel-dark hover:border-white/35'
+                    : 'crystal-glass-panel-dark'
                 }`}
               >
                 {/* Frosted Prismatic Edge Caustic on Hover */}

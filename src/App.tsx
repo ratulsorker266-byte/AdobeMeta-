@@ -4000,12 +4000,12 @@ export default function App() {
               ? 'crystal-glass-panel-light text-neutral-900'
               : 'crystal-glass-panel-dark text-neutral-100'
           }`}>
-          <div className="flex items-center gap-2.5 shrink-0 min-w-0">
+          <div className="flex items-center gap-2 shrink-0">
             <AdobeMetaProLogo
               size="sm"
               showText={true}
+              showSubtitle={false}
               theme={themeMode === 'light' ? 'light' : 'dark'}
-              subtitle="STUDIO WORKSPACE"
               onClick={() => {
                 setCurrentView('home');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -4013,12 +4013,12 @@ export default function App() {
             />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1 min-w-0">
+          <div className="flex-1 min-w-0 flex items-center justify-start sm:justify-center gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none py-1 mx-2 sm:mx-4">
             {[
               { id: 'upload', label: 'Studio' },
               { id: 'seo-rank', label: 'Search SEO' },
               { id: 'calendar', label: 'Calendar' },
-              { id: 'prompts', label: 'Prompts' },
+              { id: 'prompts', label: 'Atelier' },
               { id: 'monetize', label: 'Monetize' },
               { id: 'trends', label: 'Trends' },
               { id: 'competitor', label: 'Spy' },
@@ -4028,9 +4028,9 @@ export default function App() {
                 <button
                   key={tab.id}
                   onClick={() => setCurrentView(tab.id as any)}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold tracking-[0.04em] transition cursor-pointer whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold tracking-[0.04em] transition cursor-pointer whitespace-nowrap shrink-0 ${
                     isActive
-                      ? (themeMode === 'light' ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-950')
+                      ? (themeMode === 'light' ? 'bg-neutral-950 text-white shadow-2xs' : 'bg-white text-neutral-950')
                       : (themeMode === 'light' ? 'text-neutral-500 hover:text-black hover:bg-neutral-100/80' : 'text-neutral-400 hover:text-white hover:bg-white/5')
                   }`}
                 >
@@ -6062,6 +6062,14 @@ export default function App() {
                                 </button>
                               </div>
                             </div>
+
+                          {/* 100% Adobe Stock SEO Compliance & Commercial Readiness Gauge */}
+                          <div className="w-full my-2">
+                            <CommercialReadinessGauge
+                              result={item.result}
+                              onAutoFix={() => autoFixItem(item.id)}
+                              themeMode={themeMode}
+                            />
                           </div>
 
                           {/* Semantic Color-Coded Keywords with Top 10 High-Ranking Badges & 1-Click Slot #1 Promotion */}

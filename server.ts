@@ -248,7 +248,7 @@ function saveAuthVault(vault: Record<string, StoredContributorAccount>): void {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // Secure, bounded limit for base64 and binary image/EPS uploads (150MB supports large Illustrator EPS10 files)
   app.use(express.raw({
