@@ -18,7 +18,9 @@ import {
   ChevronRight,
   Zap,
   Flame,
-  Gamepad2
+  Gamepad2,
+  Maximize2,
+  Video
 } from 'lucide-react';
 
 interface StudioToolsHubModalProps {
@@ -48,6 +50,24 @@ export const StudioToolsHubModal: React.FC<StudioToolsHubModalProps> = ({
   if (!isOpen) return null;
 
   const tools: ToolCard[] = [
+    {
+      id: 'image_upscaler',
+      name: '8K Ultra Image Upscaler Studio',
+      category: 'Vector & AI',
+      description: 'Upscayl-grade 2K to 8K Ultra-HD photo batch upscaler (300 DPI) with CAS edge sharpening and micro-grain. 100% Free with zero API cost.',
+      icon: Maximize2,
+      color: 'from-amber-500/20 to-orange-500/20 border-amber-500/40 text-amber-400',
+      badge: '2K to 8K • 300 DPI'
+    },
+    {
+      id: 'video_upscaler',
+      name: '8K Video Super-Resolution Studio (Up to 10s)',
+      category: 'Vector & AI',
+      description: 'Super-resolve short B-roll stock video clips (up to 10s) into 2K–8K Ultra-HD with batch video queue and frame-by-frame canvas recording.',
+      icon: Video,
+      color: 'from-rose-500/20 to-pink-500/20 border-rose-500/40 text-rose-400',
+      badge: '2K to 8K • 24 FPS'
+    },
     {
       id: 'keyword_mixer',
       name: 'Live Visual Similar Image Keyword Mixer',

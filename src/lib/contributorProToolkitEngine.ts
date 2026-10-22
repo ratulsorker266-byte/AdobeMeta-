@@ -295,43 +295,41 @@ export async function runPreSubmissionAudit(
   const releaseRecommendationEn = needsRelease
     ? `Detected "${releaseTriggersFound.slice(0, 3).join(', ')}": Attach a signed Model/Property Release if any recognizable person or private property is visible.`
     : 'No recognizable person or private property terms detected — Model/Property Release not required for generic commercial concepts.';
-  const releaseRecommendationBn = needsRelease
-    ? `"${releaseTriggersFound.slice(0, 3).join(', ')}" পাওয়া গেছে: ছবিতে কোনো মানুষের মুখ বা ব্যক্তিগত সম্পত্তি চেনা গেলে অবশ্যই সাইন করা Model/Property Release যুক্ত করুন।`
-    : 'কোনো চেনা মানুষ বা ব্যক্তিগত সম্পত্তির উল্লেখ নেই — সাধারণ কমার্শিয়াল ফাইলের জন্য Release লাগবে না।';
+  const releaseRecommendationBn = releaseRecommendationEn;
 
   const checks: PreSubmissionCheckItem[] = [
     {
       id: 'resolution',
       labelEn: 'Minimum 4.0 MP Resolution & Dimensions',
-      labelBn: 'ন্যূনতম ৪ মেগাপিক্সেল (4MP) রেজোলিউশন',
+      labelBn: '',
       status: min4MpPass ? 'PASS' : 'FAIL',
       detailEn: isVector
         ? 'Vector artwork scales infinitely (recommend 4MP–15MP artboard).'
         : `${width}×${height} px (${mpNum.toFixed(2)} MP) — Adobe Stock requires ≥ 4.0 MP.`,
       detailBn: isVector
-        ? 'ভেক্টর ফাইল যেকোনো সাইজে স্কেলযোগ্য (৪–১৫ মেগাপিক্সেল আর্টবোর্ড উত্তম)।'
-        : `${width}×${height} px (${mpNum.toFixed(2)} MP) — Adobe Stock-এ কমপক্ষে ৪.০ MP হতে হবে।`,
+        ? 'Vector artwork scales infinitely (recommend 4MP–15MP artboard).'
+        : `${width}×${height} px (${mpNum.toFixed(2)} MP) — Adobe Stock requires ≥ 4.0 MP.`,
     },
     {
       id: 'filesize_eps',
       labelEn: 'File Size & EPS/AI Version Compatibility',
-      labelBn: 'ফাইল সাইজ এবং EPS/AI ভার্সন চেক',
+      labelBn: '',
       status: sizePass ? 'PASS' : 'WARNING',
       detailEn: `${fileSizeMB} MB · ${epsVersion} (Max limit: 45MB for EPS, 100MB for JPEG).`,
-      detailBn: `${fileSizeMB} MB · ${epsVersion} (EPS সর্বোচ্চ ৪৫ মেগাবাইট এবং EPS 10 ফরম্যাট সবচেয়ে নিরাপদ)।`,
+      detailBn: '',
     },
     {
       id: 'title_len',
       labelEn: 'Commercial Title Length (35–70 Chars Optimal)',
-      labelBn: 'টাইটেলের দৈর্ঘ্য (৩৫–৭০ অক্ষর সবচেয়ে ভালো)',
+      labelBn: '',
       status: titlePass ? 'PASS' : titleWarn ? 'WARNING' : 'FAIL',
       detailEn: `Current length: ${titleLen} chars. Keep descriptive titles under 70 chars so search grids don't truncate them.`,
-      detailBn: `বর্তমান দৈর্ঘ্য: ${titleLen} অক্ষর। সার্চ পেজে পুরো টাইটেল দেখাতে ৭০ অক্ষরের মধ্যে রাখা সবচেয়ে ভালো।`,
+      detailBn: '',
     },
     {
       id: 'kw_count',
       labelEn: 'Keyword Count & Plural/Duplicate Check',
-      labelBn: 'কীওয়ার্ড সংখ্যা এবং ডুপ্লিকেট/বহুবচন চেক',
+      labelBn: '',
       status: kwCountPass && duplicateOrPluralHits.length === 0 ? 'PASS' : 'WARNING',
       detailEn:
         duplicateOrPluralHits.length === 0
@@ -339,13 +337,13 @@ export async function runPreSubmissionAudit(
           : `${kwCount} keywords — Found ${duplicateOrPluralHits.length} duplicate/plural pair(s): ${duplicateOrPluralHits.slice(0, 3).join(', ')}.`,
       detailBn:
         duplicateOrPluralHits.length === 0
-          ? `${kwCount}/49টি কীওয়ার্ড — কোনো ডুপ্লিকেট বা একবচন/বহুবচন স্প্যাম নেই।`
-          : `${kwCount}টি কীওয়ার্ড — ${duplicateOrPluralHits.length}টি ডুপ্লিকেট/বহুবচন পাওয়া গেছে (নিচে ১-ক্লিকে ক্লিন করুন)।`,
+          ? `${kwCount}/49 keywords — Zero duplicate or plural spam detected.`
+          : `${kwCount} keywords — Found ${duplicateOrPluralHits.length} duplicate/plural pair(s): ${duplicateOrPluralHits.slice(0, 3).join(', ')}.`,
     },
     {
       id: 'trademark',
       labelEn: 'Trademark & Protected IP Brand Scan',
-      labelBn: 'ট্রেডমার্ক ও নিষিদ্ধ ব্র্যান্ড নাম চেক (Nike, Apple, Disney)',
+      labelBn: '',
       status: trademarkHits.length === 0 ? 'PASS' : 'FAIL',
       detailEn:
         trademarkHits.length === 0
@@ -353,13 +351,13 @@ export async function runPreSubmissionAudit(
           : `ALERT: Remove restricted trademark term(s) immediately: ${trademarkHits.join(', ').toUpperCase()}.`,
       detailBn:
         trademarkHits.length === 0
-          ? '১০০% নিরাপদ — কোনো ব্র্যান্ডের নাম, ক্যামেরা মডেল বা AI টুলের নাম পাওয়া যায়নি।'
-          : `সতর্কতা: রিজেকশন এড়াতে এই ব্র্যান্ড নামগুলো এখনই মুছে ফেলুন: ${trademarkHits.join(', ').toUpperCase()}`,
+          ? '100% Clean — Zero restricted brand names, camera models, or AI tool names found.'
+          : `ALERT: Remove restricted trademark term(s) immediately: ${trademarkHits.join(', ').toUpperCase()}.`,
     },
     {
       id: 'release',
       labelEn: 'Model & Property Release Requirement',
-      labelBn: 'মডেল বা প্রপার্টি রিলিজ (Release) লাগবে কি না',
+      labelBn: '',
       status: needsRelease ? 'WARNING' : 'PASS',
       detailEn: releaseRecommendationEn,
       detailBn: releaseRecommendationBn,
@@ -394,112 +392,87 @@ export const REJECTION_REMEDY_GUIDES: RejectionRemedyGuide[] = [
   {
     id: 'similar_content',
     reasonTitleEn: 'Similar Content / Spam Rejection',
-    reasonTitleBn: 'Similar Content (একই রকম ফাইল বারবার আপলোড)',
+    reasonTitleBn: '',
     badgeColor: 'amber',
     whyItHappensEn:
       'Uploading multiple variations with nearly identical composition, color changes only, or copy-pasting the exact same title and first 10 keywords across a batch.',
-    whyItHappensBn:
-      'সামান্য রঙ পরিবর্তন করে একই ছবি বারবার আপলোড করলে কিংবা সব ফাইলে হুবহু একই টাইটেল ও প্রথম ১০টি কীওয়ার্ড কপি-পেস্ট করলে Adobe Stock এটিকে স্প্যাম ধরে রিজেক্ট করে।',
+    whyItHappensBn: '',
     howToFixStepsEn: [
       'Select only the top 2–3 strongest variations from a similar set (different camera angle, aspect ratio, or framing).',
       'Give every file a unique Title that describes its specific angle (e.g., "Wide Banner", "Isometric Cutaway", "Macro Close-Up").',
       'Reorder Keyword Slots #1–#10 so no two files in the same upload batch share identical tag sequences.',
     ],
-    howToFixStepsBn: [
-      'একই রকম দেখতে অনেকগুলো ছবি একসাথে না দিয়ে সবচেয়ে সেরা ২–৩টি ভিন্ন অ্যাঙ্গেলের ছবি বাছাই করুন।',
-      'প্রতিটি ফাইলের টাইটেলে আলাদা বৈশিষ্ট্য (যেমন: Wide Banner, Isometric View, Close-up) উল্লেখ করে ভিন্নতা আনুন।',
-      'প্রতিটি ফাইলের প্রথম ১০টি কীওয়ার্ডের ক্রম (Order) আলাদা রাখুন এবং অন্তত ২–৩ দিন বিরতি দিয়ে সিরিজের বাকি ফাইল দিন।',
-    ],
+    howToFixStepsBn: [],
     preUploadChecklistEn: 'Rule of Thumb: Ask yourself "Would a buyer purchase both of these files separately?"',
-    preUploadChecklistBn: 'মনে রাখবেন: বায়ার কি দুটি ছবি আলাদাভাবে কিনবে? উত্তর হ্যাঁ হলে তবেই আপলোড করুন।',
+    preUploadChecklistBn: '',
   },
   {
     id: 'technical_noise_artifacts',
     reasonTitleEn: 'Technical Issues: Noise, Artifacts & AI Anatomy Errors',
-    reasonTitleBn: 'Technical Issues (নয়েজ, পিক্সেল ফাটা বা AI-এর ভুল আঙুল/টেক্সট)',
+    reasonTitleBn: '',
     badgeColor: 'red',
     whyItHappensEn:
       'Reviewers inspect images at 100% zoom. Over-sharpening halos, JPEG compression blocks, chromatic aberration, or AI generation defects (warped fingers, gibberish text, asymmetrically melted objects) cause instant rejection.',
-    whyItHappensBn:
-      'মডারেটররা ছবি ১০০% জুম করে দেখে। ছবিতে গ্রেইন/নয়েজ, অতিরিক্ত শার্পনিং, কিংবা AI দিয়ে বানানো ছবিতে বাঁকা আঙুল, অস্পষ্ট অক্ষর বা গলে যাওয়া অবজেক্ট থাকলে সাথে সাথে রিজেক্ট হয়।',
+    whyItHappensBn: '',
     howToFixStepsEn: [
       'Inspect your image at 100%–200% zoom before uploading; heal any malformed AI hands, eyes, or background wires.',
       'Apply gentle luminance noise reduction in Lightroom/Camera Raw and avoid aggressive upscaling halos.',
       'Export as sRGB JPEG at 95%–98% quality and never upscale a blurry low-res image past 2x without clean detail restoration.',
     ],
-    howToFixStepsBn: [
-      'আপলোডের আগে ছবি ১০০% জুম করে চারপাশ, মানুষের হাত-চোখ ও ব্যাকগ্রাউন্ডের লাইনগুলো ভালোভাবে চেক করুন।',
-      'হালকা Denoise ব্যবহার করুন, কিন্তু অতিরিক্ত Sharpen করবেন না (যাতে বর্ডারে সাদা দাগ না পড়ে)।',
-      'সবসময় sRGB কালার প্রোফাইলে ৯৫%–৯৮% কোয়ালিটিতে JPG এক্সপোর্ট করুন।',
-    ],
+    howToFixStepsBn: [],
     preUploadChecklistEn: 'Always check corners and background textures at 100% zoom.',
-    preUploadChecklistBn: '১০০% জুম করে ছবির কোণা এবং ব্যাকগ্রাউন্ড অবশ্যই চেক করে নিন।',
+    preUploadChecklistBn: '',
   },
   {
     id: 'ip_trademark',
     reasonTitleEn: 'Intellectual Property (IP), Trademark & Brand Violation',
-    reasonTitleBn: 'Intellectual Property / Trademark (ব্র্যান্ড লোগো বা কপিরাইট সমস্যা)',
+    reasonTitleBn: '',
     badgeColor: 'rose',
     whyItHappensEn:
       'Visible logos on clothing/laptops/cars, recognizable product designs (iPhone camera bump, Porsche headlights, Nike swoosh), famous landmarks requiring permits, or mentioning brand/AI generator names in Titles/Keywords.',
-    whyItHappensBn:
-      'ছবির ভেতর পোশাক, ল্যাপটপ বা গাড়িতে কোনো কোম্পানির লোগো থাকলে, আইফোন বা সুপরিচিত ব্র্যান্ডের হুবহু ডিজাইন বোঝা গেলে, অথবা টাইটেল/কীওয়ার্ডে Nike, Apple, Midjourney ইত্যাদি নাম লিখলে রিজেক্ট হয়।',
+    whyItHappensBn: '',
     howToFixStepsEn: [
       'Clone out or healing-brush every visible logo, brand name, serial number, QR code, and license plate.',
       'Remove distinctive proprietary hardware contours (e.g., Apple notch/camera layout, branded sneaker soles).',
       'Run the Pre-Submission Checker above to strip forbidden trademark words from your Title and 49 Keywords.',
     ],
-    howToFixStepsBn: [
-      'ফটোশপের Clone/Healing টুল দিয়ে ছবির সব লোগো, লেখার দাগ, বারকোড ও গাড়ির নাম্বার প্লেট সম্পূর্ণ মুছে ফেলুন।',
-      'টাইটেল ও কীওয়ার্ড থেকে যেকোনো ব্র্যান্ডের নাম বা AI সফটওয়্যারের নাম বাদ দিন।',
-      'ভেক্টর ফাইলে কোনো ফন্ট থাকলে সেটিকে অবশ্যই Create Outlines (Expand) করে দিন।',
-    ],
+    howToFixStepsBn: [],
     preUploadChecklistEn: 'Zero logos in pixels + Zero brand names in metadata = 100% IP Safe.',
-    preUploadChecklistBn: 'ছবিতে কোনো লোগো নেই + মেটাডেটায় কোনো ব্র্যান্ডের নাম নেই = ১০০% নিরাপদ।',
+    preUploadChecklistBn: '',
   },
   {
     id: 'focus_exposure',
     reasonTitleEn: 'Out of Focus, Motion Blur or Poor Lighting/Exposure',
-    reasonTitleBn: 'Out of Focus / Exposure (ঘোলা ছবি বা আলোর সমস্যা)',
+    reasonTitleBn: '',
     badgeColor: 'sky',
     whyItHappensEn:
       'The main subject lacks tack-sharp focus, shallow depth-of-field missed the eyes/focal point, or highlights/shadows are clipped (pure blown-out white or crushed black blobs).',
-    whyItHappensBn:
-      'ছবির মূল সাবজেক্ট বা চোখের ওপর ফোকাস শার্প না থাকলে, মোশন ব্লার হলে, অথবা অতিরিক্ত আলো (Overexposed) বা অন্ধকারের (Underexposed) কারণে ডিটেইলস হারিয়ে গেলে রিজেক্ট হয়।',
+    whyItHappensBn: '',
     howToFixStepsEn: [
       'Ensure the focal point (especially eyes in portraits or front edges in product shots) is crisp at 1:1 pixel view.',
       'Check your Histogram: pull Highlights down to -15 and lift Shadows to +15 so no pure clipping occurs.',
       'If using shallow depth of field (bokeh), make sure the transition between sharp subject and blurred background looks natural.',
     ],
-    howToFixStepsBn: [
-      'পোর্ট্রেট বা প্রোডাক্টের মূল ফোকাল পয়েন্ট যেন একদম নিখুঁত ও শার্প থাকে তা নিশ্চিত করুন।',
-      'Histogram চেক করে অতিরিক্ত সাদা (Clipped Highlights) বা অতিরিক্ত কালো অংশ ব্যালেন্স করুন।',
-      'সামান্য ঘোলা ছবি ছোট রিসাইজ (যেমন 6MP থেকে 4.2MP Downscale) করলে শার্পনেস অনেক বেড়ে যায়।',
-    ],
+    howToFixStepsBn: [],
     preUploadChecklistEn: 'Downscaling slightly (e.g., 20%) often tightens soft pixel edges.',
-    preUploadChecklistBn: 'হালকা সফট ছবি ১৫–২০% ডাউনস্কেল করলে ফোকাস অনেক বেশি শার্প দেখায়।',
+    preUploadChecklistBn: '',
   },
   {
     id: 'non_compliant_metadata',
     reasonTitleEn: 'Title / Keyword Policy Violation or Misleading Tags',
-    reasonTitleBn: 'Title / Keyword Violation (ভুল বা অপ্রাসঙ্গিক কীওয়ার্ড ও টাইটেল)',
+    reasonTitleBn: '',
     badgeColor: 'emerald',
     whyItHappensEn:
       'Including artist names ("in the style of Pixar/Van Gogh"), AI tool names ("Midjourney v6"), camera specs ("shot on Canon 5D"), or stuffing unrelated trending keywords that do not appear in the image.',
-    whyItHappensBn:
-      'টাইটেল বা কীওয়ার্ডে কোনো শিল্পীর নাম, মুভির নাম, ক্যামেরার মডেল, কিংবা ছবির সাথে মিল নেই এমন ট্রেন্ডিং শব্দ দিলে মেটাডেটা পলিসি ভঙ্গের কারণে ফাইল আটকে যায়।',
+    whyItHappensBn: '',
     howToFixStepsEn: [
       'Describe ONLY what is visually present in the image plus its direct commercial concept.',
       'Never include prompt parameters (--ar 16:9, --v 6.0, 8k, octane render, unreal engine, photorealistic) in your Title or Keywords.',
       'Use our Keyword Quality Score Auditor below to automatically flag and remove irrelevant or forbidden tags.',
     ],
-    howToFixStepsBn: [
-      'ছবিতে যা সরাসরি দেখা যাচ্ছে এবং যে কাজে এটি ব্যবহৃত হবে—শুধু সেই প্রাসঙ্গিক শব্দগুলোই রাখুন।',
-      'কখনোই প্রম্পটের কোড (--ar 16:9, 8k, octane render, midjourney) টাইটেল বা ট্যাগে রাখবেন না।',
-      'নিচের Keyword Quality Score টুল দিয়ে ১ ক্লিকে অপ্রাসঙ্গিক শব্দগুলো ছেঁটে ফেলুন।',
-    ],
+    howToFixStepsBn: [],
     preUploadChecklistEn: 'Keep titles literal, factual, and between 5 to 12 words.',
-    preUploadChecklistBn: 'টাইটেল সবসময় সহজ, বাস্তবসম্মত এবং ৫ থেকে ১২ শব্দের মধ্যে রাখুন।',
+    preUploadChecklistBn: '',
   },
 ];
 
@@ -564,7 +537,7 @@ export function calculateKeywordQualityScore(
       irrelevantWarnings.push({
         keyword: kw,
         reasonEn: 'Prompt/Camera/AI jargon (Not allowed in Adobe Stock tags)',
-        reasonBn: 'প্রম্পট বা ক্যামেরা শব্দ (Adobe Stock কীওয়ার্ডে অনুমোদিত নয়)',
+        reasonBn: '',
       });
       return;
     }
@@ -575,7 +548,7 @@ export function calculateKeywordQualityScore(
       irrelevantWarnings.push({
         keyword: kw,
         reasonEn: 'Protected Brand / Trademark name (Causes IP Rejection)',
-        reasonBn: 'ট্রেডমার্ক/ব্র্যান্ড নাম (IP রিজেকশনের ঝুঁকি)',
+        reasonBn: '',
       });
       return;
     }
@@ -669,11 +642,6 @@ export function sanitizeForGenerativeAiPolicy(title: string, keywords: string[])
       'Do NOT include real people names, living artist names, brand names, or AI generator names in your Title or Keywords.',
       'If your AI image depicts a realistic human face, attach a Property Release confirming you have rights to the synthetic likeness.',
     ],
-    checklistGuidelinesBn: [
-      'Adobe Stock পোর্টালে ফাইল আপলোডের সময় অবশ্যই "Created using generative AI tools" চেকবক্সে টিক দিন।',
-      'ছবিতে বা টাইটেলে কোনো জীবিত শিল্পী, সেলিব্রিটি, ব্র্যান্ড বা AI টুলের নাম (যেমন Midjourney/Firefly) রাখা যাবে না।',
-      'রিয়েলিস্টিক মানুষের মুখ থাকলে Adobe Stock-এর নিয়ম অনুযায়ী জেনারেটিভ AI প্রপার্টি রিলিজ যুক্ত করুন।',
-      'টাইটেল ও কীওয়ার্ডে "photorealistic", "8k", "octane render" জাতীয় প্রম্পট শব্দ না রেখে কেবল ছবির বিষয়বস্তু রাখুন।',
-    ],
+    checklistGuidelinesBn: [],
   };
 }

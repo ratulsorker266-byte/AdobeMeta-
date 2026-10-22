@@ -124,18 +124,18 @@ interface SovereignAiAssistantDrawerProps {
 }
 
 const VOICE_LANGUAGES = [
-  { code: 'bn-BD', label: '🇧🇩 বাংলা (BD)', name: 'Bengali (Bangladesh)' },
-  { code: 'bn-IN', label: '🇮🇳 বাংলা (IN)', name: 'Bengali (India)' },
-  { code: 'en-US', label: '🇺🇸 English (US)', name: 'English' },
-  { code: 'hi-IN', label: '🇮🇳 हिन्दी (HI)', name: 'Hindi' },
-  { code: 'ur-PK', label: '🇵🇰 اردو (UR)', name: 'Urdu' },
-  { code: 'ar-SA', label: '🇸🇦 العربية (AR)', name: 'Arabic' },
-  { code: 'es-ES', label: '🇪🇸 Español (ES)', name: 'Spanish' },
-  { code: 'fr-FR', label: '🇫🇷 Français (FR)', name: 'French' },
-  { code: 'de-DE', label: '🇩🇪 Deutsch (DE)', name: 'German' },
-  { code: 'pt-BR', label: '🇧🇷 Português (PT)', name: 'Portuguese' },
-  { code: 'id-ID', label: '🇮🇩 Indonesia (ID)', name: 'Indonesian' },
-  { code: 'ja-JP', label: '🇯🇵 日本語 (JA)', name: 'Japanese' }
+  { code: 'en-US', label: '🇺🇸 English (US)', name: 'English (US)' },
+  { code: 'en-GB', label: '🇬🇧 English (UK)', name: 'English (UK)' },
+  { code: 'bn-BD', label: '🇧🇩 Bengali (BD)', name: 'Bengali' },
+  { code: 'hi-IN', label: '🇮🇳 Hindi (HI)', name: 'Hindi' },
+  { code: 'ur-PK', label: '🇵🇰 Urdu (UR)', name: 'Urdu' },
+  { code: 'ar-SA', label: '🇸🇦 Arabic (AR)', name: 'Arabic' },
+  { code: 'es-ES', label: '🇪🇸 Spanish (ES)', name: 'Spanish' },
+  { code: 'fr-FR', label: '🇫🇷 French (FR)', name: 'French' },
+  { code: 'de-DE', label: '🇩🇪 German (DE)', name: 'German' },
+  { code: 'pt-BR', label: '🇧🇷 Portuguese (BR)', name: 'Portuguese' },
+  { code: 'id-ID', label: '🇮🇩 Indonesian (ID)', name: 'Indonesian' },
+  { code: 'ja-JP', label: '🇯🇵 Japanese (JA)', name: 'Japanese' }
 ];
 
 export type AiVoicePersonaId = 'Kore' | 'Aoede' | 'Zephyr' | 'Leda' | 'Charon' | 'Fenrir' | 'Puck' | 'Orus';
@@ -277,11 +277,11 @@ const AI_MODES: {
     shortLabel: '🤝 Best Friend',
     icon: Sparkles,
     badgeColor: 'text-emerald-300 border-emerald-400/40 bg-emerald-500/15',
-    placeholder: 'দোস্ত, যেকোনো বিষয়ে খোলামেলা কথা বলো—আমি কোনো কিছু লুকানো ছাড়া সব খুলে বলব...',
+    placeholder: 'Ask me anything candidly about microstock rankings, Google AdSense, or portfolio growth...',
     quickPrompts: [
-      'দোস্ত, স্টক মার্কেটপ্লেস ও গুগল থেকে দ্রুত আয় বাড়ানোর আসল গোপন ফর্মুলা কী?',
-      'ভাই, মানুষ কোন ভুলগুলোর কারণে Adobe Stock-এ প্রথম পেজে র‍্যাঙ্ক পায় না?',
-      'আমাকে একদম জিরো থেকে মাসে $1,000 প্যাসিভ ইনকামের প্র্যাকটিক্যাল গাইডলাইন দাও'
+      'What is the exact secret formula to 10x earnings on Adobe Stock and Shutterstock?',
+      'Which critical mistakes cause stock visuals to get rejected or rank on page 50?',
+      'Give me a step-by-step roadmap to build $1,000/mo passive royalty income from scratch'
     ]
   },
   {
@@ -894,12 +894,9 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
       .replace(/\s+/g, ' ')
       .trim();
 
-    const hasBn = /[\u0980-\u09FF]/.test(text);
     const cleanSpeech =
       conversationalOnly.length >= 6
         ? conversationalOnly
-        : hasBn
-        ? 'দোস্ত, আমি তোমার জন্য র‍্যাঙ্ক ওয়ান টাইটেল এবং ৪৯টি এসইও কিওয়ার্ড নিচের কার্ডে তৈরি করে দিয়েছি।'
         : 'My friend, I have prepared your Rank 1 commercial title and all 49 SEO keywords in the card below.';
 
     speechQueueActiveRef.current = true;
@@ -1348,7 +1345,7 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
     a.download = `${prefix}_${safeName.replace(/\.[^/.]+$/, '')}_Metadata.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast(`✓ Downloaded ${prefix} CSV directly from Sovereign AI 6.0!`);
+    showToast(`✓ Downloaded ${prefix} CSV directly from Contributor Studio Desk!`);
   };
 
   // Download generated image/SVG as high-res PNG
@@ -1763,22 +1760,16 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                           type="button"
                           onClick={() => {
                             const sampleByLang: Record<string, string> = {
-                              'bn-BD':
-                                'হ্যালো! আমি আপনার সোভারিন এআই কো-পাইলট। আপনি আমার সাথে বাংলা বা যেকোনো ভাষায় সরাসরি কথা বলতে পারেন।',
-                              'bn-IN':
-                                'নমস্কার! আমি আপনার এআই অ্যাসিস্ট্যান্ট। আপনার স্টক ছবির মেটাডেটা এবং আর্নিং নিয়ে যেকোনো প্রশ্ন করুন।',
-                              'hi-IN':
-                                'नमस्ते! मैं आपका एआई को-पायलट हूँ। आप मुझसे किसी भी भाषा में सीधे बात कर सकते हैं।',
-                              'ur-PK':
-                                'السلام علیکم! میں آپ کا اے آئی اسسٹنٹ ہوں، آپ مجھ سے کسی بھی زبان میں بات کر سکتے ہیں۔',
-                              'ar-SA':
-                                'مرحباً بك! أنا مساعد الذكاء الاصطناعي الخاص بك، يمكنك التحدث معي مباشرة بأي لغة.',
+                              'en-US':
+                                'Hello! I am your Contributor Studio Director. You can consult with me on commercial stock guidelines in any language.',
+                              'en-GB':
+                                'Hello! I am your AI assistant. Feel free to ask any question regarding stock metadata and royalties.',
                               'es-ES':
                                 '¡Hola! Soy tu copiloto de inteligencia artificial. Puedes hablar conmigo en cualquier idioma.'
                             };
                             const sampleText =
                               sampleByLang[voiceLang] ||
-                              'Hello! I am your Sovereign AI Co-Pilot. You can speak with me smoothly in any language.';
+                              'Hello! I am your Contributor Studio Director. You can consult with me on commercial stock guidelines in any language.';
                             speakMessageAloud(sampleText, -99, false);
                           }}
                           className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition cursor-pointer ${
@@ -2531,10 +2522,10 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                                   disabled={isChatLoading}
                                   onClick={() =>
                                     onSendChat(
-                                      'দোস্ত, তোমার ওপরের উত্তরটা আমাকে একদম সহজ, ঘরোয়া ও প্রাণবন্ত বাংলায় কোনো কিছু না লুকিয়ে বিস্তারিত বুঝিয়ে বলো।',
+                                      'Explain this in clear, actionable, simple terms with real-world examples and exact numbers.',
                                       activeMode,
                                       {
-                                        voiceLang: 'Bengali (Bangladesh)',
+                                        voiceLang: 'English (US)',
                                         isLiveVoiceCall,
                                         deepMastermind: true,
                                         webSearchGrounding
@@ -2548,7 +2539,7 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                                   }`}
                                   title="Explain this entire answer in natural friend-to-friend Bengali"
                                 >
-                                  🇧🇩 বাংলায় খুলে বলো
+                                  💡 Simplify & Break Down
                                 </button>
 
                                 <button
@@ -2644,7 +2635,7 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                     >
                       <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-500" />
                       <span>
-                        Sovereign AI Co-Pilot ({currentModeConfig.shortLabel}) is synthesizing...
+                        Studio Desk Specialist ({currentModeConfig.shortLabel}) is analyzing guidelines...
                       </span>
                     </div>
                   </div>

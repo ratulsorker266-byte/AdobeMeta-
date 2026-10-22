@@ -1,6 +1,6 @@
 export interface MonthTrendDetail {
   monthName: string;
-  bengaliName: string;
+  shortCode: string;
   monthOverview: string;
   whatToCreate: string[];
   currentTrends: {
@@ -23,7 +23,7 @@ export interface MonthTrendDetail {
 export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   january: {
     monthName: "January",
-    bengaliName: "জানুয়ারি",
+    shortCode: "JAN",
     monthOverview: "January is defined by New Year resolutions, fitness overhauls, healthy eating, corporate goal setting, and tax season preparation. Commercial buyers actively search for clean, inspiring visuals representing fresh starts and organized lifestyles.",
     whatToCreate: [
       "Fitness & Wellness: Real people working out at home, gym workouts, yoga, wearable smartwatch tracking, and clean meal prep bowls.",
@@ -99,7 +99,7 @@ export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   },
   february: {
     monthName: "February",
-    bengaliName: "ফেব্রুয়ারি",
+    shortCode: "FEB",
     monthOverview: "February revolves around Valentine's Day romance, Heart Health Month, Black History Month, romantic getaways, and early preparations for Spring Equinox and outdoor lifestyles.",
     whatToCreate: [
       "Love & Relationships: Genuine couples holding hands, anniversary dinners, creative gift wrapping, LGBTQ+ love, and chocolate sweets.",
@@ -175,7 +175,7 @@ export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   },
   march: {
     monthName: "March",
-    bengaliName: "মার্চ",
+    shortCode: "MAR",
     monthOverview: "March welcomes Spring, International Women's Day, Saint Patrick's Day, and preparations for Easter and Ramadan/Eid. Stock buyers focus on blooming nature, renewal, outdoor sports, and home improvement.",
     whatToCreate: [
       "Women Empowerment: Female entrepreneurs, women in engineering and construction, female coders, and senior women mentors.",
@@ -251,7 +251,7 @@ export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   },
   april: {
     monthName: "April",
-    bengaliName: "এপ্রিল",
+    shortCode: "APR",
     monthOverview: "April highlights Earth Day and sustainability, Easter family gatherings, tax filing deadlines, spring sports, and early wedding season bookings.",
     whatToCreate: [
       "Earth Day & Green Tech: Solar panels on rooftops, wind farms, electric vehicles charging, recycling bins, and zero-waste shopping.",
@@ -327,7 +327,7 @@ export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   },
   may: {
     monthName: "May",
-    bengaliName: "মে",
+    shortCode: "MAY",
     monthOverview: "May is centered around Mother's Day, Memorial Day weekend, kickoff to summer vacation, wedding season celebrations, and college graduations.",
     whatToCreate: [
       "Mother's Day Tributes: Emotional portraits of mothers, pampering breakfasts, gift shopping, hugs, and generational family bonds.",
@@ -403,7 +403,7 @@ export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   },
   june: {
     monthName: "June",
-    bengaliName: "জুন",
+    shortCode: "JUN",
     monthOverview: "June brings Father's Day, Pride Month celebrations, Summer Solstice, school vacation, and beach travel. Buyers are hungry for vibrant outdoor, sunny, and joyful human connections.",
     whatToCreate: [
       "Modern Fatherhood: Hands-on fathers playing with kids, teaching life skills, cooking, piggyback rides, and emotional hugs.",
@@ -479,7 +479,7 @@ export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   },
   july: {
     monthName: "July",
-    bengaliName: "জুলাই",
+    shortCode: "JUL",
     monthOverview: "July is mid-summer peak: 4th of July celebrations, water sports, outdoor cookouts, and intense advance buying for Back-to-School and early Autumn.",
     whatToCreate: [
       "Independence Day (4th of July): Sparklers at twilight, American flag decor, red-white-blue cupcakes, and fireworks in night sky.",
@@ -555,7 +555,7 @@ export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   },
   august: {
     monthName: "August",
-    bengaliName: "আগস্ট",
+    shortCode: "AUG",
     monthOverview: "August is the Back-to-School super-month, end-of-summer travel clearances, and the critical time to upload Autumn, Halloween, and Black Friday content.",
     whatToCreate: [
       "Back to School & Campus: Modern classrooms, kids boarding yellow school bus, university campuses, and digital classroom tablets.",
@@ -631,7 +631,7 @@ export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   },
   september: {
     monthName: "September",
-    bengaliName: "সেপ্টেম্বর",
+    shortCode: "SEP",
     monthOverview: "September ushers in Autumn, Oktoberfest beer festivals, the Halloween countdown, flu/health season prep, and intense Q4 corporate goal planning.",
     whatToCreate: [
       "Autumn Foliage & Lifestyle: Forest trails blanketed with maple leaves, pumpkin spice drinks, wool blankets, and leather boots.",
@@ -707,7 +707,7 @@ export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   },
   october: {
     monthName: "October",
-    bengaliName: "অক্টোবর",
+    shortCode: "OCT",
     monthOverview: "October is peak Halloween sales, Breast Cancer Awareness Month, Diwali celebrations, Thanksgiving preparations, and the start of heavy Christmas shopping asset procurement.",
     whatToCreate: [
       "Halloween Extravaganza: Jack-o'-lanterns, spooky haunted houses, trick-or-treating kids in costume, and skull candy flat-lays.",
@@ -783,7 +783,7 @@ export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   },
   november: {
     monthName: "November",
-    bengaliName: "নভেম্বর",
+    shortCode: "NOV",
     monthOverview: "November is packed with Thanksgiving, Black Friday & Cyber Monday shopping madness, Movember men's health, and the biggest stock buying wave for Christmas.",
     whatToCreate: [
       "Black Friday & Shopping Frenzy: 3D render discount banners, bursting shopping carts, courier delivery packages, and mobile sales.",
@@ -859,7 +859,7 @@ export const MONTHLY_TRENDS_KNOWLEDGE: Record<string, MonthTrendDetail> = {
   },
   december: {
     monthName: "December",
-    bengaliName: "ডিসেম্বর",
+    shortCode: "DEC",
     monthOverview: "December is the holiday climax: Christmas Day, Hanukkah, Boxing Day, New Year's Eve, and the immediate pivot to January fitness resolutions and tax season.",
     whatToCreate: [
       "Christmas Day Celebrations: Kids unwrapping presents in pajamas, decorated evergreen trees, family feasts, gingerbread houses, and Santa.",
@@ -939,19 +939,19 @@ export function findMonthlyTrends(query: string): MonthTrendDetail | null {
   if (!query) return null;
   const q = query.toLowerCase().trim();
 
-  // English and Bengali mappings
-  if (/jan(uary)?|জানু|জানুয়ারি/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.january;
-  if (/feb(ruary)?|ফেব্রু|ফেব্রুয়ারি/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.february;
-  if (/mar(ch)?|মার্চ/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.march;
-  if (/apr(il)?|এপ্রি|এপ্রিল/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.april;
-  if (/may|মে/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.may;
-  if (/jun(e)?|জুন/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.june;
-  if (/jul(y)?|জুলা|জুলাই/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.july;
-  if (/aug(ust)?|আগ|আগস্ট/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.august;
-  if (/sep(t|tember)?|সেপ্টে|সেপ্টেম্বর/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.september;
-  if (/oct(ober)?|অক্টো|অক্টোবর/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.october;
-  if (/nov(ember)?|নভে|নভেম্বর/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.november;
-  if (/dec(ember)?|ডিসে|ডিসেম্বর/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.december;
+  // English month mappings
+  if (/jan(uary)?/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.january;
+  if (/feb(ruary)?/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.february;
+  if (/mar(ch)?/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.march;
+  if (/apr(il)?/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.april;
+  if (/may/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.may;
+  if (/jun(e)?/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.june;
+  if (/jul(y)?/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.july;
+  if (/aug(ust)?/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.august;
+  if (/sep(t|tember)?/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.september;
+  if (/oct(ober)?/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.october;
+  if (/nov(ember)?/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.november;
+  if (/dec(ember)?/i.test(q)) return MONTHLY_TRENDS_KNOWLEDGE.december;
 
   return null;
 }

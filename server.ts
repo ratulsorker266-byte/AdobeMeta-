@@ -248,7 +248,12 @@ function saveAuthVault(vault: Record<string, StoredContributorAccount>): void {
 
 async function startServer() {
   const app = express();
-  const PORT = Number(process.env.PORT) || 3000;
+  const PORT = process.env.NODE_ENV === "production" && process.env.PORT
+    ? parseInt(process.env.PORT, 10)
+    : 3000;
+  const ALT_PORT = process.env.PORT && parseInt(process.env.PORT, 10) !== PORT
+    ? parseInt(process.env.PORT, 10)
+    : null;
 
   // Secure, bounded limit for base64 and binary image/EPS uploads (150MB supports large Illustrator EPS10 files)
   app.use(express.raw({
@@ -1580,8 +1585,8 @@ async function startServer() {
 
   // Extract 3 contextual follow-up suggestions from AI reply or generate smart contextual ones
   function extractFollowUpSuggestions(text: string, isBengali: boolean, hasMeta: boolean): { cleanText: string; followUps: string[] } {
-    const match = text.match(/(?:NEXT_QUESTIONS|Follow-Up Questions|পরবর্তী প্রশ্ন)[^:\n]*:\s*([^\n]+)/i);
-    const cleanText = text.replace(/\n*(?:\*\*)?(?:NEXT_QUESTIONS|Follow-Up Questions|পরবর্তী প্রশ্ন)(?:\*\*)?[^:\n]*:\s*[^\n]+/gi, "").trim();
+    const match = text.match(/(?:NEXT_QUESTIONS|Follow-Up Questions)[^:\n]*:\s*([^\n]+)/i);
+    const cleanText = text.replace(/\n*(?:\*\*)?(?:NEXT_QUESTIONS|Follow-Up Questions)(?:\*\*)?[^:\n]*:\s*[^\n]+/gi, "").trim();
     if (match && match[1]) {
       const parsed = match[1]
         .split("|")
@@ -1592,19 +1597,7 @@ async function startServer() {
         return { cleanText, followUps: parsed };
       }
     }
-    const defaultFollowUps = isBengali
-      ? hasMeta
-        ? [
-            "দোস্ত, এই টপিকের ওপর ১০টা বেস্ট-সেলিং সিরিজ আইডিয়া ও প্রম্পট দাও",
-            "এই ফাইলটার রিজেকশন রিস্ক ও ট্রেডমার্ক অডিট করে দাও",
-            "এই নিশের সবচেয়ে হাই-সিপিসি বায়ার সার্চ কিওয়ার্ড কোনগুলো?"
-          ]
-        : [
-            "দোস্ত, এই মাসের সবচেয়ে বেশি বিক্রি হওয়া ৫টি স্টক নিশ খুলে বলো",
-            "Adobe Stock ও Freepik থেকে মাসে $1,000 আয়ের গোপন ব্লুপ্রিন্ট দাও",
-            "আমার স্টুডিও ফাইলের জন্য ৪৯টি র‍্যাঙ্ক #১ কিওয়ার্ড তৈরি করে দাও"
-          ]
-      : hasMeta
+    const defaultFollowUps = hasMeta
       ? [
           "Build a 10x high-selling portfolio series around this exact subject",
           "Run a strict Adobe Stock & Shutterstock rejection audit on this asset",
@@ -1621,7 +1614,7 @@ async function startServer() {
   // Generate a high-resolution studio SVG data URL when user asks to generate an image on a free API key
   function buildStudioVisualSvgDataUrl(promptText: string): string {
     const clean = promptText
-      .replace(/generate|create|image|photo|vector|make|draw|picture|আঁকো|ছবি|তৈরি|বানিয়ে|দাও/gi, "")
+      .replace(/generate|create|image|photo|vector|make|draw|picture/gi, "")
       .trim() || "Luxury Commercial Stock Visual";
     const lower = clean.toLowerCase();
 
@@ -1741,7 +1734,7 @@ async function startServer() {
       const wantsImageGeneration =
         mode === "image_synth" ||
         (!hasImagePart &&
-          /\b(generate image|create image|draw|make an image|visualize|create a photo|create vector|ইমেজ জেনারেট|ছবি বানিয়ে|ছবি তৈরি|এঁকে দাও)\b/i.test(
+          /\b(generate image|create image|draw|make an image|visualize|create a photo|create vector)\b/i.test(
             lowerText
           ));
 
@@ -1812,11 +1805,10 @@ Active Mode Directive:
 ${modeInstructions[mode] || modeInstructions.auto}
 
 CRITICAL PERSONALITY, REAL-HUMAN SPEECH RHYTHM & "NO-HIDE" TRANSPARENCY RULES:
-1. SOUND 100% LIKE A REAL HUMAN BEST FRIEND (GHONISTHO BONDHU) — ZERO ROBOTIC TONE:
+1. SOUND 100% LIKE A REAL HUMAN BEST FRIEND & STRATEGIC MASTERMIND — ZERO ROBOTIC TONE:
    - Never use stiff, mechanical, or textbook AI phrases (ban phrases like "As an AI", "Certainly! Here is...", "I hope this helps").
    - Write with natural human breathing pauses (commas, dashes, natural conversational transitions) and warm human emotion so that when the voice engine reads your response aloud, it sounds indistinguishable from a real person talking to their closest friend.
-   - In Bengali (বাংলা), use 100% natural, effortless, everyday spoken Bengali (প্রাণবন্ত ও ঘরোয়া মুখের ভাষা—যেমন: "আরে দোস্ত, শোনো আসল ব্যাপারটা কোথায়...", "একদম সত্যি কথা বলতে কী ভাই...", "দেখো, এই জায়গাটা অনেকেই ভুল করে, কিন্তু তুমি যেভাবে করবে তা হলো...")—never stiff bookish translation!
-   - If the user writes in Banglish (Bengali in English letters), reply in fluent, soulful Bengali script (বাংলা হরফে) so the voice engine reads every word with authentic Bengali pronunciation.
+   - Speak in fluent, natural, intelligent, everyday conversational English ("Hey friend, here's the insider breakdown...", "To be completely transparent with you...", "Most creators get rejected here, but here is what works...")—warm, direct, and authoritative.
 2. 100% UNFILTERED DETAILS — HIDE NOTHING ("NO HIDE" POLICY):
    - Never give shallow, vague, or half-finished answers. Never hold back insider formulas, exact numbers, algorithmic weights, step-by-step blueprints, or real-world pros and cons.
    - Every paragraph you write will be read aloud completely from first word to last word without cutting off—so make every sentence engaging, clear, and packed with real value.
@@ -1913,14 +1905,12 @@ CRITICAL PERSONALITY, REAL-HUMAN SPEECH RHYTHM & "NO-HIDE" TRANSPARENCY RULES:
         const isConversationalGreeting =
           !hasImagePart &&
           lastUserText.length < 70 &&
-          /\b(hi|hello|hey|salaam|assalamu|kemon acho|ki khobor|who are you|tumi ke|kotha bolte|can you speak|talk to me|শুনতে পাচ্ছ|কেমন আছো|হ্যালো)\b/i.test(
+          /\b(hi|hello|hey|salaam|who are you|can you speak|talk to me)\b/i.test(
             lowerText
           );
 
         if (isConversationalGreeting) {
-          replyText = isBengaliOrBanglish
-            ? `আরে দোস্ত ${friendName}! একদম ফাটাফাটি আছি! তোমার কথা একদম পরিষ্কার শুনতে পাচ্ছি। বলো, আজ আমরা কী নিয়ে কথা বলব? স্টক মার্কেটপ্লেসের গোপন র‍্যাঙ্কিং ট্রিকস, গুগল মনিটাইজেশন, নাকি অন্য যেকোনো বিষয়—তুমি যা জানতে চাইবে আমি কোনো কিছু লুকানো ছাড়া একদম ভেতরের সব ডিটেইলস খুলে বলব, ঠিক দুইজন ঘনিষ্ঠ বন্ধুর মতো!`
-            : `Hey ${friendName}, my friend! I'm doing great and hearing you loud and clear. Tell me what's on your mind—whether it's insider microstock ranking secrets, high-CPC Google monetization, or anything else at all, I'll break down every single detail openly with zero gatekeeping!`;
+          replyText = `Hey ${friendName}, my friend! I'm doing great and hearing you loud and clear. Tell me what's on your mind—whether it's insider microstock ranking secrets, high-CPC Google monetization, or anything else at all, I'll break down every single detail openly with zero gatekeeping!`;
         } else {
           const cleanHint =
             String(imageFileName || lastUserText || "commercial visual design")
@@ -1931,9 +1921,7 @@ CRITICAL PERSONALITY, REAL-HUMAN SPEECH RHYTHM & "NO-HIDE" TRANSPARENCY RULES:
               .slice(0, 48) || "Commercial Stock Visual Design";
           const capHint = cleanHint.replace(/\b\w/g, (c) => c.toUpperCase());
 
-          const introLine = isBengaliOrBanglish
-            ? `শোনো বন্ধু ${friendName}, তোমার এই বিষয়টার জন্য একদম ভেতরের অ্যালগরিদম হিসাব করে সেরা **Subject-First Title (<70 chars)** এবং **49টি হাই-কনভার্টিং SEO Keywords** নিচে সাজিয়ে দিলাম। কোনো কিছু বাদ দিইনি—প্রথম ১০টা কিওয়ার্ডে ৭৫% সার্চ ওয়েট লক করা আছে যাতে বায়ার সার্চ করলেই তোমার ফাইল সবার ওপরে আসে:`
-            : `Here is the complete, unfiltered breakdown for you, ${friendName}—I've engineered your **Subject-First Title (<70 chars)** and locked 75% algorithmic search weight into the **Top 10 of 49 Keywords** so buyers find your asset first:`;
+          const introLine = `Here is the complete, unfiltered breakdown for you, ${friendName}—I've engineered your **Subject-First Title (<70 chars)** and locked 75% algorithmic search weight into the **Top 10 of 49 Keywords** so buyers find your asset first:`;
 
           replyText = `${introLine}
 
@@ -2002,13 +1990,10 @@ Commercial stock visual of ${cleanHint.toLowerCase()}, ultra-clean minimalist st
       .replace(/\s+/g, " ")
       .trim();
 
-    const hasBengaliScript = /[\u0980-\u09FF]/.test(text);
     // Support up to 4,500 characters so even long, deep explanations are spoken 100% from start to finish without ever cutting off!
     const conversationalSpeech =
       cleanForVoice.length >= 8
         ? cleanForVoice.slice(0, 4500)
-        : hasBengaliScript
-        ? "দোস্ত, আমি তোমার জন্য র‍্যাঙ্ক ওয়ান টাইটেল এবং ৪৯টি এসইও কিওয়ার্ড নিচের কার্ডে একদম নিখুঁতভাবে তৈরি করে দিয়েছি।"
         : "My friend, I have prepared your Rank 1 commercial title and all 49 SEO keywords in the card below.";
 
     // Official 5 Pure Single-Speaker Gemini 3.8 Neural Voices + Legacy mappings to guarantee 100% pure Male or pure Female timbre
@@ -2225,7 +2210,7 @@ Commercial stock visual of ${cleanHint.toLowerCase()}, ultra-clean minimalist st
 
   // Multimodal Voice-to-Text Transcription Endpoint (Fallback when Web Speech API is restricted)
   app.post("/api/transcribe", async (req, res) => {
-    const { audioDataUrl, lang = "Bengali (বাংলা)" } = req.body || {};
+    const { audioDataUrl, lang = "English (US)" } = req.body || {};
     const clientApiKey = typeof req.headers["x-api-key"] === "string" ? req.headers["x-api-key"].trim() : "";
     if (!audioDataUrl || typeof audioDataUrl !== "string") {
       return res.status(400).json({ error: "Missing audioDataUrl" });
@@ -3754,7 +3739,7 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
   });
 
   app.post("/api/generate-stock-prompt", async (req, res) => {
-    const { concept, style, aspectRatio, lighting, shotType } = req.body || {};
+    const { concept, style, aspectRatio, lighting, shotType, enforceDeepDetails } = req.body || {};
     const clientApiKey = req.headers['x-api-key'] as string;
 
     if (!concept || typeof concept !== "string" || !concept.trim()) {
@@ -3767,6 +3752,97 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
     const safeLight = lighting || "Clean High-Key Commercial Daylight";
     const safeShot = shotType || "Medium shot with intentional copy space";
 
+    const buildDistinctVariationsFallback = (baseConcept: string, baseStyle: string, ar: string) => {
+      const capConcept = baseConcept.replace(/\b\w/g, c => c.toUpperCase()).slice(0, 45);
+      return [
+        {
+          id: 'var-1-wide-hero',
+          archetype: 'Wide Commercial Hero (Copy Space Focus)',
+          compositionTag: 'Wide Environmental Framing',
+          cameraSpecs: '24mm–35mm f/4 · Clean side daylight · Ample negative space',
+          midjourneyPrompt: `/imagine prompt: Ultra-wide commercial environmental stock photograph of ${baseConcept}, featuring wide cinematic framing with generous intentional negative copy space occupying the entire left third for corporate advertising typography. Shot on Hasselblad H6D-100c medium format camera with Zeiss Otus 28mm f/2.8 prime lens stopped down to f/4, ISO 64, 1/500s shutter speed. Lighting setup features commercial 3-point architectural daylight with a 120cm soft octabox key light balanced at 5600K, subtle warm golden rim illumination tracing subject contours, and delicate ambient fill. Pristine tactile micro-textures, authentic physical materials, razor-sharp focal plane with natural optical depth falloff. Hasselblad Natural Colour Solution grading with calibrated sRGB color fidelity, zero blown highlights, premium corporate stock asset --ar ${ar} --style raw --v 6.1 --no text, logo, watermark, signature, blur, CGI, cartoon`,
+          nanoBananaPrompt: `Nano Banana Pro Master Studio: Commercial wide-angle establishing shot of ${baseConcept}, photographed with 35mm f/2.0 prime lens, strict rule-of-thirds composition leaving vast uncluttered negative space on left side for marketing headlines, balanced 5600K high-key daylight, razor-sharp edge definition, micro-surface textural realism, neutral travertine and slate background, agency billboard standard with zero optical distortion or artifacts --no watermark, text, brand labels, extra limbs`,
+          chatGptPrompt: `Ultra-detailed, photorealistic commercial stock photograph of ${baseConcept}. The scene is captured in a wide environmental composition with ample clean negative space on the left third designed specifically for promotional typography and headlines. Photographed on a high-end medium format digital camera with professional 35mm lens, soft natural 5600K daylight, and subtle fill bounce. Every texture and surface is rendered with tactile realism, clean edges, and authentic color balance without oversaturation or artificial sheen.`,
+          fireflyPrompt: `Commercial stock photography of ${baseConcept}. Wide landscape framing with intentional negative copy space on the side, soft natural daylight, crisp focus on the primary subject, authentic textures, high-end editorial stock asset.`,
+          fluxPrompt: `Wide commercial photo of ${baseConcept}, 28mm f/4 lens, studio daylight, generous negative copy space for typography, balanced contrast, pristine textures, 8k resolution, raw photo.`,
+          negativePrompt: 'text, watermark, logo, trademark, blurry, distorted hands, extra fingers, oversaturated, plastic skin, pixelated, signature, CGI cartoon',
+          distinctTitle: `Wide Environmental View of ${capConcept} With Copy Space`.slice(0, 68),
+          distinctKeywords: ['wide angle', 'environmental shot', 'copy space banner', 'marketing layout', 'spacious background', 'commercial photography', 'horizontal format', 'clean composition', 'enterprise visual', 'advertising template', 'modern concept', 'high resolution', 'no people'],
+          customerUseCase: 'Hero Website Header, Homepage Banner, Print Magazine Cover',
+          similarityRiskScore: 0,
+          differentiationNote: 'Focuses strictly on wide environmental context and copy space, establishing a completely unique composition from macro or flat-lay shots.'
+        },
+        {
+          id: 'var-2-macro-detail',
+          archetype: 'Tactile Macro & Texture Detail (Material Focus)',
+          compositionTag: 'Close-Up Macro Focus',
+          cameraSpecs: '90mm–100mm f/2.8 Macro · Shallow depth of field · Soft rim light',
+          midjourneyPrompt: `/imagine prompt: Extreme macro close-up detail photograph of ${baseConcept}, focusing intimately on tactile authentic micro-textures, intricate surface craftsmanship, and subtle physical imperfections. Shot with a Sony A7R V with Sony FE 90mm f/2.8 Macro G OSS lens at f/3.2, 1/320s, ISO 100. Delicate rim lighting with a 60cm parabolic reflector, soft specular reflections highlighting fine material grain, creamy circular bokeh in background. Authentic tactile richness, razor-sharp focal point on center detail, Hasselblad Natural Colour Solution, professional microstock packaging visual --ar ${ar} --style raw --v 6.1 --no text, logo, watermark, cartoon, plastic, blur`,
+          nanoBananaPrompt: `Nano Banana Pro Macro Director: Extreme 100mm macro close-up of ${baseConcept}, capturing minute physical surface grain, tactile material weave, delicate specular glints, soft diffused studio edge lighting, zero human face repetition, authentic organic craft, razor-sharp edge contrast with natural optical falloff --no blur, noise, watermark, cartoon artifacts`,
+          chatGptPrompt: `Detailed macro close-up photograph highlighting the fine textures and materials of ${baseConcept}. Shallow depth of field with a beautifully blurred background, soft diffused lighting, emphasizing tactile realism and commercial quality without artificial gloss or saturation.`,
+          fireflyPrompt: `Macro close-up photography of ${baseConcept}. Focus on intricate textures and fine details, soft studio lighting, shallow depth of field.`,
+          fluxPrompt: `Macro photography of ${baseConcept}, 90mm macro f/2.8, selective focus, tactile detail, soft specular reflections, studio quality.`,
+          negativePrompt: 'blurry, out of focus, distorted, watermark, text, brand name, low resolution, overexposed, noise, plastic',
+          distinctTitle: `Close Up Macro Detail of ${capConcept} Showing Texture`.slice(0, 68),
+          distinctKeywords: ['macro detail', 'close up focus', 'texture detail', 'tactile surface', 'craftsmanship', 'selective focus', 'shallow depth of field', 'intricate structure', 'high definition', 'material quality', 'commercial detail', 'studio shot'],
+          customerUseCase: 'Product Packaging, Feature Highlight Graphic, Texture Background',
+          similarityRiskScore: 0,
+          differentiationNote: 'Zero facial or full-body repetition; isolates tactile material details to serve customers searching for specific textures.'
+        },
+        {
+          id: 'var-3-flat-lay',
+          archetype: 'Structured Overhead Flat-Lay / Knolling',
+          compositionTag: '90° Top-Down Bird View',
+          cameraSpecs: '50mm f/5.6 · Overhead softbox grid · Neat organized alignment',
+          midjourneyPrompt: `/imagine prompt: Perpendicular top-down 90-degree flat-lay knolling composition of ${baseConcept}, impeccably organized with disciplined geometric alignment on a clean matte neutral travertine surface. Shot with Leica SL2-S and Summicron-SL 50mm f/2 ASPH at f/5.6 for edge-to-edge sharpness, ISO 50. Overhead diffused softbox lighting with honeycomb grid creating soft, even illumination without harsh drop shadows. Clean dedicated negative space in center for headline branding, sophisticated B2B marketing stock layout, calibrated sRGB commercial grade --ar ${ar} --style raw --v 6.1 --no text, watermark, tilted angle, clutter`,
+          nanoBananaPrompt: `Nano Banana Pro Knolling Engine: Strict 90-degree top-down overhead flat lay of ${baseConcept}, organized geometric spacing, immaculate alignment on textured matte linen ground, balanced overhead daylight grid, generous advertising copy space, corporate catalog stock standard --no clutter, watermark, brand labels, tilted camera`,
+          chatGptPrompt: `Overhead flat-lay photograph of ${baseConcept} organized in a neat, balanced knolling layout on a clean neutral surface. Soft, even lighting from above with no harsh shadows, leaving clear space for promotional text and commercial headlines.`,
+          fireflyPrompt: `Top down flat lay of ${baseConcept}. Minimalist knolling arrangement on clean surface, soft overhead light, ample copy space.`,
+          fluxPrompt: `Overhead flat lay photo of ${baseConcept}, 50mm f/5.6 lens, perfectly perpendicular angle, organized geometric layout, clean studio background.`,
+          negativePrompt: 'messy, cluttered, harsh shadows, angled perspective, watermark, text, logos, crooked lines',
+          distinctTitle: `Overhead Flat Lay Knolling Composition of ${capConcept}`.slice(0, 68),
+          distinctKeywords: ['overhead flat lay', 'top down view', 'knolling arrangement', 'minimalist composition', 'neat table top', 'organized layout', 'clean background', 'copy space', 'editorial flatlay', 'marketing template', 'high angle view'],
+          customerUseCase: 'Social Media Campaign, Blog Header, E-Commerce Collection Banner',
+          similarityRiskScore: 0,
+          differentiationNote: 'Completely alters the viewing plane to a perpendicular top-down angle, creating an entirely separate visual product.'
+        },
+        {
+          id: 'var-4-candid-motion',
+          archetype: 'Candid Dynamic Action & Movement',
+          compositionTag: 'Dynamic Real-World Action',
+          cameraSpecs: '50mm f/1.8 · Fast shutter 1/500s · Natural candid daylight',
+          midjourneyPrompt: `/imagine prompt: Dynamic candid authentic action photograph capturing ${baseConcept} in energetic real-world motion. Photographed with Nikon Z9 and NIKKOR Z 50mm f/1.2 S lens at f/2.0, 1/800s fast shutter speed to freeze spontaneous motion while retaining natural kinetic energy. Natural golden hour side sunlight casting warm dimensional shadows, unscripted photojournalistic commercial stock style, genuine interaction, authentic atmosphere, editorial billboard quality --ar ${ar} --style raw --v 6.1 --no pose, text, watermark, stiff expression, cartoon`,
+          nanoBananaPrompt: `Nano Banana Pro Motion Engine: High-speed candid action shot of ${baseConcept}, 50mm prime f/1.8 lens, 1/640s shutter speed, spontaneous real-life movement, authentic environmental daylight, natural documentary color science, commercial stock standard --no stiff posing, watermark, plastic skin`,
+          chatGptPrompt: `A dynamic, candid commercial stock photograph capturing ${baseConcept} in genuine motion. Natural and unscripted, with realistic movement and authentic lighting, showcasing real-world application without artificial posing or stiff models.`,
+          fireflyPrompt: `Candid action photograph of ${baseConcept} in motion. Natural daylight, spontaneous realistic movement, documentary commercial style.`,
+          fluxPrompt: `Action commercial photography of ${baseConcept}, 1/500s shutter speed, 50mm f/1.8 lens, natural sunlight, dynamic movement, authentic emotion.`,
+          negativePrompt: 'stiff posing, unnatural smile, staged look, watermark, blur, distorted hands, extra limbs, cartoon',
+          distinctTitle: `Dynamic Motion and Candid Real Life Scene of ${capConcept}`.slice(0, 68),
+          distinctKeywords: ['dynamic action', 'candid motion', 'spontaneous movement', 'real life scene', 'authentic interaction', 'active lifestyle', 'in motion', 'documentary style', 'commercial action', 'natural daylight', 'unposed'],
+          customerUseCase: 'Social Brand Campaign, Editorial Article, Video Thumbnail',
+          similarityRiskScore: 0,
+          differentiationNote: 'Captures kinetic motion and spontaneity rather than static geometry, appealing to buyers looking for human life and energy.'
+        },
+        {
+          id: 'var-5-minimalist-symbol',
+          archetype: 'Minimalist Conceptual Symbol & Metaphor',
+          compositionTag: 'Conceptual Studio Still-Life',
+          cameraSpecs: '85mm f/2.8 · Dramatic chiaroscuro / high key · Single symbolic focus',
+          midjourneyPrompt: `/imagine prompt: Minimalist conceptual commercial symbol representing ${baseConcept}, featuring a single striking metaphorical focal subject surrounded by expansive negative space. Photographed with Canon EOS R5 and RF 85mm f/1.2L USM lens at f/2.8, ISO 100. Dramatic architectural chiaroscuro lighting, subtle specular highlights, matte dark slate ground with soft gradient falloff. Clean, sophisticated B2B visual identity, corporate annual report aesthetic, museum-grade color balance --ar ${ar} --style raw --v 6.1 --no text, watermark, clutter, cartoon`,
+          nanoBananaPrompt: `Nano Banana Pro Metaphor Studio: Minimalist conceptual commercial visual for ${baseConcept}, single iconic focal subject with vast negative space, premium architectural studio lighting, B2B enterprise marketing stock visual, razor-sharp edge fidelity --no clutter, cartoon, watermark, noisy background`,
+          chatGptPrompt: `A minimalist, metaphorical commercial stock image symbolizing ${baseConcept}. Clean, striking composition with high negative space for headlines, artistic lighting, and subtle color palette suitable for corporate reports, pitch decks, and enterprise advertising.`,
+          fireflyPrompt: `Minimalist conceptual photography representing ${baseConcept}. Clean studio background, dramatic soft light, vast copy space.`,
+          fluxPrompt: `Minimalist conceptual photo of ${baseConcept}, 85mm f/2.8, single symbolic subject, generous negative space, high-end editorial lighting.`,
+          negativePrompt: 'busy, cluttered, multi-subject, complex background, text, watermark, logo, childish, oversaturated',
+          distinctTitle: `Minimalist Conceptual Symbol Representing ${capConcept}`.slice(0, 68),
+          distinctKeywords: ['minimalist concept', 'conceptual symbol', 'metaphorical visual', 'isolated background', 'negative space', 'b2b advertising', 'corporate design', 'clean graphic', 'abstract representation', 'modern minimalism'],
+          customerUseCase: 'Annual Report, Corporate Pitch Deck, Billboards & B2B Ads',
+          similarityRiskScore: 0,
+          differentiationNote: 'Converts the concept into an abstract, high-value visual metaphor for corporate art directors, completely unlike photographic series.'
+        }
+      ];
+    };
+
     const buildFallbackPrompts = () => {
       const isVec = /vector|flat|illustrat/i.test(safeStyle);
       const is3d = /3d|isometric|render/i.test(safeStyle);
@@ -3778,6 +3854,8 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
       const capTitle = cleanConcept.replace(/\b\w/g, (c) => c.toUpperCase()).slice(0, 68);
 
       return {
+        concept: cleanConcept,
+        primarySubject: cleanWords.slice(0, 3).join(' ') || cleanConcept,
         midjourneyPrompt: `/imagine prompt: ${cleanConcept}, ${safeStyle}, ${safeShot}, ${safeLight}, ultra-clean commercial microstock aesthetic, generous negative space for ad typography, razor-sharp focus, zero text or watermarks, 8k resolution --ar ${safeAr} --style raw --v 6.1`,
         fireflyPrompt: `${cleanConcept}. ${safeStyle} featuring ${safeShot.toLowerCase()} and ${safeLight.toLowerCase()}. Clean commercial composition with uncluttered copy space, natural colors, and high detail suitable for enterprise licensing.`,
         fluxPrompt: `Commercial ${safeStyle.toLowerCase()} of ${cleanConcept}. Shot composition: ${safeShot}. Lighting setup: ${safeLight}, 85mm f/2.8 prime lens, ultra-clean studio-grade fidelity, authentic textures, balanced histogram, ample negative space for marketing headlines.`,
@@ -3800,26 +3878,48 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
             "no people",
           ])
         ).slice(0, 16),
+        distinctVariations: buildDistinctVariationsFallback(cleanConcept, safeStyle, safeAr),
+        similarityDefenseSummary: "Generated 5 completely distinct commercial archetypes (Wide Hero, Macro Texture, Flat-Lay Knolling, Candid Action, and Minimalist Metaphor) to 100% bypass Adobe Stock's June 11, 2026 Distinct Content Guidelines."
       };
     };
 
     try {
       const promptSystem = `
-      You are an elite Commercial AI Stock Photography Prompt Specialist for Adobe Stock, Shutterstock, and Freepik.
+      You are an elite Commercial AI Stock Photography Prompt Specialist and Adobe Stock "Distinct Content" Guideline Auditor.
       Concept: "${cleanConcept}".
       Style: ${safeStyle}.
       Aspect Ratio: ${safeAr}.
       Lighting: ${safeLight}.
       Shot Type: ${safeShot}.
 
-      Create hyper-effective commercial prompts that pass stock agency AI moderation:
-      1. midjourneyPrompt: Midjourney v6.1 prompt with authentic natural pose, realistic skin textures, 8k resolution, copy space, and parameter flags (--ar ${safeAr} --style raw --v 6.1).
-      2. fireflyPrompt: Clean, natural descriptive prompt optimized for Adobe Firefly Image 3 without forbidden modifier syntax.
-      3. fluxPrompt: Highly detailed realistic prompt for Flux.1 / SDXL with precise camera lens focal length, lighting, and textures.
-      4. negativePrompt: Stock rejection deterrent terms (e.g. extra fingers, distorted hands, brand logos, watermark, text, blur, oversaturated, plastic skin, bad anatomy).
-      5. commercialTips: 2-3 sentences of advice for commercial buyers (copy space position, color grading, commercial viability).
-      6. suggestedTitle: High-ranking stock title (8-12 words).
-      7. suggestedKeywords: 16 top-converting search tags.
+      CRITICAL OBJECTIVE: Prevent Adobe Stock's #1 Refusal Reason: "Similar Content" (under the June 11, 2026 Distinct Content Guidelines).
+      Generate 5 FUNDAMENTALLY DISTINCT commercial archetypes for this concept (NOT slight variations! Each MUST have a completely different composition, camera perspective, distance, and customer use case):
+      1. Archetype 1: Wide Commercial Hero (Copy Space Focus) - wide angle, negative space for text, environmental context.
+      2. Archetype 2: Tactile Macro Detail (Texture & Craft Focus) - extreme close up of materials/textures/hands, zero face repetition.
+      3. Archetype 3: Structured Overhead Flat-Lay / Knolling - 90-degree top-down tabletop arrangement with organized layout.
+      4. Archetype 4: Candid Dynamic Action & Movement - spontaneous real-world motion and interaction.
+      5. Archetype 5: Minimalist Conceptual Symbol & Metaphor - clean B2B/corporate visual metaphor with generous empty background.
+
+      MANDATORY PROMPT DEPTH & DETAIL REQUIREMENT:
+      Every prompt (midjourneyPrompt, nanoBananaPrompt, chatGptPrompt, fireflyPrompt, fluxPrompt) MUST BE EXTREMELY DETAILED, AUTHORITATIVE AND ELABORATE (100–160 words each). NEVER output short or brief 1-line prompts!
+      The prompt must be an exhaustive technical and aesthetic blueprint that forces the AI image generator to produce award-winning, authentic commercial microstock imagery:
+      - Physical subject anatomy, tactile material micro-textures, organic imperfections, surface finish (matte, brushed brass, travertine, natural grain).
+      - Exact camera body & lens optics (Hasselblad H6D-100c medium format, Sony A7R V, Zeiss Otus / Leica Summicron lenses, exact aperture f/1.4–f/5.6, shutter speed, ISO 50-100, circular optical bokeh falloff).
+      - Studio & natural lighting setup (3-point commercial studio lighting, 120cm octabox key at 45°, 5600K daylight, warm golden rim lights tracing silhouettes, subtle fill bounce, zero harsh clipped highlights).
+      - Composition & commercial negative space (strict rule-of-thirds, ample clean negative copy space on the left or top third tailored for corporate advertising typography).
+      - Color science & grading (Hasselblad Natural Colour Solution, calibrated sRGB IEC61966-2.1, authentic warm tones, zero artificial cartoon/plastic look).
+      - Strict negative exclusions and model flags.
+
+      For each archetype:
+      - midjourneyPrompt: Midjourney v6.1 syntax with camera, lighting, and parameter flags (--ar ${safeAr} --style raw --v 6.1 --no text, logo, watermark).
+      - nanoBananaPrompt: Nano Banana Pro master studio prompt with optics, micro-textures, and negative space tags.
+      - chatGptPrompt: ChatGPT / DALL-E 3 comprehensive photographic prompt with photorealistic instructions and zero brand names.
+      - fireflyPrompt: Clean, rich descriptive prompt for Adobe Firefly Image 3.
+      - fluxPrompt: Flux.1 / SDXL prompt with lens focal length and aperture.
+      - distinctTitle: High-converting stock title (50-68 characters, subject-first, completely distinct from the other 4).
+      - distinctKeywords: 14-16 distinct keywords tailored specifically to this archetype.
+      - customerUseCase: Exact buyer marketing application (e.g. "Hero Web Banner", "Packaging", "Social Story").
+      - differentiationNote: 1 sentence explaining how this variation prevents Adobe Stock similar content rejection.
       `;
 
       const response = await callGeminiUnified(clientApiKey, async (ai) => {
@@ -3830,6 +3930,8 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
             responseSchema: {
               type: Type.OBJECT,
               properties: {
+                concept: { type: Type.STRING },
+                primarySubject: { type: Type.STRING },
                 midjourneyPrompt: { type: Type.STRING },
                 fireflyPrompt: { type: Type.STRING },
                 fluxPrompt: { type: Type.STRING },
@@ -3837,6 +3939,31 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
                 commercialTips: { type: Type.STRING },
                 suggestedTitle: { type: Type.STRING },
                 suggestedKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+                distinctVariations: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      archetype: { type: Type.STRING },
+                      compositionTag: { type: Type.STRING },
+                      cameraSpecs: { type: Type.STRING },
+                      midjourneyPrompt: { type: Type.STRING },
+                      nanoBananaPrompt: { type: Type.STRING },
+                      chatGptPrompt: { type: Type.STRING },
+                      fireflyPrompt: { type: Type.STRING },
+                      fluxPrompt: { type: Type.STRING },
+                      negativePrompt: { type: Type.STRING },
+                      distinctTitle: { type: Type.STRING },
+                      distinctKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+                      customerUseCase: { type: Type.STRING },
+                      similarityRiskScore: { type: Type.NUMBER },
+                      differentiationNote: { type: Type.STRING }
+                    },
+                    required: ["id", "archetype", "compositionTag", "cameraSpecs", "midjourneyPrompt", "nanoBananaPrompt", "chatGptPrompt", "fireflyPrompt", "fluxPrompt", "negativePrompt", "distinctTitle", "distinctKeywords", "customerUseCase", "similarityRiskScore", "differentiationNote"]
+                  }
+                },
+                similarityDefenseSummary: { type: Type.STRING }
               },
               required: ["midjourneyPrompt", "fireflyPrompt", "fluxPrompt", "negativePrompt", "commercialTips", "suggestedTitle", "suggestedKeywords"]
             }
@@ -3847,6 +3974,8 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
       const fb = buildFallbackPrompts();
       const parsed = safeParseJson(response.text, {});
       res.json({
+        concept: cleanConcept,
+        primarySubject: parsed.primarySubject || fb.primarySubject,
         midjourneyPrompt: parsed.midjourneyPrompt || fb.midjourneyPrompt,
         fireflyPrompt: parsed.fireflyPrompt || fb.fireflyPrompt,
         fluxPrompt: parsed.fluxPrompt || fb.fluxPrompt,
@@ -3854,6 +3983,8 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
         commercialTips: parsed.commercialTips || fb.commercialTips,
         suggestedTitle: parsed.suggestedTitle || fb.suggestedTitle,
         suggestedKeywords: Array.isArray(parsed.suggestedKeywords) && parsed.suggestedKeywords.length > 0 ? parsed.suggestedKeywords : fb.suggestedKeywords,
+        distinctVariations: Array.isArray(parsed.distinctVariations) && parsed.distinctVariations.length >= 3 ? parsed.distinctVariations : fb.distinctVariations,
+        similarityDefenseSummary: parsed.similarityDefenseSummary || fb.similarityDefenseSummary
       });
     } catch (_error: any) {
       res.json(buildFallbackPrompts());
@@ -3875,15 +4006,105 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
       .replace(/\s+/g, " ")
       .trim() || "modern commercial visual subject";
 
-    const buildReverseFallback = () => ({
-      midjourneyPrompt: `/imagine prompt: Commercial stock visual of ${cleanSubject}, balanced rule-of-thirds composition with clean copy space, soft studio diffused key lighting, crisp focal clarity, high commercial utility, zero watermarks or logos, 8k resolution --ar 16:9 --style raw --v 6.1`,
-      fireflyPrompt: `High-resolution commercial stock visual featuring ${cleanSubject} in a clean, well-lit environment with generous negative space for marketing typography and balanced color harmony.`,
-      fluxPrompt: `Professional commercial stock asset of ${cleanSubject}, captured with 50mm f/2.0 prime lens, soft natural daylight and studio fill, clean background separation, ultra-detailed textures, commercial advertising layout.`,
-      negativePrompt: "watermark, text, brand logo, trademark, blurry, out of focus, deformed hands, extra digits, chromatic aberration, sensor noise, overexposed highlights",
-      styleBreakdown: "Clean Commercial Microstock Aesthetic — High-key subject separation with intentional negative space for agency and enterprise buyers.",
-      lightingAndLens: "50mm–85mm commercial prime framing, soft diffused key light with subtle rim separation, balanced sRGB color profile.",
-      commercialReplicationTips: `Create 3–5 variations of "${cleanSubject}" (horizontal 16:9 banner, vertical 9:16 social story, and isolated vector/cutout) to multiply downloads across Adobe Stock and Shutterstock.`,
-    });
+    const buildReverseFallback = () => {
+      const capSubject = cleanSubject.replace(/\b\w/g, c => c.toUpperCase()).slice(0, 45);
+      return {
+        midjourneyPrompt: `/imagine prompt: Commercial stock visual of ${cleanSubject}, balanced rule-of-thirds composition with clean copy space, soft studio diffused key lighting, crisp focal clarity, high commercial utility, zero watermarks or logos, 8k resolution --ar 16:9 --style raw --v 6.1`,
+        fireflyPrompt: `High-resolution commercial stock visual featuring ${cleanSubject} in a clean, well-lit environment with generous negative space for marketing typography and balanced color harmony.`,
+        fluxPrompt: `Professional commercial stock asset of ${cleanSubject}, captured with 50mm f/2.0 prime lens, soft natural daylight and studio fill, clean background separation, ultra-detailed textures, commercial advertising layout.`,
+        negativePrompt: "watermark, text, brand logo, trademark, blurry, out of focus, deformed hands, extra digits, chromatic aberration, sensor noise, overexposed highlights",
+        styleBreakdown: "Clean Commercial Microstock Aesthetic — High-key subject separation with intentional negative space for agency and enterprise buyers.",
+        lightingAndLens: "50mm–85mm commercial prime framing, soft diffused key light with subtle rim separation, balanced sRGB color profile.",
+        commercialReplicationTips: `Create 3–5 variations of "${cleanSubject}" (horizontal 16:9 banner, vertical 9:16 social story, and isolated vector/cutout) to multiply downloads across Adobe Stock and Shutterstock.`,
+        distinctVariations: [
+          {
+            id: 'rev-var-1-wide',
+            archetype: 'Wide Commercial Hero (Copy Space Focus)',
+            compositionTag: 'Wide Environmental Framing',
+            cameraSpecs: '35mm f/2.8 · Clean daylight · Generous negative copy space',
+            midjourneyPrompt: `/imagine prompt: Ultra-wide environmental commercial stock visual of ${cleanSubject}, generous negative copy space on left third, balanced editorial lighting, clean background, 8k --ar 16:9 --style raw --v 6.1 --no text, watermark`,
+            nanoBananaPrompt: `Nano Banana Pro Master: Wide commercial stock scene of ${cleanSubject}, 35mm f/2.8 lens, uncrowded negative space for marketing typography, high-key balanced daylight, microstock enterprise quality --no watermark`,
+            chatGptPrompt: `High-resolution commercial stock photography of ${cleanSubject}. Wide environmental composition with generous negative space on the side for advertising text. Realistic natural lighting, professional color grading.`,
+            fireflyPrompt: `Wide shot of ${cleanSubject}. Commercial photography with clean copy space, soft natural daylight, high detail.`,
+            fluxPrompt: `Wide angle commercial stock photo of ${cleanSubject}, 28mm f/4 lens, studio daylight, generous negative space for typography.`,
+            negativePrompt: 'text, watermark, logo, trademark, blurry, distorted hands, extra fingers, oversaturated, plastic skin',
+            distinctTitle: `Wide Environmental View of ${capSubject} With Copy Space`.slice(0, 68),
+            distinctKeywords: ['wide angle', 'environmental view', 'copy space', 'commercial photography', 'horizontal format', 'clean composition', 'enterprise visual', 'advertising layout', 'modern concept', 'no people'],
+            customerUseCase: 'Hero Website Header, Homepage Banner, Print Magazine Cover',
+            similarityRiskScore: 0,
+            differentiationNote: 'Establishes a wide environmental horizon with copy space, completely distinct from close-up compositions.'
+          },
+          {
+            id: 'rev-var-2-macro',
+            archetype: 'Tactile Macro & Texture Detail (Material Focus)',
+            compositionTag: 'Close-Up Macro Focus',
+            cameraSpecs: '90mm f/2.8 Macro · Shallow depth of field · Soft rim light',
+            midjourneyPrompt: `/imagine prompt: Extreme macro close-up detail of ${cleanSubject}, tactile authentic textures, intricate craftsmanship, shallow depth of field with creamy bokeh, soft diffused studio light, 8k --ar 16:9 --style raw --v 6.1 --no text, watermark`,
+            nanoBananaPrompt: `Nano Banana Pro Macro: 90mm f/2.8 macro lens close-up texture shot of ${cleanSubject}, razor-sharp focus on fine surface detail, delicate lighting gradient, zero human face repetition --no blur, watermark`,
+            chatGptPrompt: `Detailed macro close-up photograph highlighting the fine textures and materials of ${cleanSubject}. Shallow depth of field with a beautifully blurred background, soft diffused lighting.`,
+            fireflyPrompt: `Macro close-up photography of ${cleanSubject}. Focus on intricate textures and fine details, soft studio lighting.`,
+            fluxPrompt: `Macro photography of ${cleanSubject}, 90mm macro f/2.8, selective focus, tactile detail, soft specular reflections.`,
+            negativePrompt: 'blurry, out of focus, distorted, watermark, text, brand name, low resolution, overexposed',
+            distinctTitle: `Close Up Macro Detail of ${capSubject} Showing Texture`.slice(0, 68),
+            distinctKeywords: ['macro detail', 'close up focus', 'texture detail', 'tactile surface', 'craftsmanship', 'selective focus', 'shallow depth of field', 'intricate structure', 'high definition', 'studio shot'],
+            customerUseCase: 'Product Packaging, Feature Highlight Graphic, Texture Background',
+            similarityRiskScore: 0,
+            differentiationNote: 'Isolates fine tactile details without facial repetition, avoiding composition overlap.'
+          },
+          {
+            id: 'rev-var-3-flatlay',
+            archetype: 'Structured Overhead Flat-Lay / Knolling',
+            compositionTag: '90° Top-Down Bird View',
+            cameraSpecs: '50mm f/5.6 · Overhead softbox grid · Neat organized alignment',
+            midjourneyPrompt: `/imagine prompt: Top-down 90 degree flat-lay knolling composition of ${cleanSubject}, impeccably organized layout on minimalist neutral surface, soft overhead illumination, clean negative space, 8k --ar 16:9 --style raw --v 6.1 --no text, watermark`,
+            nanoBananaPrompt: `Nano Banana Pro Knolling: Perfect 90-degree overhead flat lay of ${cleanSubject}, disciplined geometric arrangement, clean negative space, even daylight balance --no clutter, watermark`,
+            chatGptPrompt: `Overhead flat-lay photograph of ${cleanSubject} organized in a neat, balanced knolling layout on a clean neutral surface. Soft, even lighting from above with no harsh shadows.`,
+            fireflyPrompt: `Top down flat lay of ${cleanSubject}. Minimalist knolling arrangement on clean surface, soft overhead light.`,
+            fluxPrompt: `Overhead flat lay photo of ${cleanSubject}, 50mm f/5.6 lens, perfectly perpendicular angle, organized geometric layout.`,
+            negativePrompt: 'messy, cluttered, harsh shadows, angled perspective, watermark, text, logos',
+            distinctTitle: `Overhead Flat Lay Knolling Composition of ${capSubject}`.slice(0, 68),
+            distinctKeywords: ['overhead flat lay', 'top down view', 'knolling arrangement', 'minimalist composition', 'neat table top', 'organized layout', 'clean background', 'copy space', 'editorial flatlay'],
+            customerUseCase: 'Social Media Campaign, Blog Header, E-Commerce Collection Banner',
+            similarityRiskScore: 0,
+            differentiationNote: 'Perpendicular overhead perspective prevents subject/angle similarity rejection.'
+          },
+          {
+            id: 'rev-var-4-motion',
+            archetype: 'Candid Dynamic Action & Movement',
+            compositionTag: 'Dynamic Real-World Action',
+            cameraSpecs: '50mm f/1.8 · Fast shutter 1/500s · Natural candid daylight',
+            midjourneyPrompt: `/imagine prompt: Dynamic candid authentic action shot depicting ${cleanSubject} in active commercial motion, spontaneous energy, realistic motion blur and crisp focal subject, natural daylight, unscripted stock style, 8k --ar 16:9 --style raw --v 6.1 --no text, watermark`,
+            nanoBananaPrompt: `Nano Banana Pro Motion: Dynamic candid photography of ${cleanSubject} in authentic real-world motion, 50mm prime f/2.0, genuine interaction, natural documentary lighting --no stiff posing, watermark`,
+            chatGptPrompt: `A dynamic, candid commercial stock photograph capturing ${cleanSubject} in genuine motion. Natural and unscripted, with realistic movement and authentic lighting.`,
+            fireflyPrompt: `Candid action photograph of ${cleanSubject} in motion. Natural daylight, spontaneous realistic movement.`,
+            fluxPrompt: `Action commercial photography of ${cleanSubject}, 1/500s shutter speed, 50mm f/1.8 lens, natural sunlight, dynamic movement.`,
+            negativePrompt: 'stiff posing, unnatural smile, staged look, watermark, blur, distorted hands, extra limbs',
+            distinctTitle: `Dynamic Motion and Candid Real Life Scene of ${capSubject}`.slice(0, 68),
+            distinctKeywords: ['dynamic action', 'candid motion', 'spontaneous movement', 'real life scene', 'authentic interaction', 'active lifestyle', 'in motion', 'documentary style', 'commercial action'],
+            customerUseCase: 'Social Brand Campaign, Editorial Article, Video Thumbnail',
+            similarityRiskScore: 0,
+            differentiationNote: 'Converts still composition into spontaneous real-world dynamic action.'
+          },
+          {
+            id: 'rev-var-5-symbol',
+            archetype: 'Minimalist Conceptual Symbol & Metaphor',
+            compositionTag: 'Conceptual Studio Still-Life',
+            cameraSpecs: '85mm f/2.8 · Dramatic studio lighting · Single symbolic focus',
+            midjourneyPrompt: `/imagine prompt: Minimalist conceptual metaphorical visual representing ${cleanSubject}, stark elegant composition, dramatic artistic lighting, vast negative copy space, sophisticated B2B enterprise visual, 8k --ar 16:9 --style raw --v 6.1 --no text, watermark`,
+            nanoBananaPrompt: `Nano Banana Pro Metaphor: Minimalist conceptual commercial symbol for ${cleanSubject}, single focal subject with vast negative space, premium architectural studio lighting --no clutter, watermark`,
+            chatGptPrompt: `A minimalist, metaphorical commercial stock image symbolizing ${cleanSubject}. Clean, striking composition with high negative space for headlines, artistic lighting.`,
+            fireflyPrompt: `Minimalist conceptual photography representing ${cleanSubject}. Clean studio background, dramatic soft light, vast copy space.`,
+            fluxPrompt: `Minimalist conceptual photo of ${cleanSubject}, 85mm f/2.8, single symbolic subject, generous negative space.`,
+            negativePrompt: 'busy, cluttered, multi-subject, complex background, text, watermark, logo',
+            distinctTitle: `Minimalist Conceptual Symbol Representing ${capSubject}`.slice(0, 68),
+            distinctKeywords: ['minimalist concept', 'conceptual symbol', 'metaphorical visual', 'isolated background', 'negative space', 'b2b advertising', 'corporate design', 'clean graphic'],
+            customerUseCase: 'Annual Report, Corporate Pitch Deck, Billboards & B2B Ads',
+            similarityRiskScore: 0,
+            differentiationNote: 'Translates image into an abstract metaphor for corporate and editorial buyers.'
+          }
+        ]
+      };
+    };
 
     try {
       const rawBase64 = (imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64).replace(/\s+/g, '');
@@ -3893,15 +4114,24 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
       }
 
       const reversePromptSystem = `
-      You are an elite Computer Vision and Generative AI Prompt Engineer specializing in commercial stock image synthesis (Midjourney v6, Adobe Firefly Image 3, and Flux.1).
+      You are an elite Computer Vision Prompt Engineer and Adobe Stock "Distinct Content" Guideline Auditor.
       Analyze this image meticulously:
-      1. midjourneyPrompt: Midjourney v6.1 prompt that would recreate this aesthetic, composition, subject pose, and lighting. Include parameter flags (--ar 16:9 --style raw --v 6.1).
-      2. fireflyPrompt: Clean, natural descriptive prompt for Adobe Firefly Image 3 describing the photographic or illustration quality.
-      3. fluxPrompt: Hyper-detailed prompt for Flux.1 / SDXL specifying camera lens focal length, aperture, exact lighting setup, and materials.
-      4. negativePrompt: Stock rejection deterrent terms (e.g. bad hands, extra digits, watermark, blur, brand logo, text, distorted anatomy).
-      5. styleBreakdown: Summary of the artistic style (e.g., editorial portrait, high-key commercial, flat vector, 3D isometric).
-      6. lightingAndLens: Exact lighting conditions and camera specs (e.g., 85mm f/1.4 lens, soft diffused studio strobe, golden hour rim light).
-      7. commercialReplicationTips: 2-3 sentences on how to recreate similar high-selling stock assets while avoiding copyright infringement.
+      1. midjourneyPrompt: Midjourney v6.1 prompt that would recreate this aesthetic, composition, subject pose, and lighting (--ar 16:9 --style raw --v 6.1).
+      2. fireflyPrompt: Clean, natural descriptive prompt for Adobe Firefly Image 3.
+      3. fluxPrompt: Hyper-detailed prompt for Flux.1 / SDXL specifying camera lens, aperture, and lighting.
+      4. negativePrompt: Stock rejection deterrent terms.
+      5. styleBreakdown: Summary of the artistic style.
+      6. lightingAndLens: Exact lighting conditions and camera specs.
+      7. commercialReplicationTips: Advice on recreating high-selling stock assets while avoiding copyright infringement.
+
+      CRITICAL: Also generate 5 DISTINCT COMMERCIAL ARCHETYPES for this subject to prevent Adobe Stock "Similar Content" refusals (June 11, 2026 guidelines):
+      - Archetype 1: Wide Commercial Hero with Copy Space
+      - Archetype 2: Tactile Macro Detail (Texture & Craft Focus)
+      - Archetype 3: Structured Overhead Flat-Lay / Knolling
+      - Archetype 4: Candid Dynamic Action & Movement
+      - Archetype 5: Minimalist Conceptual Symbol & Metaphor
+
+      For each archetype include: id, archetype, compositionTag, cameraSpecs, midjourneyPrompt, nanoBananaPrompt, chatGptPrompt, fireflyPrompt, fluxPrompt, negativePrompt, distinctTitle (50-68 chars), distinctKeywords (12-16 keywords), customerUseCase, similarityRiskScore (0), and differentiationNote.
       `;
 
       const response = await callGeminiUnified(clientApiKey, async (ai) => {
@@ -3932,7 +4162,31 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
                 negativePrompt: { type: Type.STRING },
                 styleBreakdown: { type: Type.STRING },
                 lightingAndLens: { type: Type.STRING },
-                commercialReplicationTips: { type: Type.STRING }
+                commercialReplicationTips: { type: Type.STRING },
+                distinctVariations: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      archetype: { type: Type.STRING },
+                      compositionTag: { type: Type.STRING },
+                      cameraSpecs: { type: Type.STRING },
+                      midjourneyPrompt: { type: Type.STRING },
+                      nanoBananaPrompt: { type: Type.STRING },
+                      chatGptPrompt: { type: Type.STRING },
+                      fireflyPrompt: { type: Type.STRING },
+                      fluxPrompt: { type: Type.STRING },
+                      negativePrompt: { type: Type.STRING },
+                      distinctTitle: { type: Type.STRING },
+                      distinctKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+                      customerUseCase: { type: Type.STRING },
+                      similarityRiskScore: { type: Type.NUMBER },
+                      differentiationNote: { type: Type.STRING }
+                    },
+                    required: ["id", "archetype", "compositionTag", "cameraSpecs", "midjourneyPrompt", "nanoBananaPrompt", "chatGptPrompt", "fireflyPrompt", "fluxPrompt", "negativePrompt", "distinctTitle", "distinctKeywords", "customerUseCase", "similarityRiskScore", "differentiationNote"]
+                  }
+                }
               },
               required: ["midjourneyPrompt", "fireflyPrompt", "fluxPrompt", "negativePrompt", "styleBreakdown", "lightingAndLens", "commercialReplicationTips"]
             }
@@ -3950,6 +4204,7 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
         styleBreakdown: parsed.styleBreakdown || fb.styleBreakdown,
         lightingAndLens: parsed.lightingAndLens || fb.lightingAndLens,
         commercialReplicationTips: parsed.commercialReplicationTips || fb.commercialReplicationTips,
+        distinctVariations: Array.isArray(parsed.distinctVariations) && parsed.distinctVariations.length >= 3 ? parsed.distinctVariations : fb.distinctVariations,
       });
     } catch (_error: any) {
       res.json(buildReverseFallback());
@@ -4241,7 +4496,19 @@ ${customTarget ? `- TARGET BUYER QUERY TO RANK #1 FOR: "${customTarget}".` : "- 
     app.get("*", (req, res) => res.sendFile(path.join(distPath, "index.html")));
   }
 
-  app.listen(PORT, "0.0.0.0", () => console.log(`Server running on port ${PORT}`));
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+
+  if (ALT_PORT && !isNaN(ALT_PORT)) {
+    try {
+      app.listen(ALT_PORT, "0.0.0.0", () => {
+        console.log(`Server also running on alt port ${ALT_PORT}`);
+      });
+    } catch (e) {
+      console.warn(`Could not bind alt port ${ALT_PORT}:`, e);
+    }
+  }
 }
 
 startServer();

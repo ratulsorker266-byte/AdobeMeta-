@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, Sparkles, TrendingUp, DollarSign, X, CheckCircle2, ChevronUp } from 'lucide-react';
+import { ExternalLink, Sparkles, TrendingUp, DollarSign, X, CheckCircle2, ChevronUp, Globe, Settings, ShieldCheck } from 'lucide-react';
 
 interface GoogleAdSenseBannerProps {
   slotId?: string;
   format?: 'leaderboard' | 'rectangle' | 'in-feed' | 'sticky-footer';
   showAdPlaceholder?: boolean;
   themeMode?: 'light' | 'dark';
+  onOpenMonetizeHub?: () => void;
 }
 
 interface SponsorCreative {
@@ -27,14 +28,6 @@ const SPONSOR_CREATIVES: SponsorCreative[] = [
     revenueTag: 'High Yield ($1.80 RPD)'
   },
   {
-    title: 'Topaz Gigapixel AI: Upscale to 8K Commercial Resolution',
-    desc: 'Bypass stock rejection for low resolution. Turn 2K AI generated art into razor-sharp 300 DPI commercial vector & photos.',
-    badge: 'Asset Quality Booster',
-    ctaText: 'Get 20% Discount',
-    url: 'https://www.topazlabs.com/gigapixel-ai',
-    revenueTag: 'Rejection Shield'
-  },
-  {
     title: 'Adobe Stock Contributor VIP Royalty Portal',
     desc: 'Earn high-paying enterprise royalties and join the GenAI bonus payout program for accepted commercial visuals.',
     badge: 'Official Market',
@@ -43,12 +36,28 @@ const SPONSOR_CREATIVES: SponsorCreative[] = [
     revenueTag: '33% Royalty Rate'
   },
   {
+    title: 'Topaz Gigapixel AI: Upscale to 8K Commercial Resolution',
+    desc: 'Bypass stock rejection for low resolution. Turn 2K AI generated art into razor-sharp 300 DPI commercial vector & photos.',
+    badge: 'Asset Quality Booster',
+    ctaText: 'Get 20% Discount',
+    url: 'https://www.topazlabs.com/gigapixel-ai',
+    revenueTag: 'Rejection Shield'
+  },
+  {
     title: 'Shutterstock Contributor Level 6 Earnings Boost',
     desc: 'Scale from 15% up to 40% royalties per download. Leverage high-volume B2B buyer subscriptions worldwide.',
     badge: 'Agency Partner',
     ctaText: 'Submit to Shutterstock',
     url: 'https://submit.shutterstock.com/',
     revenueTag: 'Up to 40% Payout'
+  },
+  {
+    title: 'Freepik Premium Contributor Network',
+    desc: 'Distribute vector EPS and illustrations to over 100M creative designers with guaranteed per-download compensation.',
+    badge: 'Vector Specialist',
+    ctaText: 'Join Freepik Contributor',
+    url: 'https://contributor.freepik.com/',
+    revenueTag: 'High Volume Tier'
   }
 ];
 
@@ -56,6 +65,7 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
   slotId = '6892019482',
   format = 'leaderboard',
   themeMode = 'light',
+  onOpenMonetizeHub,
 }) => {
   const [adDismissed, setAdDismissed] = useState(false);
   const [creativeIdx, setCreativeIdx] = useState(0);
@@ -71,6 +81,10 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
         setPublisherId(storedPub.trim());
       }
     } catch (_) {}
+
+    // Rotate creative occasionally
+    const rand = Math.floor(Math.random() * SPONSOR_CREATIVES.length);
+    setCreativeIdx(rand);
 
     // Safe trigger of Google AdSense client script
     if (typeof window !== 'undefined') {
@@ -97,6 +111,16 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
         {/* Prismatic Cyan Accent Edge */}
         <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
         
+        {/* Official Google AdSense Ins Element (Indexed by Googlebot & AdSense script) */}
+        <ins
+          className="adsbygoogle hidden"
+          style={{ display: 'none' }}
+          data-ad-client={publisherId}
+          data-ad-slot={slotId}
+          data-ad-format="fluid"
+          data-ad-layout-key="-fb+5w+4e-db+86"
+        />
+
         <div className="flex items-center gap-3.5 min-w-0">
           <div className={`w-11 h-11 rounded-xl ${
             isLight ? 'bg-cyan-50 text-cyan-700 border border-cyan-200/80' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
@@ -131,6 +155,20 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
         </div>
 
         <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+          {onOpenMonetizeHub && (
+            <button
+              type="button"
+              onClick={onOpenMonetizeHub}
+              className={`text-xs font-mono px-2.5 py-2 rounded-xl border transition cursor-pointer hidden md:flex items-center gap-1 ${
+                isLight ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200 text-neutral-600' : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300'
+              }`}
+              title="Open Google Monetize Hub"
+            >
+              <Globe className="w-3 h-3 text-emerald-500" />
+              <span>Monetize Hub</span>
+            </button>
+          )}
+
           <a
             href={creative.url}
             target="_blank"
@@ -162,6 +200,16 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
   if (format === 'leaderboard') {
     return (
       <div className="w-full my-3 flex flex-col items-center justify-center">
+        {/* Official Google AdSense Ins Element */}
+        <ins
+          className="adsbygoogle hidden"
+          style={{ display: 'none' }}
+          data-ad-client={publisherId}
+          data-ad-slot={slotId}
+          data-ad-format="horizontal"
+          data-full-width-responsive="true"
+        />
+
         <div className={`w-full ${
           isLight 
             ? 'bg-white border-neutral-200/90 shadow-2xs' 
@@ -190,16 +238,34 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
                   <CheckCircle2 className="w-3 h-3" />
                   ads.txt Verified
                 </span>
+                <span className="text-neutral-400 hidden lg:inline">·</span>
+                <span className="text-[10.5px] font-mono text-neutral-400 hidden lg:inline">
+                  {publisherId}
+                </span>
               </div>
               <p className={`text-xs ${isLight ? 'text-neutral-600' : 'text-neutral-300'} mt-0.5 truncate max-w-xl`}>
-                High-RPM Contributor Deal: Distribute to Adobe Stock, Shutterstock &amp; Freepik with 100% automated metadata sync.
+                {creative.title}: {creative.desc}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
+            {onOpenMonetizeHub && (
+              <button
+                type="button"
+                onClick={onOpenMonetizeHub}
+                className={`text-xs font-mono px-3 py-1.5 rounded-xl border transition cursor-pointer hidden md:flex items-center gap-1.5 ${
+                  isLight ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200 text-neutral-700' : 'bg-white/5 hover:bg-white/10 border-white/15 text-neutral-200'
+                }`}
+                title="Configure Google AdSense & ads.txt settings"
+              >
+                <Settings className="w-3.5 h-3.5 text-amber-500" />
+                <span>Monetize Settings</span>
+              </button>
+            )}
+
             <a
-              href="https://stock.adobe.com/contributor"
+              href={creative.url}
               target="_blank"
               rel="noopener noreferrer"
               className={`${
@@ -209,7 +275,7 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
               } text-xs font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer`}
             >
               <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Start Earning</span>
+              <span>{creative.ctaText}</span>
               <ExternalLink className="w-3 h-3" />
             </a>
             <button
@@ -250,6 +316,15 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
 
     return (
       <div className="fixed bottom-0 inset-x-0 z-40 p-2 sm:p-3 pointer-events-none">
+        {/* Official Google AdSense Ins Element */}
+        <ins
+          className="adsbygoogle hidden"
+          style={{ display: 'none' }}
+          data-ad-client={publisherId}
+          data-ad-slot={slotId}
+          data-ad-format="horizontal"
+        />
+
         <div className={`max-w-4xl mx-auto pointer-events-auto rounded-2xl p-3 sm:px-5 border shadow-2xl transition-all duration-300 flex items-center justify-between gap-3 ${
           isLight
             ? 'crystal-glass-panel-light text-neutral-900 border-neutral-300/80'
@@ -264,6 +339,8 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
                 <span>Google AdSense Slot {slotId}</span>
                 <span>·</span>
                 <span className="text-emerald-500 font-bold">Active Monetization</span>
+                <span className="hidden sm:inline">·</span>
+                <span className="hidden sm:inline text-neutral-400">{publisherId}</span>
               </div>
               <div className="text-xs font-bold truncate">
                 Adobe Stock &amp; Microstock Contributor Bonus Program · Earn $0.85 - $3.50+ RPD
@@ -272,8 +349,21 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {onOpenMonetizeHub && (
+              <button
+                type="button"
+                onClick={onOpenMonetizeHub}
+                className={`text-xs font-semibold px-2.5 py-1.5 rounded-xl border transition cursor-pointer hidden sm:flex items-center gap-1 ${
+                  isLight ? 'bg-white border-neutral-300 text-neutral-800' : 'bg-white/10 border-white/20 text-white'
+                }`}
+              >
+                <Globe className="w-3 h-3 text-emerald-400" />
+                <span>Monetize</span>
+              </button>
+            )}
+
             <a
-              href="https://stock.adobe.com/contributor"
+              href={creative.url}
               target="_blank"
               rel="noopener noreferrer"
               className={`text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1 cursor-pointer ${
@@ -301,6 +391,15 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
   // ==========================================
   return (
     <div className={`${isLight ? 'bg-white border-neutral-200/90 text-neutral-800 shadow-2xs' : 'bg-[#0f1118] border-neutral-800 text-neutral-200'} border rounded-2xl p-4 text-center space-y-2 sovereign-prism-card`}>
+      {/* Official Google AdSense Ins Element */}
+      <ins
+        className="adsbygoogle hidden"
+        style={{ display: 'none' }}
+        data-ad-client={publisherId}
+        data-ad-slot={slotId}
+        data-ad-format="rectangle"
+      />
+
       <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-neutral-400">
         <span>Sponsored Publisher Slot</span>
         <button onClick={() => setAdDismissed(true)} className="hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer">

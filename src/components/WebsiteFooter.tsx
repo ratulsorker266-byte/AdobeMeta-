@@ -11,6 +11,7 @@ interface WebsiteFooterProps {
   onOpenNicheRadar: () => void;
   onOpenGuideHub: () => void;
   onOpenMultiCsv: () => void;
+  onOpenMonetize?: () => void;
   themeMode?: 'light' | 'dark';
 }
 
@@ -23,6 +24,7 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
   onOpenNicheRadar,
   onOpenGuideHub,
   onOpenMultiCsv,
+  onOpenMonetize,
   themeMode = 'light',
 }) => {
   const isLight = themeMode === 'light';
@@ -122,6 +124,19 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
             >
               Disclaimer
             </button>
+            {onOpenMonetize && (
+              <button
+                type="button"
+                onClick={onOpenMonetize}
+                className={`lumina-directional-link cursor-pointer flex items-center gap-1 font-semibold ${
+                  isLight ? 'text-emerald-700 hover:text-black' : 'text-emerald-400 hover:text-white'
+                }`}
+                title="Google Monetization & AdSense Publisher Hub"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Google Monetize Hub</span>
+              </button>
+            )}
             <a
               href="/ads.txt"
               target="_blank"

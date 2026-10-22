@@ -32,16 +32,21 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { AdobeMetaProLogo } from './AdobeMetaProLogo';
+import { GoogleAdSenseBanner } from './GoogleAdSenseBanner';
 import { GlobalAssetStoreVault, GlobalStorePack } from './GlobalAssetStoreVault';
-import store01MetadataEps from '../assets/images/store01_metadata_eps_1791118931620.jpg';
+import metadataEpsStudio from '../assets/images/metadata_eps_studio_1792575006913.jpg';
 import storeCalendarHub from '../assets/images/store_calendar_hub_1791105379723.jpg';
-import storePromptStudio from '../assets/images/store_prompt_studio_1791105394619.jpg';
+import promptAtelierCover from '../assets/images/prompt_atelier_cover_1792575024241.jpg';
 import storeMonetizeVault from '../assets/images/store_monetize_vault_1791105408515.jpg';
 import store05Rank1Seo from '../assets/images/store05_rank1_seo_1791118951820.jpg';
 import store06MarketTrends from '../assets/images/store06_market_trends_1791118972607.jpg';
 import storeCompetitorSpy from '../assets/images/store_competitor_spy_1791105421040.jpg';
 import store08MultiCsvHub from '../assets/images/store08_multi_csv_hub_1791118986226.jpg';
 import alpineLakeHero from '../assets/images/alpine_lake_hero_1790944060377.jpg';
+import coffyMotionGraphics from '../assets/images/coffy_motion_graphics_1791019037281.jpg';
+import imageUpscalerStudio from '../assets/images/image_upscaler_studio_1792574976548.jpg';
+import videoUpscalerStudio from '../assets/images/video_upscaler_studio_1792574991474.jpg';
+import globalAssetStoreCover from '../assets/images/global_asset_store_1792574530925.jpg';
 
 interface EditorialHeroProps {
   onStartGenerating: () => void;
@@ -61,6 +66,7 @@ interface EditorialHeroProps {
   onNavigateView: (view: string) => void;
   onOpenMultiCsv?: () => void;
   onOpenToolsHub?: () => void;
+  onOpenUpscaler?: (tab?: 'image' | 'video') => void;
   onOpenChat?: () => void;
   currentView?: string;
   itemsCount?: number;
@@ -86,7 +92,7 @@ export interface BoutiqueStoreItem {
   description: string;
   features: string[];
   ctaText: string;
-  actionType: 'view' | 'modal_csv' | 'modal_tools';
+  actionType: 'view' | 'modal_csv' | 'modal_tools' | 'modal_upscaler' | 'modal_video_upscaler';
   targetView?: string;
   sampleTitle: string;
   sampleKeywords: string[];
@@ -107,6 +113,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   onNavigateView,
   onOpenMultiCsv,
   onOpenToolsHub,
+  onOpenUpscaler,
   onOpenChat,
   itemsCount = 0,
   onOpenProToolkit,
@@ -189,7 +196,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       title: 'Manual Metadata & EPS Vector Studio',
       category: 'METADATA · GHOSTSCRIPT EPS · 49 WEIGHTED TAGS',
       department: 'metadata',
-      image: store01MetadataEps,
+      image: metadataEpsStudio,
       badge: 'CORE STUDIO',
       statLabel: `${itemsCount > 0 ? `${itemsCount} Queued` : '49-Tag SEO Ready'}`,
       description: 'Craft subject-first commercial titles and 49 rank-ordered keywords with native EPS vector preview and direct IPTC/XMP file embedding.',
@@ -241,16 +248,16 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     },
     {
       id: 'store-prompts',
-      storeNumber: '03 · DIRECTION',
-      title: 'Composition & Creative Direction Atelier',
-      category: 'COMMERCIAL BRIEFS · COMPOSITION · COPY SPACE FRAMING',
+      storeNumber: '03 · CONCEPT ATELIER',
+      title: 'Master Commercial Prompt & Optics Atelier',
+      category: 'COMMERCIAL PROMPTS · HASSELBLAD OPTICS · COMPOSITION CURATION',
       department: 'creative',
-      image: storePromptStudio,
-      badge: 'CREATIVE ATELIER',
-      statLabel: 'Agency Compliant',
-      description: 'Structure commercial photography scenes, studio lighting angles, and negative copy-space framing aligned with corporate buyer needs.',
-      features: ['Subject-First Framing', 'Copy-Space Rules', 'Lighting Blueprints'],
-      ctaText: 'Open Creative Atelier',
+      image: promptAtelierCover,
+      badge: 'PROMPT ATELIER',
+      statLabel: '0% Similarity Risk',
+      description: 'Artisanal commercial prompt engineering with Hasselblad medium-format optics, intentional negative copy space, and 5 distinct non-similar editorial archetypes to eliminate stock rejections.',
+      features: ['Medium-Format Optics', 'B2B Commercial Intent', '5 Distinct Archetypes', 'Negative Space Curation'],
+      ctaText: 'Open Prompt Atelier',
       actionType: 'view',
       targetView: 'prompts',
       sampleTitle: 'Natural Travertine Stone Cylinder Product Display Podium',
@@ -309,18 +316,14 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       ctaText: 'Open Calibrator',
       actionType: 'view',
       targetView: 'seo-rank',
-      sampleTitle: 'Alpine Mountain Lake and Green Pine Forest at Sunrise',
+      sampleTitle: 'Autonomous Electric Vehicle Charging at Modern Architectural Hub',
       sampleKeywords: [
-        'mountain', 'lake', 'forest', 'pine tree', 'sunrise',
-        'reflection', 'nature', 'alpine', 'wilderness', 'no people',
-        'scenic', 'landscape', 'water', 'tranquility', 'travel',
-        'outdoors', 'calm', 'serene', 'sky', 'sunlight',
-        'morning', 'peak', 'snow', 'rock', 'fir',
-        'evergreen', 'clear', 'blue', 'green', 'valley',
-        'national park', 'environment', 'conservation', 'fresh', 'pure',
-        'hiking', 'tourism', 'destination', 'peaceful', 'horizon',
-        'clean', 'panoramic', 'view', 'majestic', 'pristine',
-        'adventure', 'earth', 'horizontal', 'daylight'
+        'electric vehicle', 'ev charging', 'autonomous driving', 'modern architecture', 'smart city',
+        'clean energy', 'green mobility', 'charging station', 'futuristic car', 'technology',
+        'commercial automotive', 'urban infrastructure', 'sustainability', 'high tech', 'no people',
+        'innovation', 'transportation', 'power station', 'cable', 'battery',
+        'connected car', 'metropolis', 'corporate campus', 'exterior', 'clean design',
+        'energy efficiency', 'contemporary', 'horizontal', 'daylight', 'copy space'
       ]
     },
     {
@@ -405,6 +408,47 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
         'office', 'workspace', 'flat lay', 'top view', 'still life',
         'horizontal', 'aesthetic', 'art', 'stationery mockup'
       ]
+    },
+    {
+      id: 'store-image-upscaler',
+      storeNumber: '09 · OPTICAL SUPER-RESOLUTION',
+      title: '8K Ultra Image Super-Resolution Atelier',
+      category: 'OPTICAL ENGINE · 2K TO 8K BATCH · 300 DPI · MULTI-PASS CAS',
+      department: 'metadata',
+      image: imageUpscalerStudio,
+      badge: '8K OPTICAL ATELIER',
+      statLabel: '33.2 MP (8K UHD)',
+      description: 'Studio-grade 2K to 8K Ultra-HD photo batch resolution engine (300 DPI) with Contrast-Adaptive Sharpening (CAS) and physical micro-grain preservation. 100% Free with zero API cost.',
+      features: ['2K to 8K Ultra-HD', '300 DPI Microstock Standard', 'Batch Photo Processing', 'CAS Edge Sharpening'],
+      ctaText: 'Launch 8K Image Atelier',
+      actionType: 'modal_upscaler',
+      sampleTitle: 'Ultra High Resolution 8K Texture Photograph of Travertine Marble',
+      sampleKeywords: [
+        '8k texture', 'high resolution', 'super resolution', '300 dpi', 'macro detail',
+        'travertine', 'stone', 'marble', 'tactile surface', 'sharp focus',
+        'commercial photography', 'stock visual', 'unsharp mask', 'no blur', 'print quality',
+        'billboard standard', 'large format', 'depth of field', 'studio lighting', 'copy space'
+      ]
+    },
+    {
+      id: 'store-video-upscaler',
+      storeNumber: '10 · CINEMA SUPER-RESOLUTION',
+      title: '8K Video Cinema Resolution Atelier (Up to 10s)',
+      category: '10S VIDEO BATCH · 2K TO 8K UHD · 24-30 FPS · FRAME-BY-FRAME',
+      department: 'creative',
+      image: videoUpscalerStudio,
+      badge: '8K CINEMA ATELIER',
+      statLabel: '24-30 FPS 8K Master',
+      description: 'Super-resolve short B-roll stock video clips up to 10 seconds into 2K, 4K, 6K, and 8K Ultra-HD. Frame-by-frame canvas GPU stream recorder with batch video queue.',
+      features: ['10s Video Super-Resolution', '2K to 8K Ultra-HD', 'Batch Video Queue', 'Frame-by-Frame Stream'],
+      ctaText: 'Launch 8K Video Atelier',
+      actionType: 'modal_video_upscaler',
+      sampleTitle: 'Cinematic 8K B-Roll Footage of Rotating Travertine Stone Podium',
+      sampleKeywords: [
+        '8k video', 'super resolution', 'b-roll footage', 'cinematic stock video', '4k uhd',
+        'commercial video', 'high bitrate', 'frame by frame', 'motion graphics', 'pedestal',
+        'travertine', 'luxury product display', 'smooth animation', 'adobe stock video', 'stock footage'
+      ]
     }
   ];
 
@@ -422,6 +466,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       onOpenMultiCsv();
     } else if (store.actionType === 'modal_tools' && onOpenToolsHub) {
       onOpenToolsHub();
+    } else if (store.actionType === 'modal_upscaler' && onOpenUpscaler) {
+      onOpenUpscaler('image');
+    } else if (store.actionType === 'modal_video_upscaler' && onOpenUpscaler) {
+      onOpenUpscaler('video');
     } else {
       onStartGenerating();
     }
@@ -503,7 +551,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   : (isLight ? 'text-neutral-500 hover:text-black' : 'text-zinc-400 hover:text-white')
               }`}
             >
-              <span>{isBn ? 'মার্কেট' : 'Workspace'}</span>
+              <span>Workspace</span>
               {activeDepartment === 'all' && (
                 <span className={`absolute bottom-0 left-0 right-0 h-[1.5px] rounded-full ${isLight ? 'bg-neutral-950' : 'bg-white'}`} />
               )}
@@ -527,7 +575,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-zinc-400 hover:text-white'
               }`}
             >
-              <span>{isBn ? 'স্টুডিও' : 'Studio'}</span>
+              <span>Studio</span>
             </button>
 
             <button
@@ -536,7 +584,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-zinc-400 hover:text-white'
               }`}
             >
-              <span>{isBn ? 'সার্চ এসইও' : 'Search SEO'}</span>
+              <span>Search SEO</span>
             </button>
 
             <button
@@ -545,7 +593,17 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-zinc-400 hover:text-white'
               }`}
             >
-              <span>{isBn ? 'ক্যালেন্ডার' : 'Calendar'}</span>
+              <span>Calendar</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateView('prompts')}
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 ${
+                isLight ? 'text-neutral-500 hover:text-black' : 'text-zinc-400 hover:text-white'
+              }`}
+              title="Distinct Prompt Engineering Atelier (Nano Banana Pro, ChatGPT, Midjourney)"
+            >
+              <span>Prompts</span>
             </button>
 
             <button
@@ -554,12 +612,12 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-zinc-400 hover:text-white'
               }`}
             >
-              <span>{isBn ? 'মনিটাইজ' : 'Monetize'}</span>
+              <span>Monetize</span>
             </button>
           </nav>
 
-          {/* Medium Screens (768px - 1279px): 3 essential links with ample room */}
-          <nav className="hidden md:flex xl:hidden items-center gap-4 lg:gap-6 text-[12.5px] font-sans font-medium tracking-[0.02em] shrink-0">
+          {/* Large Screens (1024px - 1279px): Essential links with ample room */}
+          <nav className="hidden lg:flex xl:hidden items-center gap-3.5 lg:gap-5 text-[12px] font-sans font-medium tracking-[0.02em] shrink-0">
             <button
               onClick={() => {
                 const storeEl = document.getElementById('global-commercial-store-vault');
@@ -579,6 +637,16 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               }`}
             >
               <span>Studio</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateView('prompts')}
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 ${
+                isLight ? 'text-neutral-600 hover:text-black' : 'text-zinc-300 hover:text-white'
+              }`}
+              title="Prompt Atelier"
+            >
+              <span>Prompts</span>
             </button>
 
             <button
@@ -632,7 +700,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 title="Pre-Check Audit, Studio Desk, Performance & Account Settings"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>{isBn ? 'কন্ট্রোল' : 'System'}</span>
+                <span>System</span>
               </button>
 
               <AnimatePresence>
@@ -654,7 +722,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                       } backdrop-blur-xl space-y-1`}
                     >
                       <div className="px-2.5 pt-1 text-[9.5px] font-mono uppercase tracking-[0.16em] text-neutral-400">
-                        {isBn ? 'টুলস এবং পারফরম্যান্স' : 'WORKSPACE & TOOLS'}
+                        WORKSPACE &amp; TOOLS
                       </div>
 
                       {onOpenProToolkit && (
@@ -689,7 +757,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                         >
                           <span className="flex items-center gap-2">
                             <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-                            <span>{isBn ? 'স্টুডিও ডেস্ক' : 'Studio Desk & Guidelines'}</span>
+                            <span>Studio Desk &amp; Guidelines</span>
                           </span>
                           <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
                         </button>
@@ -705,7 +773,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                             isLight ? 'hover:bg-neutral-100' : 'hover:bg-neutral-800/80'
                           }`}
                         >
-                          <span>{isBn ? 'লাইট মোড (ফাস্ট ফোন)' : 'Lite Performance Mode'}</span>
+                          <span>Lite Performance Mode</span>
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                               isLiteMode
@@ -731,7 +799,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                             isLight ? 'hover:bg-neutral-100' : 'hover:bg-neutral-800/80'
                           }`}
                         >
-                          <span>{isBn ? 'অ্যাবাউট ও কনট্রিবিউটর গাইড' : 'About & Adobe Stock Guide'}</span>
+                          <span>About &amp; Adobe Stock Guide</span>
                           <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
                         </button>
                       )}
@@ -749,7 +817,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                         >
                           <span className="flex items-center gap-2">
                             <Settings className="w-3.5 h-3.5 text-amber-400" />
-                            <span>{isBn ? 'স্টুডিও প্রেফারেন্স ও থিম' : 'Studio Preferences & Theme'}</span>
+                            <span>Studio Preferences &amp; Theme</span>
                           </span>
                           <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
                         </button>
@@ -758,7 +826,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                       <div className={`my-1.5 border-t ${isLight ? 'border-neutral-200' : 'border-neutral-800'}`} />
 
                       <div className="px-2.5 pt-0.5 text-[9.5px] font-mono uppercase tracking-[0.16em] text-neutral-400">
-                        {isBn ? 'অ্যাকাউন্ট ও সেশন' : 'ACCOUNT & SESSION'}
+                        ACCOUNT &amp; SESSION
                       </div>
 
                       {user ? (
@@ -790,7 +858,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                             >
                               <span className="flex items-center gap-2">
                                 <LogOut className="w-3.5 h-3.5" />
-                                <span>{isBn ? 'লগ আউট করুন (Log Out)' : 'Log Out / Sign Out'}</span>
+                                <span>Log Out / Sign Out</span>
                               </span>
                               <span className="text-[9.5px] font-mono uppercase px-1.5 py-0.5 rounded bg-red-500/20">
                                 EXIT
@@ -814,7 +882,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                           >
                             <span className="flex items-center gap-2">
                               <UserIcon className="w-3.5 h-3.5 text-emerald-500" />
-                              <span>{isBn ? 'লগইন / অ্যাকাউন্ট খুলুন' : 'Sign In / Create Account'}</span>
+                              <span>Sign In / Create Account</span>
                             </span>
                             <ArrowUpRight className="w-3.5 h-3.5 opacity-70" />
                           </button>
@@ -853,7 +921,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   : 'cyan-glow-button'
               }`}
             >
-              <span className="transition-transform duration-200 group-hover:-translate-x-0.5">{isBn ? 'স্টুডিও খুলুন' : 'Open Studio'}</span>
+              <span className="transition-transform duration-200 group-hover:-translate-x-0.5">Open Studio</span>
               <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
             </button>
 
@@ -973,6 +1041,20 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   type="button"
                   onClick={() => {
                     setShowMobileNav(false);
+                    onNavigateView('prompts');
+                  }}
+                  className={`p-2.5 rounded-xl text-left border flex items-center gap-2 cursor-pointer transition ${
+                    isLight ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200/80' : 'bg-neutral-900/60 hover:bg-neutral-900 border-white/10'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>Prompt Atelier (Anti-Similarity)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileNav(false);
                     onNavigateView('monetize');
                   }}
                   className={`p-2.5 rounded-xl text-left border flex items-center gap-2 cursor-pointer transition ${
@@ -1070,25 +1152,25 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
           >
             <img
-              src={alpineLakeHero}
-              alt="Cinematic commercial background"
+              src={globalAssetStoreCover}
+              alt="Architectural studio gallery background"
               className={`w-full h-full object-cover object-center transition-all duration-700 ${
-                isLight ? 'opacity-85 filter contrast-105 saturate-115 brightness-100' : 'opacity-50 filter brightness-95 contrast-125'
+                isLight ? 'opacity-20 filter contrast-105 brightness-105' : 'opacity-30 filter brightness-90 contrast-115'
               }`}
             />
             {/* Ambient Aurora Glow Mesh (Celestial Cyan & Soft Violet Aurora) - Only in Dark Theme */}
             {!isLight && <div aria-hidden="true" className="hero-aurora-mesh" />}
-            {/* Contrast Scrim Gradient ensuring WCAG AA legibility while revealing the alpine landscape */}
+            {/* Contrast Scrim Gradient ensuring WCAG AA legibility while revealing the alpine landscape clearly */}
             <div
               className={`absolute inset-0 ${
                 isLight
-                  ? 'bg-gradient-to-r from-white/92 via-white/60 to-white/15'
+                  ? 'bg-gradient-to-r from-white/78 via-white/40 to-white/10'
                   : 'bg-gradient-to-t from-[#05060A] via-[#05060A]/85 to-[#05060A]/50'
               }`}
             />
             {/* Subtle light-mode bottom fade so workbench and dropzone blend effortlessly */}
             {isLight && (
-              <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-white/55 via-transparent to-transparent pointer-events-none" />
             )}
           </div>
           {/* Interactive Cursor-Tracking Warm Ambient Caustic Spotlight */}
@@ -1170,24 +1252,24 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 isLight ? 'text-neutral-950' : 'text-white'
               }`}>
                 <span className="block">
-                  <span className={isLight ? 'text-neutral-950' : 'text-white'}>Precision Stock</span>{' '}
+                  <span className={isLight ? 'text-neutral-950' : 'text-white'}>Manual Metadata</span>{' '}
                   <span className={`font-serif italic font-normal text-[1.08em] ${isLight ? 'text-cyan-700' : 'wow-text-cyan'} pr-1.5`}>
-                    Metadata
+                    Architecture
                   </span>
                 </span>
                 <span className="block mt-1 sm:mt-1.5">
                   <span className={isLight ? 'text-neutral-500' : 'text-cyan-400 font-mono text-[0.8em]'}>&amp;</span>{' '}
                   <span className={`font-serif italic font-normal text-[1.08em] ${isLight ? 'text-neutral-700' : 'wow-text-platinum'} pr-1`}>
-                    Editorial
+                    Artisanal
                   </span>{' '}
-                  <span className={isLight ? 'text-neutral-950' : 'wow-text-cyan'}>Excellence.</span>
+                  <span className={isLight ? 'text-neutral-950' : 'wow-text-cyan'}>Search Dominance.</span>
                 </span>
               </h1>
 
               <p className={`text-[15.5px] sm:text-[16.5px] font-sans font-normal max-w-xl leading-[1.72] tracking-normal ${
                 isLight ? 'text-neutral-600' : 'text-zinc-300'
               }`}>
-                A calm, high-precision workbench for commercial stock contributors. Inspect EPS vectors, fine-tune subject-first titles under 70 characters, lock your priority keywords, and scale Google AdSense and royalty revenue across 7 global agencies.
+                A bespoke, high-precision manual workbench for elite stock contributors. Zero robotic AI artifacts. Hand-calibrated subject-first titles under 70 characters, 4-tier rank-ordered 49 keywords with 75% search authority locked in Slots 1–10, and multi-agency Google monetization.
               </p>
             </div>
 
@@ -1470,8 +1552,42 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 return (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-[10.5px] font-mono tabular-nums text-neutral-400">
-                      <span>Top Priority Keywords (Click to Lock #1)</span>
-                      <span>01–08 / 49</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold tracking-wider text-cyan-300">TIER-1 SLOTS 01–08</span>
+                        <span className="opacity-40">·</span>
+                        <span className="text-emerald-400 font-semibold">75% SEARCH POWER</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsHoveringSpecimen(true);
+                          const baseTitle = customSpecimenTitle || activePreviewStore.sampleTitle;
+                          const titleTokens = baseTitle
+                            .toLowerCase()
+                            .replace(/[^a-z0-9\s]/g, ' ')
+                            .split(/\s+/)
+                            .filter((w) => w.length > 2);
+                          const scored = [...activeTags].sort((a, b) => {
+                            const aInTitle = titleTokens.some((t) => a.toLowerCase().includes(t));
+                            const bInTitle = titleTokens.some((t) => b.toLowerCase().includes(t));
+                            if (aInTitle && !bInTitle) return -1;
+                            if (!aInTitle && bInTitle) return 1;
+                            return 0;
+                          });
+                          setCustomSpecimenTags(scored);
+                          if (showToast) {
+                            showToast('⚡ 100x Rank #1 Calibrated! Title & Slots 1–10 100% Synchronized for First-Page Search.');
+                          }
+                        }}
+                        className={`text-[10px] font-mono px-2 py-0.5 rounded-md border flex items-center gap-1 transition cursor-pointer ${
+                          isLight
+                            ? 'bg-neutral-900 text-white hover:bg-black border-neutral-900 font-bold'
+                            : 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border-cyan-400/40 font-bold'
+                        }`}
+                        title="1-Click Rank #1 Calibrator: Synchronize primary title nouns into slots 1-5 for instant search rank dominance"
+                      >
+                        <span>⚡ Calibrate Rank #1</span>
+                      </button>
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -1503,7 +1619,20 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                       })}
                     </div>
 
-                    <div className={`text-[10.5px] font-mono pt-1 truncate ${
+                    {/* 100x First-Page Search Authority Guarantee Bar */}
+                    <div className={`p-2.5 rounded-xl border text-[10px] font-mono flex items-center justify-between gap-2 ${
+                      isLight
+                        ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+                        : 'bg-emerald-950/25 border-emerald-500/25 text-emerald-300'
+                    }`}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-bold">FIRST-PAGE SEARCH INDEX: 100%</span>
+                      </div>
+                      <span className="opacity-80">Slots 01–10 75% Weight · Zero Trademarks</span>
+                    </div>
+
+                    <div className={`text-[10px] font-mono pt-0.5 truncate ${
                       isLight ? 'text-neutral-500' : 'text-neutral-400'
                     }`}>
                       {agencySpecNote}
@@ -1596,6 +1725,20 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   <ArrowUpRight className="w-3 h-3 opacity-50" />
                 </button>
               ))}
+
+              {onOpenUpscaler && (
+                <button
+                  type="button"
+                  onClick={() => onOpenUpscaler('image')}
+                  className={`lumina-directional-link text-[11.5px] font-semibold flex items-center gap-1 cursor-pointer transition ${
+                    isLight ? 'text-amber-800 hover:text-black' : 'text-amber-400 hover:text-white'
+                  }`}
+                  title="Upscayl-Grade 2K to 8K Image & 10s Video Super-Resolution"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-500" />
+                  <span>05 · 8K Ultra Upscaler (Free)</span>
+                </button>
+              )}
             </div>
 
             <button
@@ -1704,6 +1847,15 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             </div>
           </div>
         </motion.div>
+      </div>
+
+      {/* Official High-Yield Google Monetized Leaderboard Unit */}
+      <div className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14 mb-8">
+        <GoogleAdSenseBanner
+          format="leaderboard"
+          themeMode={themeMode}
+          onOpenMonetizeHub={() => onNavigateView('monetize')}
+        />
       </div>
 
       {/* ============================================================ */}
@@ -1823,6 +1975,15 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
         </div>
 
       </section>
+
+      {/* High-RPM In-Feed Native Google Monetized Partner Unit */}
+      <div className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14 mb-8">
+        <GoogleAdSenseBanner
+          format="in-feed"
+          themeMode={themeMode}
+          onOpenMonetizeHub={() => onNavigateView('monetize')}
+        />
+      </div>
 
       {/* ============================================================ */}
       {/* GLOBAL COMMERCIAL METADATA, PROMPT & NICHE STORE VAULT       */}

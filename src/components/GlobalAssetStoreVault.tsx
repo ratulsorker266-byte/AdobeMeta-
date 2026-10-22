@@ -22,7 +22,7 @@ export interface GlobalStorePack {
   code: string;
   title: string;
   niche: string;
-  department: 'business' | 'tech' | 'vector' | 'luxury' | 'lifestyle' | 'nature' | 'seasonal' | 'architecture';
+  department: 'business' | 'tech' | 'vector' | 'luxury' | 'lifestyle' | 'nature' | 'seasonal' | 'architecture' | 'prompts';
   adobeCategory: string;
   adobeCategoryId: number;
   cpcEstimate: string;
@@ -397,6 +397,83 @@ export const GLOBAL_COMMERCIAL_PACKS: GlobalStorePack[] = [
     ],
     midjourneyPrompt: 'Abstract 3D architectural sculpture of flowing champagne gold silk ribbons intersecting with translucent frosted crystal glass slabs on deep velvet slate background, soft caustic light refraction, clean copy space --ar 16:9 --v 6.1',
     vectorPrompt: 'Smooth gradient mesh vector background of flowing champagne gold and deep obsidian silk waves, clean layered EPS 10 commercial vector background --no text'
+  },
+  {
+    id: 'pack-13-nanobanana-anti-similarity',
+    code: 'VAULT-13',
+    title: 'Nano Banana Pro & ChatGPT 100% Anti-Similarity Master Suite',
+    niche: 'AI Stock Prompts & Anti-Rejection',
+    department: 'prompts',
+    adobeCategory: 'Graphic Resources',
+    adobeCategoryId: 8,
+    cpcEstimate: '$6.50 CPC',
+    demandLevel: 'Breakout',
+    image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=900&q=80',
+    recommendedTitle: 'Anti-Similarity Commercial Stock Photography Prompt Blueprints Suite',
+    shutterstockCaption: 'Curated 5-archetype anti-similarity prompt engineering blueprints for commercial stock photography with clean negative space and razor-sharp optics',
+    freepikTitle: 'Commercial Stock AI Prompts — Anti-Similarity Blueprints',
+    gettyTitle: 'Conceptual architectural view of commercial stock photography prompt blueprints',
+    keywords: [
+      'prompt engineering', 'commercial prompts', 'anti similarity', 'nano banana pro', 'chatgpt prompt',
+      'stock photography prompt', 'photorealistic ai', 'negative copy space', 'commercial stock', 'zero rejection',
+      'hasselblad optics', 'sony a7r', 'clean composition', 'stock contributor', 'microstock guide',
+      'adobe stock guidelines', 'midjourney v6', 'firefly prompt', 'high resolution', 'commercial visual',
+      'macro texture', 'knolling flat lay', 'wide angle hero', 'b2b marketing', 'advertising banner',
+      'enterprise visual', 'depth of field', 'studio lighting', 'copy space', 'no people',
+      'authentic photo', 'editorial layout', 'commercial asset', 'digital creator', 'stock portfolio',
+      'monetization', 'search weight', 'relevance', 'professional photography', 'distinct content'
+    ],
+    midjourneyPrompt: 'Ultra-wide commercial environmental shot of minimalist artisanal travertine studio with clean negative copy space on left third, balanced daylight, Hasselblad H6D-100c, 8k --ar 16:9 --style raw --v 6.1 --no text, watermark',
+    vectorPrompt: 'Clean minimalist vector blueprint of 5 distinct camera angles and composition archetypes for commercial microstock photography, flat EPS 10 --no text'
+  },
+  {
+    id: 'pack-14-chatgpt-dalle-commercial',
+    code: 'VAULT-14',
+    title: 'ChatGPT & DALL-E 3 Photographic B2B Commercial Enterprise Pack',
+    niche: 'B2B Enterprise & Corporate Tech',
+    department: 'prompts',
+    adobeCategory: 'Business',
+    adobeCategoryId: 3,
+    cpcEstimate: '$5.90 CPC',
+    demandLevel: 'Very High',
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80',
+    recommendedTitle: 'Enterprise Commercial Photography Prompts For Corporate Technology',
+    shutterstockCaption: 'Photorealistic commercial stock prompts for enterprise corporate technology, financial boardrooms, and sustainable smart cities',
+    freepikTitle: 'Enterprise Corporate Tech Prompts — Commercial Stock Suite',
+    gettyTitle: 'High-tech architectural B2B commercial stock prompts for corporate campaigns',
+    keywords: [
+      'chatgpt prompt', 'dalle 3 prompt', 'enterprise photography', 'b2b corporate', 'smart architecture',
+      'data analytics', 'cloud technology', 'modern business', 'corporate headquarters', 'sustainable city',
+      'executive meeting', 'commercial photography', 'high resolution', 'photorealistic', 'clean background',
+      'copy space', 'no people', 'architectural symmetry', 'daylight', 'glass building',
+      'financial district', 'boardroom', 'innovation', 'corporate finance', 'b2b marketing'
+    ],
+    midjourneyPrompt: 'High-resolution commercial stock photography of sustainable corporate headquarters with glass facade and vertical gardens. Generous negative space for advertising typography, Hasselblad optics, 8k --ar 16:9 --v 6.1',
+    vectorPrompt: 'Minimalist flat vector icon set of enterprise cloud tech nodes, financial growth graphs, and corporate logos, editable EPS 10 --no text'
+  },
+  {
+    id: 'pack-15-reverse-vision-deconstruction',
+    code: 'VAULT-15',
+    title: 'Vision AI Reverse-Engineered Stock Prompts: Travertine & Biotech',
+    niche: 'Reverse Computer Vision & Optical Extraction',
+    department: 'prompts',
+    adobeCategory: 'Science',
+    adobeCategoryId: 15,
+    cpcEstimate: '$6.20 CPC',
+    demandLevel: 'Breakout',
+    image: 'https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=900&q=80',
+    recommendedTitle: 'Computer Vision Reverse Engineered Commercial Prompts And Metadata',
+    shutterstockCaption: 'Deconstructed optical camera specifications, lighting blueprints, and reverse-engineered commercial prompts from bestselling stock assets',
+    freepikTitle: 'Reverse Vision AI Prompts — Optical Camera Blueprints',
+    gettyTitle: 'Conceptual optical deconstruction of commercial stock image metadata and prompts',
+    keywords: [
+      'reverse prompt', 'computer vision', 'image deconstruction', 'camera specs', 'focal length',
+      'studio lighting', 'macro focus', 'commercial stock', 'biotech research', 'travertine podium',
+      'high precision', 'stock metadata', '49 keywords', 'priority ranking', 'microstock guide',
+      'adobe stock review', 'shutterstock approved', 'clean composition', 'copy space', 'no people'
+    ],
+    midjourneyPrompt: 'Extreme macro close-up detail of organic tactile materials and biotechnology laboratory glassware, shallow depth of field, creamy bokeh, soft diffused lighting, 8k --ar 16:9 --v 6.1',
+    vectorPrompt: 'Technical optical camera blueprint vector illustration showing 24mm, 50mm, and 100mm macro focal length diagrams, clean EPS 10 vector --no text'
   }
 ];
 
@@ -799,7 +876,8 @@ export const GlobalAssetStoreVault: React.FC<GlobalAssetStoreVaultProps> = ({
 
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
                 {[
-                  { id: 'all', label: 'All Packs (12)' },
+                  { id: 'all', label: 'All Packs (15)' },
+                  { id: 'prompts', label: 'Anti-Similarity Prompts (Nano Banana & ChatGPT)' },
                   { id: 'business', label: 'Business & Fintech' },
                   { id: 'tech', label: 'AI & Biotech' },
                   { id: 'luxury', label: 'Podiums & Mockups' },
@@ -946,6 +1024,22 @@ export const GlobalAssetStoreVault: React.FC<GlobalAssetStoreVaultProps> = ({
                         <FileSpreadsheet className="w-3.5 h-3.5" />
                         <span>Export CSV</span>
                       </button>
+
+                      {onOpenPromptWithConcept && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenPromptWithConcept(activePack.title)}
+                          className={`lumina-tactile-button px-3.5 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 cursor-pointer ${
+                            isLight
+                              ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200'
+                              : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
+                          }`}
+                          title="Generate 5 Distinct Non-Similar Archetypes (Nano Banana Pro & ChatGPT)"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Prompt Atelier</span>
+                        </button>
+                      )}
 
                       <button
                         type="button"

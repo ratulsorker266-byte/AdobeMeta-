@@ -23,7 +23,9 @@ import {
   Trash2,
   ArrowRight,
   Command,
-  X
+  X,
+  Maximize2,
+  Video
 } from 'lucide-react';
 
 interface CommandItem {
@@ -188,6 +190,26 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       shortcut: 'G P',
       keywords: ['prompt', 'midjourney', 'firefly', 'flux', 'ai', 'generate'],
       action: () => onNavigateView('prompts'),
+    },
+    {
+      id: 'tool_image_upscaler',
+      title: 'Store 09 · 8K Ultra Image Upscaler Studio',
+      category: 'Intelligence & Tools',
+      description: 'Upscayl-grade 2K to 8K photo upscaler (300 DPI) & batch processing (100% Free)',
+      icon: Maximize2,
+      shortcut: 'G I',
+      keywords: ['image upscale', 'upscayl', '8k image', '4k photo', '2k', 'super resolution', '300 dpi', 'batch'],
+      action: () => onOpenTool('image_upscaler'),
+    },
+    {
+      id: 'tool_video_upscaler',
+      title: 'Store 10 · 8K Video Super-Resolution Studio (Up to 10s)',
+      category: 'Intelligence & Tools',
+      description: 'Super-resolve 10s B-roll video clips into 2K–8K Ultra-HD with batch queue (100% Free)',
+      icon: Video,
+      shortcut: 'G V',
+      keywords: ['video upscale', '10s video', '8k video', '4k video', 'super resolution', 'broll', 'frame sequence'],
+      action: () => onOpenTool('video_upscaler'),
     },
     {
       id: 'monetize_hub_view',

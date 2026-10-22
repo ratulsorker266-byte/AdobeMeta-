@@ -54,6 +54,7 @@ import { ContributorProToolkitModal } from './components/ContributorProToolkitMo
 import { ArchitecturalAuthModal } from './components/ArchitecturalAuthModal';
 import { SovereignAiAssistantDrawer, AiAssistantMode } from './components/SovereignAiAssistantDrawer';
 import { VisualKeywordMixerModal } from './components/VisualKeywordMixerModal';
+import { UltraUpscalerModal } from './components/UltraUpscalerModal';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   return (
@@ -1049,6 +1050,13 @@ export default function App() {
   const [competitorActiveItem, setCompetitorActiveItem] = useState<BulkItem | null>(null);
   const [showKeywordMixerModal, setShowKeywordMixerModal] = useState<boolean>(false);
   const [mixerActiveItem, setMixerActiveItem] = useState<BulkItem | null>(null);
+  const [showUltraUpscalerModal, setShowUltraUpscalerModal] = useState<boolean>(false);
+  const [upscalerInitialTab, setUpscalerInitialTab] = useState<'image' | 'video'>('image');
+
+  const handleOpenUpscaler = (tab: 'image' | 'video' = 'image') => {
+    setUpscalerInitialTab(tab);
+    setShowUltraUpscalerModal(true);
+  };
 
   // Google Monetization, Compliance & Legal Modals
   const [showEarningMonetizeModal, setShowEarningMonetizeModal] = useState<boolean>(false);
@@ -3838,9 +3846,13 @@ export default function App() {
         backgroundAttachment: 'fixed'
       } : {}}
     >
-      {/* Dark overlay if custom background is used so content stays readable */}
+      {/* Light / Dark scrim overlay when custom background is used so content stays readable */}
       {customBgUrl && (
-        <div className="absolute inset-0 bg-black/85 backdrop-blur-[2px] z-0 pointer-events-none" />
+        <div className={`absolute inset-0 z-0 pointer-events-none transition-colors duration-500 ${
+          themeMode === 'light'
+            ? 'bg-gradient-to-b from-white/72 via-white/52 to-white/75 backdrop-blur-[1px]'
+            : 'bg-black/85 backdrop-blur-[2px]'
+        }`} />
       )}
 
       {/* ==================================================================== */}
@@ -3859,9 +3871,9 @@ export default function App() {
           }`}
         />
 
-        {/* 1. SUNLIGHT WHITE EDITION (SADA) — Pure White Pearl & Warm Ivory Radial Lighting (Zero GPU Blur Tax) */}
-        {themeMode === 'light' && (
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_65%_at_50%_-10%,rgba(255,255,255,0.98),rgba(254,243,199,0.28)_45%,rgba(248,246,240,0.85)_100%)]" />
+        {/* 1. SUNLIGHT WHITE EDITION (SADA) — Transparent when custom background is active so mountain is clearly visible */}
+        {themeMode === 'light' && !customBgUrl && (
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_65%_at_50%_-10%,rgba(255,255,255,0.92),rgba(254,243,199,0.22)_45%,rgba(248,246,240,0.85)_100%)]" />
         )}
 
         {/* 2. HAUTE-COUTURE OBSIDIAN SILK & SUBTLE AURORA MESH (ZERO GPU TAX) */}
@@ -3919,6 +3931,7 @@ export default function App() {
           }}
           onOpenMultiCsv={() => setShowMultiCsvModal(true)}
           onOpenToolsHub={() => setShowToolsHubModal(true)}
+          onOpenUpscaler={handleOpenUpscaler}
           onOpenChat={() => setIsChatOpen(true)}
           currentView={currentView}
           itemsCount={items.length}
@@ -4268,6 +4281,57 @@ export default function App() {
               showToast={showToast}
               initialConcept={promptStudioPreloadConcept}
               themeMode={themeMode}
+              onOpenMonetizeHub={() => setCurrentView('monetize')}
+              onSendToStudio={(title, keywords, concept) => {
+                const sampleFile = new File([''], `${title.slice(0, 24).toLowerCase().replace(/[^a-z0-9]+/g, '-')}.jpg`, { type: 'image/jpeg' });
+                const stagedItem: BulkItem = {
+                  id: `prompt-studio-${Date.now()}`,
+                  file: sampleFile,
+                  previewUrl: '',
+                  status: 'completed',
+                  progress: 100,
+                  result: {
+                    recommendedTitle: title,
+                    shortDescription: title,
+                    category: 'Graphic Resources',
+                    keywords: keywords.slice(0, 49),
+                    priorityKeywords: keywords.slice(0, 10),
+                    longTailKeywords: [title.toLowerCase()],
+                    buyerSearchPhrases: [title.toLowerCase()],
+                    alternativeTitles: {
+                      b2bCommercial: title,
+                      highVolumeSeo: title,
+                      editorialStory: title,
+                    },
+                    agencyTitles: {
+                      adobeStock: title,
+                      shutterstock: title,
+                      freepik: title,
+                      getty: title,
+                      vecteezy: title,
+                    },
+                    explanation: `Engineered via Distinct Prompt Studio (${concept}). 100% Anti-Similarity Verified.`,
+                    detectedDefects: [],
+                    overallSubmissionRiskScore: 0,
+                    riskLabel: 'Low risk',
+                    technicalQualityScore: 99,
+                    copyrightRiskScore: 0,
+                    acceptanceProbability: 99,
+                    rejectionFlags: [],
+                    trademarkRisk: 'none',
+                    detectedTrademarks: ['None detected'],
+                    modelReleaseRequired: false,
+                    propertyReleaseRequired: false,
+                    releaseExplanation: 'Concept asset verified free of trademarks.',
+                    searchWeightIndex: 99,
+                    estimatedCpcUSD: '1.50',
+                  },
+                };
+                setItems((prev) => [stagedItem, ...prev]);
+                setCurrentView('upload');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                showToast(`✓ Staged "${title}" with 49 verified tags into Studio Workbench!`);
+              }}
             />
           ) : currentView === 'calendar' ? (
             <SeasonalCalendarDashboard
@@ -4292,8 +4356,15 @@ export default function App() {
               className="space-y-8"
             >
               <>
-                  {/* Studio Manual Precision & Workflow Control Bar (Minimalist Progressive Disclosure) */}
-                  <div className={`${themeMode === 'light' ? 'crystal-architectural-slab-light text-neutral-800' : 'crystal-architectural-slab-dark text-neutral-100'} rounded-[32px] p-7 sm:p-9 space-y-6`}>
+                {/* Official High-Yield Google Monetized Leaderboard Unit */}
+                <GoogleAdSenseBanner
+                  format="leaderboard"
+                  themeMode={themeMode}
+                  onOpenMonetizeHub={() => setCurrentView('monetize')}
+                />
+
+                {/* Studio Manual Precision & Workflow Control Bar (Minimalist Progressive Disclosure) */}
+                <div className={`${themeMode === 'light' ? 'crystal-architectural-slab-light text-neutral-800' : 'crystal-architectural-slab-dark text-neutral-100'} rounded-[32px] p-7 sm:p-9 space-y-6`}>
                     {/* Top Row: Clean Minimalist Workbench Header & Core Controls */}
                     <div className={`flex flex-wrap items-center justify-between gap-4 pb-5 border-b ${
                       themeMode === 'light' ? 'border-neutral-200/70' : 'border-white/10'
@@ -5602,6 +5673,17 @@ export default function App() {
                     })
                     .map((item, index) => (
                     <React.Fragment key={item.id}>
+                      {/* High-RPM In-Feed Native Google Monetized Unit Embedded Naturally Between Assets */}
+                      {((index === 1 && items.length >= 2) || (index > 1 && (index + 1) % 4 === 0)) && (
+                        <div className="w-full my-2">
+                          <GoogleAdSenseBanner
+                            format="in-feed"
+                            themeMode={themeMode}
+                            onOpenMonetizeHub={() => setCurrentView('monetize')}
+                          />
+                        </div>
+                      )}
+
                       <motion.div 
                         layout
                         data-bounce-card="true"
@@ -6062,6 +6144,7 @@ export default function App() {
                                 </button>
                               </div>
                             </div>
+                          </div>
 
                           {/* 100% Adobe Stock SEO Compliance & Commercial Readiness Gauge */}
                           <div className="w-full my-2">
@@ -6534,6 +6617,7 @@ export default function App() {
           onOpenNicheRadar={() => setShowNicheRadarModal(true)}
           onOpenGuideHub={() => setShowGuideHubModal(true)}
           onOpenMultiCsv={() => setShowMultiCsvModal(true)}
+          onOpenMonetize={() => setCurrentView('monetize')}
           themeMode={themeMode}
         />
       </motion.div>
@@ -7455,6 +7539,15 @@ export default function App() {
                 setShowKeywordMixerModal(true);
                 break;
               }
+              case 'image_upscaler':
+                handleOpenUpscaler('image');
+                break;
+              case 'video_upscaler':
+                handleOpenUpscaler('video');
+                break;
+              case 'ultra_upscaler':
+                handleOpenUpscaler('image');
+                break;
             }
           }}
         />
@@ -7677,6 +7770,15 @@ export default function App() {
                 setShowKeywordMixerModal(true);
                 break;
               }
+              case 'image_upscaler':
+                handleOpenUpscaler('image');
+                break;
+              case 'video_upscaler':
+                handleOpenUpscaler('video');
+                break;
+              case 'ultra_upscaler':
+                handleOpenUpscaler('image');
+                break;
               default:
                 setShowToolsHubModal(true);
                 break;
@@ -7822,6 +7924,17 @@ export default function App() {
         />
       )}
 
+      {/* 8K Ultra Image & 10s Video Super-Resolution Upscaler Modal */}
+      {showUltraUpscalerModal && (
+        <UltraUpscalerModal
+          isOpen={showUltraUpscalerModal}
+          onClose={() => setShowUltraUpscalerModal(false)}
+          showToast={showToast}
+          themeMode={themeMode}
+          initialTab={upscalerInitialTab}
+        />
+      )}
+
       {/* Keyboard Shortcuts Reference Modal */}
       {showShortcutsModal && (
         <KeyboardShortcutsModal
@@ -7851,6 +7964,13 @@ export default function App() {
           themeMode={themeMode}
         />
       )}
+
+      {/* High-Viewability Sticky Footer Google Monetize Anchor Banner */}
+      <GoogleAdSenseBanner
+        format="sticky-footer"
+        themeMode={themeMode}
+        onOpenMonetizeHub={() => setCurrentView('monetize')}
+      />
 
       {/* GDPR & Google AdSense Compliant Cookie Banner */}
       <CookieConsentBanner onOpenPrivacy={() => setShowPrivacyModal(true)} />

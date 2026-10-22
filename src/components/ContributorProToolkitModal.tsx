@@ -197,7 +197,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
     };
     saveTrackerList([item, ...trackedItems]);
     setNewTrkFile('');
-    showToast(isBn ? 'ফাইলটি ট্র্যাকারে যুক্ত হয়েছে!' : 'File added to Upload Tracker!');
+    showToast('File added to Upload Tracker!');
   };
 
   // Parse Imported Adobe Stock / Agency Earnings CSV
@@ -234,9 +234,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
         saveTrackerList([...imported, ...trackedItems]);
         playChimeSound();
         showToast(
-          isBn
-            ? `${imported.length}টি ফাইলের আর্নিং ডেটা ইমপোর্ট হয়েছে!`
-            : `Imported ${imported.length} rows from Earnings CSV!`
+          `Imported ${imported.length} rows from Earnings CSV!`
         );
       }
     } catch {
@@ -265,9 +263,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
       URL.revokeObjectURL(url);
       playChimeSound();
       showToast(
-        isBn
-          ? 'আপনার ফাইলের ভেতর সরাসরি IPTC/XMP মেটাডেটা লিখে ডাউনলোড করা হয়েছে!'
-          : 'Embedded IPTC/XMP Title & Keywords directly into your file!'
+        'Embedded IPTC/XMP Title & Keywords directly into your file!'
       );
     } finally {
       setIsEmbedding(false);
@@ -286,7 +282,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
     a.click();
     URL.revokeObjectURL(url);
     playChimeSound();
-    showToast(isBn ? 'Adobe Bridge .xmp Sidecar ডাউনলোড হয়েছে!' : 'Downloaded Adobe Bridge .xmp Sidecar!');
+    showToast('Downloaded Adobe Bridge .xmp Sidecar!');
   };
 
   const kwAudit = calculateKeywordQualityScore(auditTitle, parsedKeywords);
@@ -334,23 +330,17 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
               <div>
                 <div className="flex items-center flex-wrap gap-2">
                   <h2 className="text-sm sm:text-base font-bold tracking-tight">
-                    {isBn
-                      ? 'কন্ট্রিবিউটর প্রো চেক ও আর্নিং টুলকিট'
-                      : 'Contributor Pre-Submission & Compliance Toolkit'}
+                    'Contributor Pre-Submission & Compliance Toolkit'
                   </h2>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-semibold flex items-center gap-1">
                     <Lock className="w-3 h-3" />
                     <span>
-                      {isBn
-                        ? 'আপনার ফাইল সার্ভারে যায় না, সব ব্রাউজারেই প্রসেস হয়'
-                        : '100% Local Browser Processing — Files Never Leave Your Device'}
+                      '100% Local Browser Processing — Files Never Leave Your Device'
                     </span>
                   </span>
                 </div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  {isBn
-                    ? 'আপলোডের আগে রিজেকশন রোধ, AI পলিসি গাইডলাইন, ফাইল মেটাডেটা এম্বেড এবং আর্নিং ট্র্যাকার'
-                    : 'Prevent rejections before uploading, verify generative AI disclosure rules, embed IPTC/XMP, and track earnings'}
+                  'Prevent rejections before uploading, verify generative AI disclosure rules, embed IPTC/XMP, and track earnings'
                 </p>
               </div>
             </div>
@@ -376,37 +366,31 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
               {
                 id: 'presubmit',
                 labelEn: '1. Pre-Submission Checker',
-                labelBn: '১. প্রি-সাবমিশন চেকার',
                 icon: ShieldCheck,
               },
               {
                 id: 'rejection',
                 labelEn: '2. Rejection Reason Helper',
-                labelBn: '২. রিজেকশন সমাধান হেল্পার',
                 icon: HelpCircle,
               },
               {
                 id: 'aidisclosure',
                 labelEn: '3. AI Content Disclosure Helper',
-                labelBn: '৩. AI ডিসক্লোজার গাইড',
                 icon: Sparkles,
               },
               {
                 id: 'kwscore',
                 labelEn: '4. Keyword Quality Score',
-                labelBn: '৪. কীওয়ার্ড কোয়ালিটি স্কোর',
                 icon: BarChart3,
               },
               {
                 id: 'embed',
                 labelEn: '5. Direct File IPTC/XMP Embed',
-                labelBn: '৫. ফাইলে মেটাডেটা এম্বেড (.xmp)',
                 icon: FileCode,
               },
               {
                 id: 'tracker',
                 labelEn: '6. Upload & Earnings CSV Tracker',
-                labelBn: '৬. আপলোড ও আর্নিং ট্র্যাকার',
                 icon: FileSpreadsheet,
               },
             ].map((t) => {
@@ -431,7 +415,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  <span>{isBn ? t.labelBn : t.labelEn}</span>
+                  <span>{t.labelEn}</span>
                 </button>
               );
             })}
@@ -449,7 +433,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
                   <div className="lg:col-span-5 space-y-1">
                     <div className="flex items-center justify-between text-xs font-bold">
-                      <span>{isBn ? 'আপনার ফাইলের টাইটেল (Title):' : 'Asset Title to Check / Embed:'}</span>
+                      <span>'Asset Title to Check / Embed:'</span>
                       <span
                         className={`font-mono text-[11px] ${
                           auditTitle.length <= 70 ? 'text-emerald-500' : 'text-amber-500'
@@ -473,9 +457,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                   <div className="lg:col-span-7 space-y-1">
                     <div className="flex items-center justify-between text-xs font-bold">
                       <span>
-                        {isBn
-                          ? 'কীওয়ার্ড তালিকা (কমা দিয়ে আলাদা করা):'
-                          : 'Keywords List (Comma-separated):'}
+                        'Keywords List (Comma-separated):'
                       </span>
                       <span className="font-mono text-[11px] text-emerald-500">
                         {parsedKeywords.length}/49 tags
@@ -509,14 +491,10 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="text-sm font-bold">
-                        {isBn
-                          ? 'আপলোডের আগে ৬-ধাপের ফাইল ও মেটাডেটা চেকার'
-                          : '6-Point Pre-Submission File & Metadata Inspector'}
+                        '6-Point Pre-Submission File & Metadata Inspector'
                       </h3>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {isBn
-                          ? 'ন্যূনতম 4MP রেজোলিউশন, ফাইল সাইজ, EPS/AI ভার্সন, টাইটেল দৈর্ঘ্য, ডুপ্লিকেট/বহুবচন কীওয়ার্ড, ট্রেডমার্ক শব্দ (Nike, Disney) এবং রিলিজ লাগবে কি না তা চেক করুন।'
-                          : 'Checks minimum 4MP resolution, file size, EPS/AI version, title length, duplicate/plural keywords, restricted trademarks (Nike, Disney, etc.), and Model/Property release requirements.'}
+                        'Checks minimum 4MP resolution, file size, EPS/AI version, title length, duplicate/plural keywords, restricted trademarks (Nike, Disney, etc.), and Model/Property release requirements.'
                       </p>
                     </div>
 
@@ -539,7 +517,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                         className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer"
                       >
                         <Upload className="w-4 h-4" />
-                        <span>{isBn ? 'আপনার ফাইল সিলেক্ট করে চেক করুন' : 'Select Your File to Check'}</span>
+                        <span>'Select Your File to Check'</span>
                       </button>
 
                       <button
@@ -552,7 +530,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                             : 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-neutral-200'
                         }`}
                       >
-                        {isBn ? 'টাইটেল ও কীওয়ার্ড এখনই চেক করুন' : 'Check Title & Keywords Now'}
+                        'Check Title & Keywords Now'
                       </button>
                     </div>
                   </div>
@@ -591,14 +569,12 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                               setAuditKeywordsInput(preSubReport.cleanedKeywords.join(', '));
                               handleRunPreSubCheck(null);
                               showToast(
-                                isBn
-                                  ? 'ডুপ্লিকেট ও ট্রেডমার্ক শব্দগুলো ক্লিন করা হয়েছে!'
-                                  : 'Removed duplicate/plural & trademark keywords!'
+                                'Removed duplicate/plural & trademark keywords!'
                               );
                             }}
                             className="px-3.5 py-1.5 rounded-lg bg-amber-500 text-black font-bold text-xs cursor-pointer"
                           >
-                            {isBn ? '১-ক্লিকে ডুপ্লিকেট ও ট্রেডমার্ক মুছুন' : '1-Click Clean Duplicates & Trademarks'}
+                            '1-Click Clean Duplicates & Trademarks'
                           </button>
                         )}
                       </div>
@@ -616,10 +592,10 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                           >
                             <div className="space-y-1">
                               <div className="text-xs font-bold">
-                                {isBn ? chk.labelBn : chk.labelEn}
+                                {chk.labelEn}
                               </div>
                               <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                                {isBn ? chk.detailBn : chk.detailEn}
+                                {chk.detailEn}
                               </p>
                             </div>
                             <span
@@ -639,9 +615,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                     </div>
                   ) : (
                     <div className="p-6 text-center text-xs text-neutral-500 border border-dashed border-neutral-300 dark:border-neutral-800 rounded-xl">
-                      {isBn
-                        ? 'ওপরের "আপনার ফাইল সিলেক্ট করে চেক করুন" বা "টাইটেল ও কীওয়ার্ড এখনই চেক করুন" বাটনে ক্লিক করুন।'
-                        : 'Click "Select Your File to Check" or "Check Title & Keywords Now" above to run the 6-point pre-submission audit.'}
+                      Click "Select Your File to Check" or "Check Title &amp; Keywords Now" above to run the 6-point pre-submission audit.
                     </div>
                   )}
                 </div>
@@ -660,14 +634,10 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                 >
                   <div>
                     <h3 className="text-sm font-bold">
-                      {isBn
-                        ? 'Adobe Stock রিজেকশন কারণ ও সমাধান গাইড'
-                        : 'Adobe Stock Rejection Reason Diagnostic & Fix Helper'}
+                      'Adobe Stock Rejection Reason Diagnostic & Fix Helper'
                     </h3>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {isBn
-                        ? 'আপনার ফাইল কোন কারণে রিজেক্ট হয়েছে তা নিচে সিলেক্ট করুন—কেন হয়েছে এবং কীভাবে ঠিক করে আবার আপলোড করবেন তা জেনে নিন।'
-                        : 'Select the rejection reason you received from Adobe Stock to see exactly why it happened and step-by-step instructions to fix it.'}
+                      'Select the rejection reason you received from Adobe Stock to see exactly why it happened and step-by-step instructions to fix it.'
                     </p>
                   </div>
 
@@ -690,7 +660,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                               : 'bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-neutral-700'
                           }`}
                         >
-                          {isBn ? g.reasonTitleBn : g.reasonTitleEn}
+                          {g.reasonTitleEn}
                         </button>
                       );
                     })}
@@ -700,7 +670,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                     const guide =
                       REJECTION_REMEDY_GUIDES.find((g) => g.id === selectedRejectionId) ||
                       REJECTION_REMEDY_GUIDES[0];
-                    const steps = isBn ? guide.howToFixStepsBn : guide.howToFixStepsEn;
+                    const steps = guide.howToFixStepsEn;
                     return (
                       <div
                         className={`p-4 rounded-xl border space-y-3 ${
@@ -708,23 +678,21 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                         }`}
                       >
                         <div className="text-sm font-bold text-amber-500">
-                          {isBn ? guide.reasonTitleBn : guide.reasonTitleEn}
+                          {guide.reasonTitleEn}
                         </div>
 
                         <div className="space-y-1">
                           <div className="text-xs font-bold">
-                            {isBn ? 'কেন এই রিজেকশন হয়?' : 'Why Reviewers Reject for This Reason:'}
+                            'Why Reviewers Reject for This Reason:'
                           </div>
                           <p className="text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                            {isBn ? guide.whyItHappensBn : guide.whyItHappensEn}
+                            {guide.whyItHappensEn}
                           </p>
                         </div>
 
                         <div className="space-y-1.5 pt-1">
                           <div className="text-xs font-bold text-emerald-500">
-                            {isBn
-                              ? 'কীভাবে ঠিক করবেন (Step-by-Step Fix):'
-                              : 'How to Fix It Before Re-Submitting:'}
+                            'How to Fix It Before Re-Submitting:'
                           </div>
                           <ul className="space-y-1.5 text-xs">
                             {steps.map((st, idx) => (
@@ -737,7 +705,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                         </div>
 
                         <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 text-xs font-semibold text-amber-600 dark:text-amber-400">
-                          💡 {isBn ? guide.preUploadChecklistBn : guide.preUploadChecklistEn}
+                          💡 {guide.preUploadChecklistEn}
                         </div>
                       </div>
                     );
@@ -759,14 +727,10 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="text-sm font-bold">
-                        {isBn
-                          ? 'Generative AI Content Disclosure ও পলিসি গাইডলাইন'
-                          : 'Generative AI Content Disclosure & Policy Sanitizer'}
+                        'Generative AI Content Disclosure & Policy Sanitizer'
                       </h3>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {isBn
-                          ? 'আপনি যদি AI দিয়ে তৈরি ফাইল আপলোড করেন, তবে Adobe Stock-এর অফিশিয়াল নিয়ম অনুযায়ী কোন ফ্ল্যাগ দেবেন এবং টাইটেল/কীওয়ার্ডে কী রাখা যাবে তা এখানে প্রস্তুত করুন।'
-                          : 'Ensures your AI-generated assets follow official Adobe Stock & Shutterstock Generative AI disclosure rules and strips forbidden prompt/artist/brand terms.'}
+                        'Ensures your AI-generated assets follow official Adobe Stock & Shutterstock Generative AI disclosure rules and strips forbidden prompt/artist/brand terms.'
                       </p>
                     </div>
 
@@ -777,16 +741,12 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                         setAuditKeywordsInput(aiSanitized.compliantKeywords.join(', '));
                         playChimeSound();
                         showToast(
-                          isBn
-                            ? 'টাইটেল ও কীওয়ার্ড AI পলিসি অনুযায়ী ক্লিন করা হয়েছে!'
-                            : 'Sanitized Title & Keywords for Generative AI Policy compliance!'
+                          'Sanitized Title & Keywords for Generative AI Policy compliance!'
                         );
                       }}
                       className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs cursor-pointer"
                     >
-                      {isBn
-                        ? '১-ক্লিকে টাইটেল ও কীওয়ার্ড AI পলিসি অনুযায়ী ক্লিন করুন'
-                        : '1-Click Sanitize Title & Keywords for AI Policy'}
+                      '1-Click Sanitize Title & Keywords for AI Policy'
                     </button>
                   </div>
 
@@ -798,9 +758,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                       }`}
                     >
                       <div className="font-bold text-emerald-500 uppercase">
-                        {isBn
-                          ? 'Adobe Stock পোর্টালে যা সিলেক্ট করবেন:'
-                          : 'Required Adobe Stock Contributor Portal Settings:'}
+                        'Required Adobe Stock Contributor Portal Settings:'
                       </div>
 
                       <label className="flex items-center gap-2.5 cursor-pointer font-semibold">
@@ -817,7 +775,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
 
                       <div className="flex items-center gap-3 pt-1">
                         <span className="text-neutral-500">
-                          {isBn ? 'ফাইলের ধরন (Category Type):' : 'Recommended Asset Type:'}
+                          'Recommended Asset Type:'
                         </span>
                         <button
                           type="button"
@@ -851,9 +809,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                           className="w-4 h-4 accent-amber-500"
                         />
                         <span>
-                          {isBn
-                            ? 'ছবিতে রিয়েলিস্টিক মানুষের মুখ আছে (থাকলে Property Release দিতে হবে)'
-                            : 'Depicts a realistic human face (Requires Generative AI Property Release)'}
+                          'Depicts a realistic human face (Requires Generative AI Property Release)'
                         </span>
                       </label>
                     </div>
@@ -864,12 +820,10 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                       }`}
                     >
                       <div className="font-bold text-amber-500 uppercase">
-                        {isBn ? 'অফিশিয়াল জেনারেটিভ AI নিয়মাবলী:' : 'Official Generative AI Submission Rules:'}
+                        'Official Generative AI Submission Rules:'
                       </div>
                       <ul className="space-y-1.5">
-                        {(isBn
-                          ? aiSanitized.checklistGuidelinesBn
-                          : aiSanitized.checklistGuidelinesEn
+                        {(aiSanitized.checklistGuidelinesEn
                         ).map((rule, idx) => (
                           <li key={idx} className="flex items-start gap-2">
                             <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
@@ -896,14 +850,10 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="text-sm font-bold">
-                        {isBn
-                          ? 'কীওয়ার্ড কোয়ালিটি স্কোর ও প্রাসঙ্গিকতা অডিটর'
-                          : 'Keyword Quality Score & Title Relevance Auditor'}
+                        'Keyword Quality Score & Title Relevance Auditor'
                       </h3>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {isBn
-                          ? 'কীওয়ার্ডগুলো আপনার টাইটেলের সাথে কতটা প্রাসঙ্গিক তা স্কোর করে দেখায় এবং অপ্রাসঙ্গিক বা নিষিদ্ধ শব্দ থাকলে সতর্ক করে।'
-                          : 'Scores how strongly your keywords align with your Title subject, warns about irrelevant or forbidden tags, and prioritizes your Top-10 slots.'}
+                        'Scores how strongly your keywords align with your Title subject, warns about irrelevant or forbidden tags, and prioritizes your Top-10 slots.'
                       </p>
                     </div>
 
@@ -914,14 +864,12 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                           setAuditKeywordsInput(kwAudit.cleanedOptimized49.join(', '));
                           playChimeSound();
                           showToast(
-                            isBn
-                              ? 'অপ্রাসঙ্গিক শব্দ মুছে Top-10 স্লট সাজানো হয়েছে!'
-                              : 'Removed warnings and reordered Top-10 relevant keywords!'
+                            'Removed warnings and reordered Top-10 relevant keywords!'
                           );
                         }}
                         className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs cursor-pointer"
                       >
-                        {isBn ? '১-ক্লিকে অপ্রাসঙ্গিক শব্দ মুছে সাজান' : '1-Click Clean & Optimize Top-10 Order'}
+                        '1-Click Clean & Optimize Top-10 Order'
                       </button>
 
                       <button
@@ -940,7 +888,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                         ) : (
                           <Copy className="w-3.5 h-3.5" />
                         )}
-                        <span>{isBn ? 'কপি করুন' : 'Copy Clean Tags'}</span>
+                        <span>'Copy Clean Tags'</span>
                       </button>
                     </div>
                   </div>
@@ -953,7 +901,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                       }`}
                     >
                       <div className="text-neutral-500 uppercase text-[10px]">
-                        {isBn ? 'কীওয়ার্ড কোয়ালিটি স্কোর' : 'KEYWORD QUALITY SCORE'}
+                        'KEYWORD QUALITY SCORE'
                       </div>
                       <div className="text-xl font-black text-emerald-500 mt-0.5">
                         {kwAudit.overallScore}/100
@@ -966,7 +914,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                       }`}
                     >
                       <div className="text-neutral-500 uppercase text-[10px]">
-                        {isBn ? 'টাইটেল ও প্রথম ১০ ট্যাগের মিল' : 'TITLE-TO-TOP-10 ALIGNMENT'}
+                        'TITLE-TO-TOP-10 ALIGNMENT'
                       </div>
                       <div className="text-xl font-black text-amber-500 mt-0.5">
                         {kwAudit.top10CorrelationPct}%
@@ -979,7 +927,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                       }`}
                     >
                       <div className="text-neutral-500 uppercase text-[10px]">
-                        {isBn ? 'সতর্কতা / অপ্রাসঙ্গিক শব্দ' : 'WARNINGS / IRRELEVANT TAGS'}
+                        'WARNINGS / IRRELEVANT TAGS'
                       </div>
                       <div className="text-xl font-black mt-0.5">
                         {kwAudit.irrelevantWarnings.length + kwAudit.duplicateWarnings.length}
@@ -991,15 +939,13 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                   {kwAudit.irrelevantWarnings.length > 0 && (
                     <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 space-y-1.5 text-xs">
                       <div className="font-bold text-red-500">
-                        {isBn
-                          ? 'নিচের শব্দগুলো পলিসি ভঙ্গ বা রিজেকশন ঘটাতে পারে:'
-                          : 'Flagged Irrelevant or Policy-Violating Keywords:'}
+                        'Flagged Irrelevant or Policy-Violating Keywords:'
                       </div>
                       {kwAudit.irrelevantWarnings.map((w, i) => (
                         <div key={i} className="flex items-center gap-2">
                           <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
                           <span>
-                            <strong>{w.keyword}</strong> — {isBn ? w.reasonBn : w.reasonEn}
+                            <strong>{w.keyword}</strong> — {w.reasonEn}
                           </span>
                         </div>
                       ))}
@@ -1009,9 +955,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                   {/* Top-10 Priority Preview */}
                   <div className="space-y-2">
                     <div className="text-xs font-bold">
-                      {isBn
-                        ? 'আপনার অপ্টিমাইজড কীওয়ার্ড তালিকা (প্রথম ১০টি ট্যাগ নীল/সবুজ বর্ডারে হাইলাইট করা):'
-                        : 'Optimized Keyword Order (First 10 Priority Slots Highlighted):'}
+                      'Optimized Keyword Order (First 10 Priority Slots Highlighted):'
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {kwAudit.cleanedOptimized49.map((kw, idx) => (
@@ -1046,14 +990,10 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                 >
                   <div>
                     <h3 className="text-sm font-bold">
-                      {isBn
-                        ? 'নিজের ফাইলে সরাসরি IPTC/XMP মেটাডেটা এম্বেড এবং Bridge .xmp Sidecar'
-                        : 'Direct In-Browser IPTC/XMP File Embedder & Adobe Bridge .xmp Generator'}
+                      'Direct In-Browser IPTC/XMP File Embedder & Adobe Bridge .xmp Generator'
                     </h3>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {isBn
-                        ? 'আপনার JPG/PNG বা EPS ভেক্টর ফাইলের ভেতর সরাসরি টাইটেল ও ৪৯টি কীওয়ার্ড লিখে নিন, যাতে Adobe Stock বা Shutterstock-এ আপলোড করার সাথে সাথে অটোমেটিক টাইটেল ও ট্যাগ বসে যায়!'
-                        : 'Writes your Title and 49 Keywords directly into your JPEG/PNG (EXIF/IPTC) or EPS vector (PostScript DSC + XMP packet), or exports a standalone Adobe Bridge .xmp sidecar.'}
+                      'Writes your Title and 49 Keywords directly into your JPEG/PNG (EXIF/IPTC) or EPS vector (PostScript DSC + XMP packet), or exports a standalone Adobe Bridge .xmp sidecar.'
                     </p>
                   </div>
 
@@ -1082,8 +1022,6 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                       <span>
                         {embedFile
                           ? `${embedFile.name} (${(embedFile.size / 1024).toFixed(1)} KB)`
-                          : isBn
-                          ? '১. আপনার JPG / PNG / EPS ফাইল সিলেক্ট করুন'
                           : '1. Select Your JPG / PNG / EPS File'}
                       </span>
                     </button>
@@ -1096,9 +1034,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                     >
                       <Download className="w-4 h-4" />
                       <span>
-                        {isBn
-                          ? '২. মেটাডেটা এম্বেড করা ফাইল ডাউনলোড করুন'
-                          : '2. Download File with Embedded IPTC/XMP'}
+                        '2. Download File with Embedded IPTC/XMP'
                       </span>
                     </button>
 
@@ -1109,7 +1045,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                     >
                       <FileCode className="w-4 h-4" />
                       <span>
-                        {isBn ? 'Adobe Bridge .xmp Sidecar ডাউনলোড' : 'Download Adobe Bridge .xmp Sidecar'}
+                        'Download Adobe Bridge .xmp Sidecar'
                       </span>
                     </button>
                   </div>
@@ -1130,14 +1066,10 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="text-sm font-bold">
-                        {isBn
-                          ? 'আপলোড স্ট্যাটাস ও আর্নিং CSV ট্র্যাকার'
-                          : 'Contributor Upload Status & Earnings CSV Analytics'}
+                        'Contributor Upload Status & Earnings CSV Analytics'
                       </h3>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {isBn
-                          ? 'কোন ফাইল Submitted, Approved বা Rejected তা ট্র্যাক করুন এবং আর্নিং CSV ইমপোর্ট করে দেখুন কোন টপিকে সবচেয়ে বেশি সেল হচ্ছে।'
-                          : 'Track which files are Submitted, Approved, or Rejected, or import your earnings CSV to see which topics generate the highest revenue.'}
+                        'Track which files are Submitted, Approved, or Rejected, or import your earnings CSV to see which topics generate the highest revenue.'
                       </p>
                     </div>
 
@@ -1158,7 +1090,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                       className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer"
                     >
                       <FileSpreadsheet className="w-4 h-4" />
-                      <span>{isBn ? 'আর্নিং CSV ইমপোর্ট করুন' : 'Import Adobe/Agency Earnings CSV'}</span>
+                      <span>'Import Adobe/Agency Earnings CSV'</span>
                     </button>
                   </div>
 
@@ -1168,7 +1100,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                       type="text"
                       value={newTrkFile}
                       onChange={(e) => setNewTrkFile(e.target.value)}
-                      placeholder={isBn ? 'ফাইলের নাম (যেমন vector_05.eps)' : 'Filename (e.g. vector_05.eps)'}
+                      placeholder='Filename (e.g. vector_05.eps)'
                       className={`sm:col-span-4 rounded-xl border px-3 py-2 text-xs ${
                         isLight ? 'bg-[#fbfaf8] border-neutral-300' : 'bg-neutral-950 border-neutral-800'
                       }`}
@@ -1177,7 +1109,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                       type="text"
                       value={newTrkTopic}
                       onChange={(e) => setNewTrkTopic(e.target.value)}
-                      placeholder={isBn ? 'টপিক বা নিশ' : 'Topic / Niche'}
+                      placeholder='Topic / Niche'
                       className={`sm:col-span-4 rounded-xl border px-3 py-2 text-xs ${
                         isLight ? 'bg-[#fbfaf8] border-neutral-300' : 'bg-neutral-950 border-neutral-800'
                       }`}
@@ -1199,7 +1131,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                       className="sm:col-span-2 px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>{isBn ? 'যোগ করুন' : 'Add File'}</span>
+                      <span>'Add File'</span>
                     </button>
                   </div>
 
@@ -1216,7 +1148,7 @@ export const ContributorProToolkitModal: React.FC<ContributorProToolkitModalProp
                           }`}
                         >
                           <div className="text-[10px] text-neutral-500 uppercase">
-                            {isBn ? 'টপ আর্নিং টপিক' : 'TOP PERFORMING TOPIC'}
+                            'TOP PERFORMING TOPIC'
                           </div>
                           <div className="font-bold truncate mt-0.5">{topic}</div>
                           <div className="flex items-center justify-between mt-1.5 text-emerald-500 font-bold">

@@ -117,7 +117,27 @@ export interface BulkItem {
   };
 }
 
+export interface DistinctPromptVariation {
+  id: string;
+  archetype: string;
+  compositionTag: string;
+  cameraSpecs: string;
+  midjourneyPrompt: string;
+  nanoBananaPrompt: string;
+  chatGptPrompt: string;
+  fireflyPrompt: string;
+  fluxPrompt: string;
+  negativePrompt: string;
+  distinctTitle: string;
+  distinctKeywords: string[];
+  customerUseCase: string;
+  similarityRiskScore: number;
+  differentiationNote: string;
+}
+
 export interface StockPromptResult {
+  concept?: string;
+  primarySubject?: string;
   midjourneyPrompt: string;
   fireflyPrompt: string;
   fluxPrompt: string;
@@ -125,6 +145,8 @@ export interface StockPromptResult {
   commercialTips: string;
   suggestedTitle: string;
   suggestedKeywords: string[];
+  distinctVariations?: DistinctPromptVariation[];
+  similarityDefenseSummary?: string;
 }
 
 export interface SeasonalDeadline {
