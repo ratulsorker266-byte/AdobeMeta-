@@ -571,11 +571,13 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
             <button
               onClick={() => onNavigateView('upload')}
-              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 ${
-                isLight ? 'text-neutral-500 hover:text-black' : 'text-zinc-400 hover:text-white'
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 flex items-center gap-1.5 ${
+                isLight ? 'text-amber-800 font-bold' : 'text-amber-300 hover:text-amber-200 font-bold'
               }`}
+              title="Suno Custom Studio Mode (suno.com/create?mode=CUSTOM)"
             >
-              <span>Studio</span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Create (Custom)</span>
             </button>
 
             <button
@@ -918,10 +920,11 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               className={`text-[12px] font-bold tracking-[0.02em] px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl hidden sm:flex items-center gap-1.5 cursor-pointer whitespace-nowrap group shrink-0 transition-all duration-200 ${
                 isLight
                   ? 'bg-neutral-950 hover:bg-black text-white shadow-sm'
-                  : 'cyan-glow-button'
+                  : 'bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-extrabold shadow-[0_0_20px_rgba(245,158,11,0.35)]'
               }`}
             >
-              <span className="transition-transform duration-200 group-hover:-translate-x-0.5">Open Studio</span>
+              <Sparkles className="w-3.5 h-3.5 text-black" />
+              <span className="transition-transform duration-200 group-hover:-translate-x-0.5">Create ⚡ (Custom)</span>
               <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
             </button>
 
@@ -1064,6 +1067,22 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   <DollarSign className="w-4 h-4 text-emerald-400" />
                   <span>Monetize Hub</span>
                 </button>
+
+                {onOpenUpscaler && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMobileNav(false);
+                      onOpenUpscaler('image');
+                    }}
+                    className={`p-2.5 rounded-xl text-left border flex items-center gap-2 cursor-pointer transition ${
+                      isLight ? 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-900' : 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30 text-amber-300'
+                    }`}
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>8K Upscaler Studio (Photo &amp; Video)</span>
+                  </button>
+                )}
               </div>
 
               <div className="pt-2 border-t border-neutral-200/70 dark:border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -1352,6 +1371,36 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
               {/* Clean Directional Quick-Launch Links (Minimalist Editorial Typography) */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => onNavigateView('upload')}
+                  className={`lumina-directional-link cursor-pointer gap-1.5 font-bold ${
+                    isLight ? 'text-amber-800 hover:text-amber-900' : 'text-amber-300 hover:text-amber-200'
+                  }`}
+                  title="Launch Suno Custom Studio (suno.com/create?mode=CUSTOM)"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Suno Custom Studio (?mode=CUSTOM)</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 opacity-90" />
+                </button>
+                <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
+                {onOpenUpscaler && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onOpenUpscaler('image')}
+                      className={`lumina-directional-link cursor-pointer gap-1.5 font-bold ${
+                        isLight ? 'text-amber-700 hover:text-amber-900' : 'text-amber-300 hover:text-amber-200'
+                      }`}
+                      title="Launch 8K Ultra-HD Image & Video Super-Resolution Studio (100% Free)"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>8K Ultra Upscaler (Photo & Video)</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 opacity-90" />
+                    </button>
+                    <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
+                  </>
+                )}
                 {onOpenMultiCsv && (
                   <>
                     <button
@@ -1785,10 +1834,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <div className="flex flex-wrap items-center gap-2">
               {[
-                { id: 'all', label: 'All Modules (08)' },
-                { id: 'metadata', label: 'Metadata & SEO (03)' },
-                { id: 'creative', label: 'Calendar & Prompts (03)' },
-                { id: 'monetize', label: 'Royalty & CSV (02)' },
+                { id: 'all', label: 'All Modules (10)' },
+                { id: 'metadata', label: 'Metadata & 8K Image (03)' },
+                { id: 'creative', label: 'Calendar & 8K Video (04)' },
+                { id: 'monetize', label: 'Royalty & 7-CSV (03)' },
               ].map((tab) => {
                 const isActive = activeDepartment === tab.id;
                 return (

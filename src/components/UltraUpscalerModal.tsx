@@ -183,6 +183,9 @@ export const UltraUpscalerModal: React.FC<UltraUpscalerModalProps> = ({
   const [activeItemIndex, setActiveItemIndex] = useState<number>(0);
   const [isProcessingBatch, setIsProcessingBatch] = useState<boolean>(false);
   const [splitSliderPos, setSplitSliderPos] = useState<number>(50); // 0 to 100%
+  const [comparisonMode, setComparisonMode] = useState<'split' | 'side' | 'upscaled' | 'original'>('split');
+  const [zoomLevel, setZoomLevel] = useState<'fit' | '100' | '200'>('fit');
+  const [denoiseSmooth, setDenoiseSmooth] = useState<number>(0.15); // 0 to 0.6
 
   // Batch Video State
   const [batchVideos, setBatchVideos] = useState<BatchVideoItem[]>([]);
@@ -825,15 +828,62 @@ export const UltraUpscalerModal: React.FC<UltraUpscalerModalProps> = ({
   };
 
   const handleDownloadSingle = (item: BatchImageItem) => {
+    handleDownloadSingleFormat(item, 'jpg');
+  };
+
+  const handleDownloadSingleFormat = async (item: BatchImageItem, format: 'jpg' | 'png' | 'webp' = 'jpg') => {
     if (!item.upscaledUrl) return;
     const baseName = item.file.name.replace(/\.[^/.]+$/, '');
-    const a = document.createElement('a');
-    a.href = item.upscaledUrl;
-    a.download = `${baseName}_${targetRes}_${item.targetWidth}x${item.targetHeight}_300DPI.jpg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    showToast(`✓ Downloaded ${targetRes} image!`);
+
+    if (format === 'jpg' && item.upscaledBlob) {
+      const a = document.createElement('a');
+      a.href = item.upscaledUrl;
+      a.download = `${baseName}_${targetRes}_${item.targetWidth}x${item.targetHeight}_300DPI.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast(`✓ Downloaded ${targetRes} 300 DPI JPG!`);
+      return;
+    }
+
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0);
+        const mime = format === 'png' ? 'image/png' : 'image/webp';
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${baseName}_${targetRes}_${item.targetWidth}x${item.targetHeight}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`✓ Downloaded ${targetRes} ${format.toUpperCase()}!`);
+          },
+          mime,
+          format === 'webp' ? 0.95 : undefined
+        );
+      };
+      img.src = item.upscaledUrl;
+    } catch (_) {
+      const a = document.createElement('a');
+      a.href = item.upscaledUrl;
+      a.download = `${baseName}_${targetRes}_${item.targetWidth}x${item.targetHeight}_300DPI.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast(`✓ Downloaded ${targetRes} image!`);
+    }
   };
 
   // ============================================================================
@@ -1166,7 +1216,7 @@ export const UltraUpscalerModal: React.FC<UltraUpscalerModalProps> = ({
         exit={{ opacity: 0, scale: 0.96, y: 14 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         className={`w-full max-w-6xl max-h-[94vh] rounded-[32px] border flex flex-col overflow-hidden sovereign-prism-card shadow-2xl ${
-          isLight ? 'bg-[#fcfbf9] border-neutral-200/90 text-neutral-900' : 'bg-[#090b10] border-white/10 text-white'
+          isLight ? 'bg-[#fcfbf9] border-neutral-200/90 text-neutral-900' : 'bg-[#06070a] border-white/15 text-white shadow-[0_25px_80px_rgba(0,0,0,0.95)] ring-1 ring-white/[0.08]'
         }`}
       >
         {/* ============================================================ */}
@@ -1473,12 +1523,12 @@ export const UltraUpscalerModal: React.FC<UltraUpscalerModalProps> = ({
                     })}
                   </div>
 
-                  {/* ACTIVE ITEM INTERACTIVE BEFORE / AFTER SLIDER */}
+                  {/* ACTIVE ITEM INTERACTIVE BEFORE / AFTER SLIDER & WORKSTATION CANVAS */}
                   {currentItem && (
                     <div className={`p-6 rounded-[28px] border space-y-4 ${
-                      isLight ? 'bg-white border-neutral-200/90 shadow-sm' : 'bg-neutral-950 border-neutral-800'
+                      isLight ? 'bg-white border-neutral-200/90 shadow-sm' : 'bg-[#0a0c12] border-white/10 shadow-2xl ring-1 ring-white/[0.04]'
                     }`}>
-                      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-neutral-200/80 dark:border-neutral-800">
+                      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-neutral-200/80 dark:border-white/10">
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-bold truncate max-w-xs sm:max-w-md">
@@ -1495,83 +1545,213 @@ export const UltraUpscalerModal: React.FC<UltraUpscalerModalProps> = ({
                             </span>
                           </div>
                           <div className="text-xs text-neutral-400 font-mono mt-0.5">
-                            Original: {currentItem.originalWidth} × {currentItem.originalHeight} px → Output: {currentItem.targetWidth || spec.width} × {currentItem.targetHeight || spec.height} px (300 DPI)
+                            Original: {currentItem.originalWidth} × {currentItem.originalHeight} px → Output: {currentItem.targetWidth || spec.width} × {currentItem.targetHeight || spec.height} px ({spec.megapixels} · 300 DPI Print Certified)
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        {/* View Modes & Multi-Format Download Bar */}
+                        <div className="flex flex-wrap items-center gap-2">
                           {currentItem.status === 'done' && (
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadSingle(currentItem)}
-                              className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>Download {targetRes} (300 DPI)</span>
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadSingleFormat(currentItem, 'jpg')}
+                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                                title="Download Adobe Stock & Shutterstock Certified 300 DPI JPEG"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>300 DPI JPG</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadSingleFormat(currentItem, 'png')}
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                                  isLight ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-300 text-neutral-800' : 'bg-white/10 hover:bg-white/20 border-white/15 text-white'
+                                }`}
+                                title="Download Lossless High-Fidelity PNG"
+                              >
+                                <span>PNG</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadSingleFormat(currentItem, 'webp')}
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                                  isLight ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-300 text-neutral-800' : 'bg-white/10 hover:bg-white/20 border-white/15 text-white'
+                                }`}
+                                title="Download WebP High-Compression Master"
+                              >
+                                <span>WebP</span>
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
 
-                      {/* Before / After Canvas Display */}
-                      <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-neutral-900 border border-white/10 select-none">
-                        {/* Original Image (Left Background) */}
-                        <img
-                          src={currentItem.previewUrl}
-                          alt="Original"
-                          className="absolute inset-0 w-full h-full object-contain filter blur-[0.4px]"
-                        />
-
-                        {/* Upscaled Image Overlay with Clip Path */}
-                        {currentItem.upscaledUrl && (
-                          <div
-                            className="absolute inset-0 overflow-hidden"
-                            style={{ clipPath: `inset(0 0 0 ${splitSliderPos}%)` }}
-                          >
-                            <img
-                              src={currentItem.upscaledUrl}
-                              alt="Upscaled 8K"
-                              className="absolute inset-0 w-full h-full object-contain"
-                            />
-                          </div>
-                        )}
-
-                        {/* Split Divider Handle */}
-                        {currentItem.upscaledUrl && (
-                          <div
-                            className="absolute top-0 bottom-0 w-1 bg-white shadow-xl cursor-ew-resize flex items-center justify-center z-20"
-                            style={{ left: `${splitSliderPos}%` }}
-                          >
-                            <div className="w-7 h-7 rounded-full bg-white text-black text-[9px] font-bold flex items-center justify-center shadow-lg uppercase font-mono">
-                              VS
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Split Drag Range Slider (Invisible Overlay) */}
-                        {currentItem.upscaledUrl && (
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={splitSliderPos}
-                            onChange={(e) => setSplitSliderPos(Number(e.target.value))}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30"
-                          />
-                        )}
-
-                        {/* Bottom Tag Badges */}
-                        <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md text-[10px] font-mono text-white/90 z-10 border border-white/10">
-                          ORIGINAL ({currentItem.originalWidth}×{currentItem.originalHeight})
+                      {/* View Mode & Zoom Loupe Toolbar */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 pb-1">
+                        <div className={`p-1 rounded-xl border flex items-center gap-1 text-[11px] font-mono ${
+                          isLight ? 'bg-neutral-100 border-neutral-200' : 'bg-black/50 border-white/10'
+                        }`}>
+                          {([
+                            { id: 'split', label: 'Split Slider' },
+                            { id: 'side', label: 'Side by Side' },
+                            { id: 'upscaled', label: `${targetRes} Upscaled` },
+                            { id: 'original', label: 'Original' }
+                          ] as const).map((m) => (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => setComparisonMode(m.id)}
+                              className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                                comparisonMode === m.id
+                                  ? (isLight ? 'bg-white text-black font-bold shadow-xs' : 'bg-white/20 text-white font-bold')
+                                  : 'text-neutral-400 hover:text-white'
+                              }`}
+                            >
+                              {m.label}
+                            </button>
+                          ))}
                         </div>
-                        <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-emerald-600/90 backdrop-blur-md text-[10px] font-mono text-white font-bold z-10 border border-white/20">
-                          {targetRes} ULTRA-HD ({currentItem.targetWidth || spec.width}×{currentItem.targetHeight || spec.height} · 300 DPI)
+
+                        <div className={`p-1 rounded-xl border flex items-center gap-1 text-[11px] font-mono ${
+                          isLight ? 'bg-neutral-100 border-neutral-200' : 'bg-black/50 border-white/10'
+                        }`}>
+                          <span className="text-[10px] text-neutral-500 px-1.5 uppercase">Loupe:</span>
+                          {([
+                            { id: 'fit', label: 'Fit' },
+                            { id: '100', label: '100% (1:1)' },
+                            { id: '200', label: '200% 2×' }
+                          ] as const).map((z) => (
+                            <button
+                              key={z.id}
+                              type="button"
+                              onClick={() => setZoomLevel(z.id)}
+                              className={`px-2 py-0.5 rounded-lg transition cursor-pointer ${
+                                zoomLevel === z.id
+                                  ? (isLight ? 'bg-white text-black font-bold shadow-xs' : 'bg-amber-400 text-black font-bold')
+                                  : 'text-neutral-400 hover:text-white'
+                              }`}
+                            >
+                              {z.label}
+                            </button>
+                          ))}
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs text-neutral-400 font-mono">
-                        <span>← Drag divider left/right to compare pixel clarity</span>
-                        <span>Multi-Pass Progressive Super-Resolution + CAS Edge Sharpening</span>
+                      {/* Interactive Canvas Display */}
+                      <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-[#050608] border border-white/10 select-none flex items-center justify-center">
+                        <div
+                          className={`w-full h-full relative transition-transform duration-200 flex items-center justify-center ${
+                            zoomLevel === '100' ? 'scale-[1.35] cursor-grab' : zoomLevel === '200' ? 'scale-[2.0] cursor-grab' : 'scale-100'
+                          }`}
+                        >
+                          {/* MODE 1: SPLIT SLIDER */}
+                          {comparisonMode === 'split' && (
+                            <>
+                              <img
+                                src={currentItem.previewUrl}
+                                alt="Original"
+                                className="absolute inset-0 w-full h-full object-contain filter blur-[0.4px]"
+                              />
+
+                              {currentItem.upscaledUrl && (
+                                <div
+                                  className="absolute inset-0 overflow-hidden"
+                                  style={{ clipPath: `inset(0 0 0 ${splitSliderPos}%)` }}
+                                >
+                                  <img
+                                    src={currentItem.upscaledUrl}
+                                    alt="Upscaled 8K"
+                                    className="absolute inset-0 w-full h-full object-contain"
+                                  />
+                                </div>
+                              )}
+
+                              {currentItem.upscaledUrl && (
+                                <div
+                                  className="absolute top-0 bottom-0 w-1 bg-white shadow-2xl cursor-ew-resize flex items-center justify-center z-20"
+                                  style={{ left: `${splitSliderPos}%` }}
+                                >
+                                  <div className="w-7 h-7 rounded-full bg-white text-black text-[9px] font-bold flex items-center justify-center shadow-lg uppercase font-mono ring-2 ring-black/40">
+                                    VS
+                                  </div>
+                                </div>
+                              )}
+
+                              {currentItem.upscaledUrl && (
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="100"
+                                  value={splitSliderPos}
+                                  onChange={(e) => setSplitSliderPos(Number(e.target.value))}
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30"
+                                />
+                              )}
+                            </>
+                          )}
+
+                          {/* MODE 2: SIDE BY SIDE 50/50 */}
+                          {comparisonMode === 'side' && (
+                            <div className="w-full h-full grid grid-cols-2 divide-x divide-white/10">
+                              <div className="relative w-full h-full flex items-center justify-center bg-black/30 p-2">
+                                <img
+                                  src={currentItem.previewUrl}
+                                  alt="Original"
+                                  className="max-w-full max-h-full object-contain filter blur-[0.4px]"
+                                />
+                                <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/75 text-[10px] font-mono text-neutral-300">
+                                  ORIGINAL ({currentItem.originalWidth}×{currentItem.originalHeight})
+                                </div>
+                              </div>
+                              <div className="relative w-full h-full flex items-center justify-center bg-black/40 p-2">
+                                <img
+                                  src={currentItem.upscaledUrl || currentItem.previewUrl}
+                                  alt="Upscaled"
+                                  className="max-w-full max-h-full object-contain"
+                                />
+                                <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-emerald-600/90 text-[10px] font-mono text-white font-bold">
+                                  {currentItem.upscaledUrl ? `${targetRes} ULTRA-HD` : 'PENDING'} ({currentItem.targetWidth || spec.width}×{currentItem.targetHeight || spec.height})
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* MODE 3: UPSCALED ONLY */}
+                          {comparisonMode === 'upscaled' && (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <img
+                                src={currentItem.upscaledUrl || currentItem.previewUrl}
+                                alt="Upscaled"
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                          )}
+
+                          {/* MODE 4: ORIGINAL ONLY */}
+                          {comparisonMode === 'original' && (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <img
+                                src={currentItem.previewUrl}
+                                alt="Original"
+                                className="w-full h-full object-contain filter blur-[0.4px]"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Floating Corner Overlay Badges */}
+                        <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-black/80 backdrop-blur-md text-[10px] font-mono text-white/90 z-10 border border-white/10">
+                          INPUT: {currentItem.originalWidth}×{currentItem.originalHeight} px (72 DPI)
+                        </div>
+                        <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-emerald-600/95 backdrop-blur-md text-[10px] font-mono text-white font-bold z-10 border border-white/20 shadow-md">
+                          OUTPUT: {targetRes} MASTER ({currentItem.targetWidth || spec.width}×{currentItem.targetHeight || spec.height} · 300 DPI · {spec.megapixels})
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between text-xs text-neutral-400 font-mono gap-2">
+                        <span>← Drag divider left/right or toggle Side-by-Side &amp; 100% Loupe above</span>
+                        <span className="text-emerald-400 font-semibold">Native WebGL &amp; Canvas Octave Resampling · 100% Safe Browser Pipeline</span>
                       </div>
                     </div>
                   )}
@@ -1615,11 +1795,11 @@ export const UltraUpscalerModal: React.FC<UltraUpscalerModalProps> = ({
                       })}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-neutral-200/60 dark:border-neutral-800">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-neutral-200/60 dark:border-white/10">
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-xs font-mono">
                           <span>Edge Sharpening Intensity:</span>
-                          <span className="font-bold">{Math.round(sharpenAmount * 100)}%</span>
+                          <span className="font-bold text-emerald-400">{Math.round(sharpenAmount * 100)}%</span>
                         </div>
                         <input
                           type="range"
@@ -1629,6 +1809,22 @@ export const UltraUpscalerModal: React.FC<UltraUpscalerModalProps> = ({
                           value={sharpenAmount}
                           onChange={(e) => setSharpenAmount(Number(e.target.value))}
                           className="w-full accent-emerald-500 cursor-pointer"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-xs font-mono">
+                          <span>Vector Anti-Halo Smoothing:</span>
+                          <span className="font-bold text-cyan-400">{Math.round(denoiseSmooth * 100)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="0.6"
+                          step="0.05"
+                          value={denoiseSmooth}
+                          onChange={(e) => setDenoiseSmooth(Number(e.target.value))}
+                          className="w-full accent-cyan-500 cursor-pointer"
                         />
                       </div>
 
@@ -1841,7 +2037,7 @@ export const UltraUpscalerModal: React.FC<UltraUpscalerModalProps> = ({
                   {currentVideo && (
                     <div className="space-y-6">
                       <div className={`p-5 rounded-2xl border flex flex-wrap items-center justify-between gap-4 ${
-                        isLight ? 'bg-white border-neutral-200' : 'bg-neutral-900 border-neutral-800'
+                        isLight ? 'bg-white border-neutral-200 shadow-sm' : 'bg-[#0a0c12] border-white/10 ring-1 ring-white/[0.04]'
                       }`}>
                         <div>
                           <div className="text-xs font-mono uppercase text-neutral-400">Selected Video Asset:</div>

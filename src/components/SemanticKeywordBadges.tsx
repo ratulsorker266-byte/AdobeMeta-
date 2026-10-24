@@ -304,6 +304,20 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
     return Math.min(99, Math.round(88 + countFactor * 7 + Math.min(4, top10Compound)));
   }, [keywords]);
 
+  const handleCopyAgencyKeywords = (agency: 'adobe' | 'shutterstock' | 'freepik' | 'getty') => {
+    let count = 49;
+    if (agency === 'freepik') count = 30;
+    else if (agency === 'getty') count = 35;
+    else if (agency === 'shutterstock') count = Math.min(50, keywords.length);
+
+    const slice = (keywords || []).slice(0, count);
+    navigator.clipboard.writeText(slice.join(', '));
+    playTickSound();
+    setCopiedType(agency);
+    setTimeout(() => setCopiedType(null), 2000);
+    showToast(`✓ Copied ${slice.length} keywords formatted for ${agency === 'adobe' ? 'Adobe Stock' : agency.charAt(0).toUpperCase() + agency.slice(1)}!`);
+  };
+
   const copyTags = (tagList: string[], type: string) => {
     navigator.clipboard.writeText(tagList.join(', '));
     setCopiedType(type);
@@ -354,7 +368,7 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <span>Top 10 Priority</span>
+            <span>Top 10 Priority (75% Weight)</span>
           </button>
 
           {effectiveLongTail.length > 0 && (
@@ -410,8 +424,41 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
             >
               <Zap className="w-3 h-3 text-emerald-400" />
               <span>⚡ Rank #1 Calibrator</span>
+              <span className="text-[9.5px] opacity-75 font-mono">({algoDominanceScore}%)</span>
             </button>
           )}
+
+          {/* Agency Direct Copy Chips */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => handleCopyAgencyKeywords('adobe')}
+              className={`text-[10px] font-mono px-2 py-1 rounded-lg border transition cursor-pointer ${
+                copiedType === 'adobe'
+                  ? 'bg-emerald-500 text-white border-emerald-500 font-bold'
+                  : isLight
+                  ? 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200'
+                  : 'bg-white/[0.04] hover:bg-white/10 text-neutral-300 border-white/10'
+              }`}
+              title="Copy up to 49 tags for Adobe Stock"
+            >
+              {copiedType === 'adobe' ? '✓ Adobe' : 'Adobe (49)'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCopyAgencyKeywords('freepik')}
+              className={`text-[10px] font-mono px-2 py-1 rounded-lg border transition cursor-pointer ${
+                copiedType === 'freepik'
+                  ? 'bg-emerald-500 text-white border-emerald-500 font-bold'
+                  : isLight
+                  ? 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200'
+                  : 'bg-white/[0.04] hover:bg-white/10 text-neutral-300 border-white/10'
+              }`}
+              title="Copy top 30 tags for Freepik"
+            >
+              {copiedType === 'freepik' ? '✓ Freepik' : 'Freepik (30)'}
+            </button>
+          </div>
 
           <button
             type="button"
@@ -427,17 +474,17 @@ export const SemanticKeywordBadges: React.FC<SemanticKeywordBadgesProps> = ({
                 : 'bg-white hover:bg-neutral-200 text-neutral-950 border-white'
             }`}
           >
-            {copiedType ? (
+            {copiedType && copiedType !== 'adobe' && copiedType !== 'freepik' ? (
               <Check className="w-3 h-3" />
             ) : (
               <Copy className="w-3 h-3" />
             )}
             <span>
-              {copiedType
+              {copiedType && copiedType !== 'adobe' && copiedType !== 'freepik'
                 ? 'Copied'
                 : activeFilter === 'top10'
                 ? 'Copy Top 10'
-                : `Copy Tags (${keywords.length})`}
+                : `Copy All (${keywords.length})`}
             </span>
           </button>
         </div>
