@@ -623,7 +623,7 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between bg-slate-950/60">
           <div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-cyan-400 mb-1">
+            <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-emerald-400 mb-1">
               GEN-10 MULTI-AGENCY EXPORT ENGINE · 10 MARKETPLACES + MASTER JSON
             </div>
             <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
@@ -645,9 +645,9 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
         {/* Content */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-4">
           {isSampleDemo && (
-            <div className="p-3.5 bg-gradient-to-r from-cyan-950/60 to-violet-950/60 border border-cyan-500/30 rounded-2xl text-xs text-cyan-100 flex items-center justify-between gap-3">
+            <div className="p-3.5 bg-gradient-to-r from-emerald-950/60 to-rose-950/60 border border-emerald-500/30 rounded-2xl text-xs text-emerald-100 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+                <Sparkles className="w-4 h-4 text-rose-400 shrink-0" />
                 <span>
                   <strong>Interactive Agency Format Preview:</strong> Displaying sample commercial stock assets. Inspect raw CSV/JSON schemas below or drop your files in the Studio to export real metadata.
                 </span>
@@ -660,7 +660,7 @@ export const MultiCsvExportModal: React.FC<MultiCsvExportModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   onClick={downloadAllCsvsZip}
-                  className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 text-xs sm:text-sm font-black p-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition cursor-pointer"
+                  className="lal-sobuj-glow-button text-xs sm:text-sm font-black p-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-rose-500/20 transition cursor-pointer"
                 >
                   <Package className="w-4 h-4" />
                   <span>Download All 10 Agency CSVs + JSON in 1 ZIP</span>

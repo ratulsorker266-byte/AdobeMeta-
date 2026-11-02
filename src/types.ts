@@ -42,6 +42,31 @@ export type MetadataVersion = {
   qualityScore?: number;
 };
 
+export type VisualPalette = {
+  dominantHex?: string;
+  palette?: Array<{ hex: string; name: string }>;
+  lightingStyle?: string;
+  compositionType?: string;
+  copySpaceLocation?: string;
+};
+
+export type CommercialYieldForecast = {
+  predictedRpmRange?: string;
+  commercialDemandScore?: number;
+  recommendedMicrostockTier?: string;
+  seasonalityPeak?: string;
+  salesVelocityPrediction?: string;
+  topBuyerIndustries?: string[];
+};
+
+export type IntentKeywordGroups = {
+  buyerQueries?: string[];
+  coreSubject?: string[];
+  lightingAndAtmosphere?: string[];
+  commercialUseCases?: string[];
+  compositionAndLayout?: string[];
+};
+
 export type MetadataResult = {
   recommendedTitle: string;
   alternativeTitles?: {
@@ -55,7 +80,12 @@ export type MetadataResult = {
     freepik: string;
     getty: string;
     vecteezy: string;
+    onetwothreerf?: string;
+    dreamstime?: string;
   };
+  visualPalette?: VisualPalette;
+  commercialYield?: CommercialYieldForecast;
+  intentKeywordGroups?: IntentKeywordGroups;
   searchWeightIndex?: number;
   estimatedCpcUSD?: string;
   shortDescription: string;

@@ -106,7 +106,7 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
       <div className={`w-full my-4 ${
         isLight 
           ? 'bg-white border-neutral-200/90 shadow-2xs' 
-          : 'bg-[#0a0d14] border-white/10 shadow-md'
+          : 'bg-[#000000] border-white/10 shadow-md'
       } border rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 transition-all duration-200 sovereign-prism-card relative overflow-hidden`}>
         {/* Prismatic Cyan Accent Edge */}
         <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
@@ -213,7 +213,7 @@ export const GoogleAdSenseBanner: React.FC<GoogleAdSenseBannerProps> = ({
         <div className={`w-full ${
           isLight 
             ? 'bg-white border-neutral-200/90 shadow-2xs' 
-            : 'bg-[#0a0d14] border-white/10 shadow-lg'
+            : 'bg-[#000000] border-white/10 shadow-lg'
         } border rounded-2xl p-3.5 sm:px-6 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-3 sovereign-prism-card`}>
           
           {/* Subtle Ambient Cyan / Platinum Hairline */}

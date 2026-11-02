@@ -61,7 +61,7 @@ interface EditorialHeroProps {
   onOpenSettings?: () => void;
   onToggleTheme: () => void;
   themeMode: 'light' | 'dark';
-  gen10Skin?: 'velvet' | 'black';
+  gen10Skin?: 'velvet' | 'black' | 'lal-sobuj';
   user: any;
   onNavigateView: (view: string) => void;
   onOpenMultiCsv?: () => void;
@@ -78,6 +78,7 @@ interface EditorialHeroProps {
   onToggleLang?: () => void;
   onLoadStorePack?: (pack: GlobalStorePack) => void;
   showToast?: (msg: string) => void;
+  onOpenOfficialStandards?: () => void;
 }
 
 export interface BoutiqueStoreItem {
@@ -108,7 +109,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   onOpenSettings,
   onToggleTheme,
   themeMode,
-  gen10Skin = 'velvet',
+  gen10Skin = 'lal-sobuj',
   user,
   onNavigateView,
   onOpenMultiCsv,
@@ -123,7 +124,8 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   uiLang = 'en',
   onToggleLang,
   onLoadStorePack,
-  showToast
+  showToast,
+  onOpenOfficialStandards
 }) => {
   const [activeDepartment, setActiveDepartment] = useState<'all' | 'metadata' | 'creative' | 'monetize'>('all');
   const [showGlobalVaultExpanded, setShowGlobalVaultExpanded] = useState<boolean>(false);
@@ -486,19 +488,19 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   const skinPalette = isLight
     ? {
         orbOne: 'bg-white/90',
-        orbTwo: 'bg-amber-100/45',
-        orbThree: 'bg-stone-200/40',
-        horizonBeam: 'from-transparent via-neutral-300 to-transparent',
-        spotlightColor: 'rgba(0, 0, 0, 0.04)',
+        orbTwo: 'bg-emerald-100/45',
+        orbThree: 'bg-rose-100/40',
+        horizonBeam: 'from-transparent via-emerald-300 to-transparent',
+        spotlightColor: 'rgba(5, 150, 105, 0.05)',
         accentBadge: 'text-neutral-900 border-neutral-300 bg-neutral-100',
       }
     : {
-        orbOne: 'bg-white/[0.02]',
-        orbTwo: 'bg-neutral-900/40',
-        orbThree: 'bg-white/[0.01]',
-        horizonBeam: 'from-transparent via-white/15 to-transparent',
-        spotlightColor: 'rgba(255, 255, 255, 0.03)',
-        accentBadge: 'text-white border-white/20 bg-white/5',
+        orbOne: 'bg-rose-500/[0.14]',
+        orbTwo: 'bg-emerald-500/[0.18]',
+        orbThree: 'bg-emerald-400/[0.08]',
+        horizonBeam: 'from-transparent via-emerald-400/40 via-rose-500/35 to-transparent',
+        spotlightColor: 'rgba(244, 42, 65, 0.12)',
+        accentBadge: 'text-emerald-300 border-emerald-500/35 bg-emerald-950/50',
       };
 
   return (
@@ -509,7 +511,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
     >
 
       {/* ============================================================ */}
-      {/* FLOATING 3D OPTICAL CRYSTAL GLASS HEADER (DAY & NIGHT MODE) */}
+      {/* CLEAN OFFICIAL ENTERPRISE HEADER (DAY & NIGHT MODE)          */}
       {/* ============================================================ */}
       <header className={`sticky top-0 z-50 w-full px-3 sm:px-6 lg:px-10 xl:px-14 transition-all duration-300 ${
         isScrolled ? 'pt-2' : 'pt-3 sm:pt-4'
@@ -571,13 +573,11 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
             <button
               onClick={() => onNavigateView('upload')}
-              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 flex items-center gap-1.5 ${
-                isLight ? 'text-amber-800 font-bold' : 'text-amber-300 hover:text-amber-200 font-bold'
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 ${
+                isLight ? 'text-neutral-500 hover:text-black' : 'text-zinc-400 hover:text-white'
               }`}
-              title="Suno Custom Studio Mode (suno.com/create?mode=CUSTOM)"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Create (Custom)</span>
+              <span>Studio</span>
             </button>
 
             <button
@@ -610,12 +610,29 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
             <button
               onClick={() => onNavigateView('monetize')}
-              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 ${
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 flex items-center gap-1.5 ${
                 isLight ? 'text-neutral-500 hover:text-black' : 'text-zinc-400 hover:text-white'
               }`}
             >
               <span>Monetize</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                Earn $
+              </span>
             </button>
+
+            {onOpenOfficialStandards && (
+              <button
+                type="button"
+                onClick={onOpenOfficialStandards}
+                className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 flex items-center gap-1 ${
+                  isLight ? 'text-cyan-800 hover:text-black' : 'text-cyan-400 hover:text-cyan-300'
+                }`}
+                title="Official Specifications & Accreditation"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Specs</span>
+              </button>
+            )}
           </nav>
 
           {/* Large Screens (1024px - 1279px): Essential links with ample room */}
@@ -653,12 +670,29 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
 
             <button
               onClick={() => onNavigateView('monetize')}
-              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 ${
+              className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 flex items-center gap-1.5 ${
                 isLight ? 'text-neutral-600 hover:text-black' : 'text-zinc-300 hover:text-white'
               }`}
             >
               <span>Monetize</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                Earn $
+              </span>
             </button>
+
+            {onOpenOfficialStandards && (
+              <button
+                type="button"
+                onClick={onOpenOfficialStandards}
+                className={`lumina-directional-link cursor-pointer relative py-1 whitespace-nowrap transition-colors duration-200 flex items-center gap-1 ${
+                  isLight ? 'text-cyan-800 hover:text-black' : 'text-cyan-400 hover:text-cyan-300'
+                }`}
+                title="Official Specifications & Accreditation"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Specs</span>
+              </button>
+            )}
           </nav>
 
           {/* Zone 3: Clean, Non-Overlapping Controls (Search + System + Theme + Open Studio + Mobile Hamburger) */}
@@ -917,14 +951,13 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             {/* Primary Workbench CTA */}
             <button
               onClick={() => onNavigateView('upload')}
-              className={`text-[12px] font-bold tracking-[0.02em] px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl hidden sm:flex items-center gap-1.5 cursor-pointer whitespace-nowrap group shrink-0 transition-all duration-200 ${
+              className={`text-[12px] font-bold tracking-[0.02em] px-4 py-2 rounded-xl hidden sm:flex items-center gap-1.5 cursor-pointer whitespace-nowrap group shrink-0 transition-all duration-200 ${
                 isLight
                   ? 'bg-neutral-950 hover:bg-black text-white shadow-sm'
-                  : 'bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-extrabold shadow-[0_0_20px_rgba(245,158,11,0.35)]'
+                  : 'lal-sobuj-glow-button'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-black" />
-              <span className="transition-transform duration-200 group-hover:-translate-x-0.5">Create ⚡ (Custom)</span>
+              <span className="transition-transform duration-200 group-hover:-translate-x-0.5">Open Studio</span>
               <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
             </button>
 
@@ -1184,7 +1217,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               className={`absolute inset-0 ${
                 isLight
                   ? 'bg-gradient-to-r from-white/78 via-white/40 to-white/10'
-                  : 'bg-gradient-to-t from-[#05060A] via-[#05060A]/85 to-[#05060A]/50'
+                  : 'bg-gradient-to-t from-[#011710] via-[#011710]/92 to-[#022419]/65'
               }`}
             />
             {/* Subtle light-mode bottom fade so workbench and dropzone blend effortlessly */}
@@ -1207,93 +1240,64 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           <div
             aria-hidden="true"
             className={`pointer-events-none absolute top-0 inset-x-10 h-[1.5px] bg-gradient-to-r z-[3] ${
-              isLight ? 'from-transparent via-neutral-300 to-transparent' : 'from-transparent via-cyan-400/40 to-transparent'
+              isLight ? 'from-transparent via-neutral-300 to-transparent' : 'from-transparent via-rose-500/50 via-emerald-400/50 to-transparent'
             }`}
           />
           <div
             aria-hidden="true"
             className={`pointer-events-none absolute bottom-0 inset-x-24 h-[1px] bg-gradient-to-r z-[3] ${
-              isLight ? 'from-transparent via-neutral-200 to-transparent' : 'from-transparent via-white/10 to-transparent'
+              isLight ? 'from-transparent via-neutral-200 to-transparent' : 'from-transparent via-emerald-500/30 to-transparent'
             }`}
           />
 
-          {/* Luminous Live Market Intelligence & Contributor Status Ticker */}
-          <div className={`mb-7 sm:mb-8 pb-4 border-b flex flex-wrap items-center justify-between gap-3 relative z-10 ${
-            isLight ? 'border-neutral-200/70' : 'border-white/10'
-          }`}>
-            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-              <div className="luminous-market-ticker px-3.5 py-1.5 rounded-full flex items-center gap-2 text-[10.5px] font-mono tracking-wider uppercase text-cyan-300">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 cyan-pulse-dot shrink-0" />
-                <span className="font-semibold text-white tracking-widest">LIVE ATELIER INDEX</span>
-                <span className="opacity-40 text-cyan-200">|</span>
-                <span className="text-cyan-300 font-bold">$1,940/DAY YIELD</span>
-                <span className="opacity-40 text-cyan-200 hidden sm:inline">|</span>
-                <span className="text-emerald-400 font-semibold hidden sm:inline">7 AGENCIES READY</span>
-              </div>
-
-              <div className="hidden lg:flex items-center gap-2 text-[11px] font-mono tracking-wider text-neutral-300">
-                <span className="opacity-40">·</span>
-                <span>49 Weighted Keywords</span>
-                <span className="opacity-40">·</span>
-                <span>Top-10 Rank Control</span>
-                <span className="opacity-40">·</span>
-                <span>IPTC Direct Embed</span>
-              </div>
-            </div>
-
-            <div className="hidden md:flex items-center gap-2.5 text-[10.5px] font-mono tabular-nums text-neutral-300">
-              <span className="px-2 py-0.5 rounded bg-white/[0.06] border border-white/10 text-white font-semibold">
-                Vector EPS · JPG · 4K
-              </span>
-              <button
-                type="button"
-                onClick={() => onNavigateView('monetize')}
-                className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-semibold transition cursor-pointer"
-              >
-                <span>Google Monetize Hub</span>
-                <ArrowUpRight className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-stretch relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 xl:gap-16 items-start relative z-10 pt-2 sm:pt-4">
           
-          {/* Left 7 Columns: Progressive Hero Awakening Typography & Dropzone */}
+          {/* Left 7 Columns: Spacious Official Enterprise Workstation Console */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-7 flex flex-col justify-between space-y-6 text-left"
+            className="lg:col-span-7 flex flex-col space-y-8 text-left"
           >
-            <div className="space-y-5">
-              {/* Grand Cinematic Headline with Cormorant Garamond and Electric Cyan Sheen */}
-              <h1 className={`text-[46px] sm:text-[66px] xl:text-[80px] font-serif font-bold tracking-[-0.025em] leading-[1.03] ${
+            {/* Clean Authoritative Header Block with Generous Breathing Room */}
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full text-[11px] font-mono tracking-wider uppercase border border-emerald-500/40 bg-[#022419]/90 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.22)]">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0 shadow-[0_0_10px_#f43f5e]" />
+                <span className="font-bold text-white tracking-widest">🇧🇩 BANGLADESH SOVEREIGN EDITION</span>
+                <span className="opacity-40 text-emerald-300">·</span>
+                <span className="text-emerald-300 font-bold">SOVEREIGN LAL-SOBUJ ATELIER</span>
+                <span className="opacity-40 text-emerald-300 hidden sm:inline">·</span>
+                <span className="text-rose-300 font-semibold hidden sm:inline">2026 WORLD SPEC</span>
+              </div>
+
+              <h1 className={`text-4xl sm:text-5xl xl:text-6xl font-sans font-extrabold tracking-tight leading-[1.08] ${
                 isLight ? 'text-neutral-950' : 'text-white'
               }`}>
-                <span className="block">
-                  <span className={isLight ? 'text-neutral-950' : 'text-white'}>Manual Metadata</span>{' '}
-                  <span className={`font-serif italic font-normal text-[1.08em] ${isLight ? 'text-cyan-700' : 'wow-text-cyan'} pr-1.5`}>
-                    Architecture
-                  </span>
-                </span>
-                <span className="block mt-1 sm:mt-1.5">
-                  <span className={isLight ? 'text-neutral-500' : 'text-cyan-400 font-mono text-[0.8em]'}>&amp;</span>{' '}
-                  <span className={`font-serif italic font-normal text-[1.08em] ${isLight ? 'text-neutral-700' : 'wow-text-platinum'} pr-1`}>
-                    Artisanal
-                  </span>{' '}
-                  <span className={isLight ? 'text-neutral-950' : 'wow-text-cyan'}>Search Dominance.</span>
+                <span className="block text-white">Official Stock Metadata</span>
+                <span className="block mt-2 bg-gradient-to-r from-rose-500 via-red-400 via-emerald-400 to-emerald-300 bg-clip-text text-transparent">
+                  &amp; Contributor Enterprise Suite.
                 </span>
               </h1>
 
-              <p className={`text-[15.5px] sm:text-[16.5px] font-sans font-normal max-w-xl leading-[1.72] tracking-normal ${
-                isLight ? 'text-neutral-600' : 'text-zinc-300'
+              <p className={`text-base sm:text-[17px] font-sans font-normal max-w-xl leading-[1.75] ${
+                isLight ? 'text-neutral-600' : 'text-emerald-100/90'
               }`}>
-                A bespoke, high-precision manual workbench for elite stock contributors. Zero robotic AI artifacts. Hand-calibrated subject-first titles under 70 characters, 4-tier rank-ordered 49 keywords with 75% search authority locked in Slots 1–10, and multi-agency Google monetization.
+                The official high-performance workstation for commercial photographers, vector studios, and footage contributors. Calibrate subject-first titles, lock 49 weighted keywords into Top-10 search algorithms, write lossless IPTC metadata, and maximize multi-agency Google AdSense earnings.
               </p>
             </div>
 
-            <div className="space-y-4">
-              {/* Instant Minimalist Executive Dropzone Bar with Prismatic Cyan Border */}
+            {/* Unified Grand Executive Studio Dropzone Console */}
+            <div className={`p-7 sm:p-9 rounded-3xl border sovereign-prism-card relative overflow-hidden transition-all duration-300 ${
+              isHeroDragging
+                ? 'border-emerald-400 bg-emerald-500/10 shadow-[0_0_50px_rgba(16,185,129,0.35)]'
+                : isLight
+                ? 'bg-white border-neutral-300 shadow-xl'
+                : 'bg-[#021f17]/95 border-emerald-500/30 hover:border-rose-500/50 shadow-[0_16px_50px_rgba(0,0,0,0.85)] hover:shadow-[0_0_40px_rgba(244,42,65,0.25)]'
+            }`}>
+              {/* Prismatic Top Edge Accent (Red to Green) */}
+              <div aria-hidden="true" className="prismatic-edge-caustic" />
+
+              {/* Main Drag-and-Drop Interactive Surface */}
               <div
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -1312,146 +1316,165 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   }
                 }}
                 onClick={onStartGenerating}
-                className={`p-5 sm:p-6 rounded-2xl transition-all duration-300 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 sovereign-prism-card group relative overflow-hidden ${
-                  isHeroDragging
-                    ? 'border-cyan-400 bg-cyan-500/10 shadow-[0_0_40px_rgba(0,240,255,0.3)]'
-                    : isLight
-                    ? 'crystal-glass-panel-light hover:border-neutral-900'
-                    : 'crystal-glass-panel-dark hover:border-cyan-400/50 hover:shadow-[0_0_35px_rgba(0,240,255,0.18)]'
-                }`}
+                className="cursor-pointer group space-y-6"
               >
-                {/* Prismatic Top Edge Caustic */}
-                <div aria-hidden="true" className="prismatic-edge-caustic opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                <div className="flex items-center gap-3.5 relative z-10">
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border transition-all ${
-                    isLight
-                      ? 'bg-neutral-950 text-white border-neutral-800'
-                      : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 group-hover:bg-cyan-500/20 group-hover:border-cyan-400/60'
-                  }`}>
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className={`text-xs sm:text-sm font-semibold flex flex-wrap items-center gap-2 ${
-                      isLight ? 'text-neutral-950' : 'text-white'
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border transition-all duration-300 ${
+                      isLight
+                        ? 'bg-neutral-900 text-white border-neutral-700 shadow-md'
+                        : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 group-hover:bg-rose-500/20 group-hover:border-rose-400/60 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
                     }`}>
-                      <span>Open EPS, AI, PSD, JPG or 4K Footage in Workbench</span>
+                      <CheckCircle2 className="w-6 h-6 text-emerald-400 group-hover:text-rose-400 transition-colors" />
                     </div>
-                    <div className={`text-[11.5px] mt-0.5 ${isLight ? 'text-neutral-500' : 'text-neutral-300'}`}>
-                      Full Manual Title &amp; Tag Control · 49 Keywords · 7-Agency CSV &amp; IPTC Write
+                    <div>
+                      <h3 className={`text-base sm:text-lg font-bold tracking-tight ${
+                        isLight ? 'text-neutral-950' : 'text-white'
+                      }`}>
+                        Drop EPS, AI, PSD, JPG, PNG or 4K Video
+                      </h3>
+                      <p className={`text-xs sm:text-[13px] mt-1 ${isLight ? 'text-neutral-500' : 'text-emerald-200/70'}`}>
+                        Manual Title &amp; Tag Control · 49 Keywords · 7-Agency CSV &amp; IPTC Write
+                      </p>
                     </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onWatchDemo();
+                      }}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-semibold border cursor-pointer transition ${
+                        isLight
+                          ? 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border-neutral-300'
+                          : 'bg-white/[0.06] hover:bg-emerald-500/15 text-neutral-200 border-emerald-500/30 hover:border-emerald-400/60'
+                      }`}
+                    >
+                      Load Sample
+                    </button>
+                    <span className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-lg transition-all ${
+                      isLight
+                        ? 'bg-neutral-950 text-white hover:bg-black'
+                        : 'lal-sobuj-glow-button'
+                    }`}>
+                      <span>Select Files</span>
+                      <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5 shrink-0 relative z-10">
+                {/* Sleek Integrated Command & Agency Dock */}
+                <div className={`pt-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                  isLight ? 'border-neutral-200' : 'border-white/10'
+                }`}>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onWatchDemo();
+                      onOpenCommandPalette();
                     }}
-                    className={`lumina-tactile-button px-3.5 py-2.5 rounded-xl text-[11.5px] font-semibold border cursor-pointer ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition cursor-pointer text-left ${
                       isLight
-                        ? 'bg-[#faf8f5] hover:bg-neutral-100 text-neutral-800 border-neutral-300'
-                        : 'bg-[#050506] hover:bg-white/10 text-neutral-200 border-white/15 hover:border-white/30'
+                        ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200 text-neutral-700'
+                        : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/10 hover:border-cyan-400/40 text-neutral-300'
                     }`}
                   >
-                    Load Sample
+                    <Search className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                    <span className="text-[11.5px]">Search 2026 rules &amp; high-RPM niches</span>
+                    <kbd className="ml-1 px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-white/10 text-neutral-300 border border-white/10">⌘K</kbd>
                   </button>
-                  <span className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-lg transition-all ${
-                    isLight
-                      ? 'bg-neutral-950 text-white'
-                      : 'cyan-glow-button'
-                  }`}>
-                    <span>Select Files</span>
-                    <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-                  </span>
+
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400">
+                    <span className="text-cyan-400">AGENCY READY:</span>
+                    <span>Adobe · Shutterstock · Freepik · Getty · Vecteezy</span>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Clean Directional Quick-Launch Links (Minimalist Editorial Typography) */}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-xs font-medium">
+            {/* Spacious Quick Navigation Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              {onOpenUpscaler && (
                 <button
                   type="button"
-                  onClick={() => onNavigateView('upload')}
-                  className={`lumina-directional-link cursor-pointer gap-1.5 font-bold ${
-                    isLight ? 'text-amber-800 hover:text-amber-900' : 'text-amber-300 hover:text-amber-200'
+                  onClick={() => onOpenUpscaler('image')}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer group flex flex-col justify-between ${
+                    isLight
+                      ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200'
+                      : 'bg-[#021f17]/90 hover:bg-[#032a20] border-emerald-500/30 hover:border-rose-500/50 shadow-md hover:shadow-[0_0_20px_rgba(244,42,65,0.2)]'
                   }`}
-                  title="Launch Suno Custom Studio (suno.com/create?mode=CUSTOM)"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Suno Custom Studio (?mode=CUSTOM)</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 opacity-90" />
+                  <div className="flex items-center justify-between">
+                    <Sparkles className="w-4 h-4 text-emerald-400" />
+                    <ArrowUpRight className="w-3.5 h-3.5 text-neutral-500 group-hover:text-emerald-400 transition" />
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition">8K Upscaler</div>
+                    <div className="text-[10.5px] text-emerald-200/70 mt-0.5">Photo &amp; 4K Video</div>
+                  </div>
                 </button>
-                <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
-                {onOpenUpscaler && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => onOpenUpscaler('image')}
-                      className={`lumina-directional-link cursor-pointer gap-1.5 font-bold ${
-                        isLight ? 'text-amber-700 hover:text-amber-900' : 'text-amber-300 hover:text-amber-200'
-                      }`}
-                      title="Launch 8K Ultra-HD Image & Video Super-Resolution Studio (100% Free)"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      <span>8K Ultra Upscaler (Photo & Video)</span>
-                      <ArrowUpRight className="w-3.5 h-3.5 opacity-90" />
-                    </button>
-                    <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
-                  </>
-                )}
-                {onOpenMultiCsv && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={onOpenMultiCsv}
-                      className={`lumina-directional-link cursor-pointer gap-1.5 ${
-                        isLight ? 'text-neutral-700 hover:text-black' : 'text-neutral-300 hover:text-white'
-                      }`}
-                    >
-                      <span>7-Agency CSV Hub</span>
-                      <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
-                    </button>
-                    <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
-                  </>
-                )}
+              )}
+
+              {onOpenMultiCsv && (
                 <button
                   type="button"
-                  onClick={() => onNavigateView('seo-rank')}
-                  className={`lumina-directional-link cursor-pointer gap-1.5 ${
-                    isLight ? 'text-neutral-700 hover:text-black' : 'text-neutral-300 hover:text-white'
+                  onClick={onOpenMultiCsv}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer group flex flex-col justify-between ${
+                    isLight
+                      ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200'
+                      : 'bg-[#021f17]/90 hover:bg-[#032a20] border-emerald-500/30 hover:border-rose-500/50 shadow-md hover:shadow-[0_0_20px_rgba(244,42,65,0.2)]'
                   }`}
                 >
-                  <span>Title &amp; Top-10 Calibrator</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 opacity-75" />
+                  <div className="flex items-center justify-between">
+                    <Layers className="w-4 h-4 text-rose-400" />
+                    <ArrowUpRight className="w-3.5 h-3.5 text-neutral-500 group-hover:text-rose-400 transition" />
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-xs font-bold text-white group-hover:text-rose-300 transition">7-Agency CSV</div>
+                    <div className="text-[10.5px] text-emerald-200/70 mt-0.5">Batch Multi-Export</div>
+                  </div>
                 </button>
-                <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
-                <button
-                  type="button"
-                  onClick={() => onNavigateView('monetize')}
-                  className={`lumina-directional-link cursor-pointer gap-1.5 ${
-                    isLight ? 'text-neutral-700 hover:text-black' : 'text-neutral-300 hover:text-white'
-                  }`}
-                >
-                  <span>Royalty &amp; AdSense Analytics</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
-                </button>
-                <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-700">·</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const storeEl = document.getElementById('global-commercial-store-vault');
-                    if (storeEl) storeEl.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className={`lumina-directional-link cursor-pointer gap-1.5 font-semibold ${
-                    isLight ? 'text-neutral-950 hover:text-black' : 'text-white hover:text-neutral-200'
-                  }`}
-                >
-                  <span>Global Store (588+ Tags)</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 opacity-80" />
-                </button>
-              </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => onNavigateView('seo-rank')}
+                className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer group flex flex-col justify-between ${
+                  isLight
+                    ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200'
+                    : 'bg-[#021f17]/90 hover:bg-[#032a20] border-emerald-500/30 hover:border-rose-500/50 shadow-md hover:shadow-[0_0_20px_rgba(244,42,65,0.2)]'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  <ArrowUpRight className="w-3.5 h-3.5 text-neutral-500 group-hover:text-emerald-400 transition" />
+                </div>
+                <div className="mt-3">
+                  <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition">Top-10 Rank</div>
+                  <div className="text-[10.5px] text-emerald-200/70 mt-0.5">Algorithm Calibrator</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onNavigateView('monetize')}
+                className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer group flex flex-col justify-between ${
+                  isLight
+                    ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200'
+                    : 'bg-[#021f17]/90 hover:bg-[#032a20] border-emerald-500/30 hover:border-rose-500/50 shadow-md hover:shadow-[0_0_20px_rgba(244,42,65,0.2)]'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <DollarSign className="w-4 h-4 text-rose-400" />
+                  <ArrowUpRight className="w-3.5 h-3.5 text-neutral-500 group-hover:text-rose-400 transition" />
+                </div>
+                <div className="mt-3">
+                  <div className="text-xs font-bold text-white group-hover:text-rose-300 transition">Google Monetize</div>
+                  <div className="text-[10.5px] text-emerald-200/70 mt-0.5">AdSense &amp; Royalty</div>
+                </div>
+              </button>
             </div>
           </motion.div>
 
@@ -1475,26 +1498,26 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               className={`rounded-2xl p-6 sm:p-7 relative overflow-hidden phantom-monolith-card sovereign-prism-card flex-1 flex flex-col justify-between transition-all duration-300 ${
               isLight
                 ? 'crystal-glass-panel-light'
-                : 'crystal-glass-panel-dark border-cyan-500/25 hover:border-cyan-400/60 shadow-[0_0_35px_rgba(0,240,255,0.14)]'
+                : 'crystal-glass-panel-dark border-emerald-500/30 hover:border-rose-500/60 shadow-[0_0_35px_rgba(16,185,129,0.18)]'
             }`}>
-              {/* Prismatic Cyan Edge Caustic */}
+              {/* Prismatic Red-to-Green Edge Caustic */}
               <div aria-hidden="true" className="prismatic-edge-caustic" />
-              {/* Dynamic 3D Electric Cyan & Platinum Specular Light Following Cursor */}
+              {/* Dynamic 3D Crimson & Emerald Specular Light Following Cursor */}
               <div
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 transition-opacity duration-300"
                 style={{
                   opacity: tilt.active ? 1 : 0,
-                  background: `radial-gradient(circle 350px at ${specularPos.x}% ${specularPos.y}%, rgba(0, 240, 255, 0.22), transparent 70%)`,
+                  background: `radial-gradient(circle 350px at ${specularPos.x}% ${specularPos.y}%, rgba(244, 42, 65, 0.20), transparent 70%)`,
                 }}
               />
               {/* Top Specimen Header + Minimalist Agency Selector */}
-              <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-neutral-200/60 dark:border-white/10 gap-2">
+              <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-neutral-200/60 dark:border-emerald-500/20 gap-2">
                 <div className="flex items-center gap-2 text-[10.5px] font-mono tracking-[0.08em] uppercase tabular-nums truncate">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 cyan-pulse-dot shrink-0" />
-                  <span className="text-cyan-300 font-bold">{activePreviewStore.storeNumber}</span>
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0 shadow-[0_0_8px_#f43f5e]" />
+                  <span className="text-emerald-300 font-bold">{activePreviewStore.storeNumber}</span>
                   <span className="text-neutral-500">·</span>
-                  <span className="text-neutral-300 font-medium hidden sm:inline">LIVE SPECIMEN SANDBOX</span>
+                  <span className="text-emerald-100/90 font-medium hidden sm:inline">LIVE SPECIMEN SANDBOX</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <select
@@ -1749,9 +1772,9 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           {/* ============================================================ */}
           {/* STREAMLINED MINIMALIST COMPLIANCE & MONETIZE EXECUTIVE STRIP */}
           {/* ============================================================ */}
-          <div className="mt-8 pt-6 border-t border-neutral-200/60 dark:border-white/10 flex flex-wrap items-center justify-between gap-4 relative z-10">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
-              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-400">
+          <div className="mt-14 pt-8 sm:mt-18 sm:pt-10 border-t border-neutral-200/60 dark:border-white/10 flex flex-wrap items-center justify-between gap-5 relative z-10">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-xs">
+              <span className="text-[10.5px] font-mono uppercase tracking-[0.2em] text-cyan-400 font-bold">
                 AUDIT SUITE
               </span>
               {[
@@ -1766,7 +1789,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                   onClick={() =>
                     onOpenProToolkit ? onOpenProToolkit(item.tab) : onNavigateView('upload')
                   }
-                  className={`lumina-directional-link text-[11.5px] font-medium flex items-center gap-1 cursor-pointer transition ${
+                  className={`lumina-directional-link text-[11.5px] font-medium flex items-center gap-1.5 cursor-pointer transition ${
                     isLight ? 'text-neutral-600 hover:text-black' : 'text-neutral-400 hover:text-white'
                   }`}
                 >
@@ -1779,7 +1802,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenUpscaler('image')}
-                  className={`lumina-directional-link text-[11.5px] font-semibold flex items-center gap-1 cursor-pointer transition ${
+                  className={`lumina-directional-link text-[11.5px] font-semibold flex items-center gap-1.5 cursor-pointer transition ${
                     isLight ? 'text-amber-800 hover:text-black' : 'text-amber-400 hover:text-white'
                   }`}
                   title="Upscayl-Grade 2K to 8K Image & 10s Video Super-Resolution"
@@ -1793,7 +1816,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             <button
               type="button"
               onClick={() => onNavigateView('monetize')}
-              className={`text-[11.5px] font-semibold flex items-center gap-2 cursor-pointer px-3.5 py-1.5 rounded-full border transition ${
+              className={`text-[11.5px] font-semibold flex items-center gap-2 cursor-pointer px-4 py-2 rounded-full border transition shadow-sm ${
                 isLight 
                   ? 'bg-neutral-900 text-white border-neutral-900 hover:bg-black' 
                   : 'bg-white/[0.08] text-white border-white/15 hover:bg-white/[0.15] hover:border-white/30'
@@ -1807,6 +1830,98 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
         </div>
 
         {/* ============================================================ */}
+        {/* OFFICIAL ENTERPRISE ACCREDITATION & INDUSTRY COMPLIANCE RIBBON */}
+        {/* ============================================================ */}
+        <div className={`mt-16 sm:mt-20 p-8 sm:p-10 rounded-3xl border relative overflow-hidden transition-all duration-300 ${
+          isLight
+            ? 'bg-white border-neutral-300 shadow-lg'
+            : 'bg-[#000000] border-white/12 shadow-[0_24px_70px_rgba(0,0,0,0.9)]'
+        }`}>
+          <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-6 border-b ${
+            isLight ? 'border-neutral-200' : 'border-white/10'
+          }`}>
+            <div>
+              <div className="flex items-center gap-2 text-[10.5px] font-mono uppercase tracking-[0.2em] text-cyan-400 font-bold">
+                <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                <span>OFFICIAL INDUSTRY COMPLIANCE &amp; ACCREDITATION</span>
+              </div>
+              <h3 className={`text-lg sm:text-xl font-sans font-bold mt-1 ${
+                isLight ? 'text-neutral-950' : 'text-white'
+              }`}>
+                Verified Global Agency Standards Architecture
+              </h3>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {onOpenOfficialStandards && (
+                <button
+                  type="button"
+                  onClick={onOpenOfficialStandards}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md ${
+                    isLight
+                      ? 'bg-neutral-900 hover:bg-black text-white'
+                      : 'bg-white hover:bg-neutral-200 text-black'
+                  }`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>View Official Verification Protocol</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 pt-6">
+            <div className={`p-4 rounded-2xl border space-y-1 ${
+              isLight ? 'bg-neutral-50/70 border-neutral-200' : 'bg-white/[0.02] border-white/10'
+            }`}>
+              <div className={`flex items-center gap-1.5 text-xs font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>Adobe Stock 2026</span>
+              </div>
+              <p className={`text-[11px] leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
+                100% compliant with 4-word title rules and 49-keyword ceiling.
+              </p>
+            </div>
+
+            <div className={`p-4 rounded-2xl border space-y-1 ${
+              isLight ? 'bg-neutral-50/70 border-neutral-200' : 'bg-white/[0.02] border-white/10'
+            }`}>
+              <div className={`flex items-center gap-1.5 text-xs font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>IPTC Standard 7.2</span>
+              </div>
+              <p className={`text-[11px] leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
+                Direct in-browser lossless binary metadata injection.
+              </p>
+            </div>
+
+            <div className={`p-4 rounded-2xl border space-y-1 ${
+              isLight ? 'bg-neutral-50/70 border-neutral-200' : 'bg-white/[0.02] border-white/10'
+            }`}>
+              <div className={`flex items-center gap-1.5 text-xs font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>Google ads.txt Certified</span>
+              </div>
+              <p className={`text-[11px] leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
+                Authorized direct publisher verification &amp; GDPR consent.
+              </p>
+            </div>
+
+            <div className={`p-4 rounded-2xl border space-y-1 ${
+              isLight ? 'bg-neutral-50/70 border-neutral-200' : 'bg-white/[0.02] border-white/10'
+            }`}>
+              <div className={`flex items-center gap-1.5 text-xs font-bold ${isLight ? 'text-neutral-900' : 'text-white'}`}>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>100% Client-Side Private</span>
+              </div>
+              <p className={`text-[11px] leading-relaxed ${isLight ? 'text-neutral-600' : 'text-neutral-400'}`}>
+                Zero server-side asset storage, no scraping for AI training.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================ */}
         {/* MINIMALIST ARCHITECTURAL DIRECTORY HEADER & FILTER BAR       */}
         {/* ============================================================ */}
         <motion.div
@@ -1814,20 +1929,16 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-28 pt-8 border-t border-neutral-200/60 dark:border-white/[0.08] flex flex-col sm:flex-row sm:items-end justify-between gap-6"
+          className="mt-20 pt-8 border-t border-neutral-200/60 dark:border-white/[0.08] flex flex-col sm:flex-row sm:items-end justify-between gap-6"
         >
-          <div className="space-y-2">
-            <div className="text-[10.5px] font-mono tracking-[0.2em] uppercase text-neutral-400">
-              01. ENTERPRISE MODULES
+          <div className="space-y-1.5">
+            <div className="text-[10.5px] font-mono tracking-[0.2em] uppercase text-cyan-400 font-semibold">
+              01. ENTERPRISE WORKSPACES
             </div>
-            <h2 className={`text-2xl sm:text-4xl font-serif font-bold tracking-[-0.02em] leading-[1.15] ${
+            <h2 className={`text-2xl sm:text-4xl font-sans font-bold tracking-[-0.03em] leading-[1.15] ${
               isLight ? 'text-neutral-950' : 'text-white'
             }`}>
-              Specialized{' '}
-              <span className={`italic font-normal text-[1.08em] ${isLight ? 'text-neutral-700' : 'wow-text-silver'} pr-1`}>
-                Creative
-              </span>{' '}
-              Workspaces
+              Official Contributor Workspaces &amp; Engines
             </h2>
           </div>
 

@@ -265,7 +265,7 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
           className={`relative w-full max-w-[900px] my-auto max-h-[94vh] overflow-y-auto rounded-3xl border shadow-[0_32px_90px_rgba(0,0,0,0.55)] grid grid-cols-1 lg:grid-cols-12 ${
             isLight
               ? 'bg-[#faf8f5] border-neutral-200/90 text-neutral-900'
-              : 'bg-[#090b10] border-white/15 text-neutral-100'
+              : 'bg-[#000000] border-white/15 text-neutral-100'
           }`}
         >
           {/* Left Column: 5D Optical Crystal Prism & Architectural Security Visualizer */}
@@ -273,7 +273,7 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
             className={`lg:col-span-5 relative p-6 sm:p-7 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-r ${
               isLight
                 ? 'bg-gradient-to-br from-[#f3efe8] via-[#ebe5da] to-[#faf8f5] border-neutral-200/80'
-                : 'bg-gradient-to-br from-[#0d1017] via-[#07090e] to-[#111520] border-white/10'
+                : 'bg-[#040404] border-white/10'
             }`}
           >
             {/* Ambient Architectural Grid */}
@@ -564,7 +564,7 @@ export const ArchitecturalAuthModal: React.FC<ArchitecturalAuthModalProps> = ({
                     className={`p-4 sm:p-5 rounded-2xl border space-y-3.5 transition-all ${
                       isLight
                         ? 'bg-white border-amber-300 shadow-lg'
-                        : 'bg-[#10141f] border-[#D4AF37]/45 shadow-[0_20px_50px_rgba(0,0,0,0.75)]'
+                        : 'bg-[#050505] border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.85)]'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-neutral-200/70 dark:border-white/10">

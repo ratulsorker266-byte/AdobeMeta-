@@ -1445,7 +1445,7 @@ export const UltraUpscalerModal: React.FC<UltraUpscalerModalProps> = ({
                         className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-md ${
                           isProcessingBatch
                             ? 'bg-neutral-400 cursor-not-allowed text-white'
-                            : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                            : 'lal-sobuj-glow-button'
                         }`}
                       >
                         {isProcessingBatch ? (
@@ -1959,7 +1959,7 @@ export const UltraUpscalerModal: React.FC<UltraUpscalerModalProps> = ({
                         className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-md ${
                           isProcessingVideoBatch
                             ? 'bg-neutral-400 cursor-not-allowed text-white'
-                            : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                            : 'lal-sobuj-glow-button'
                         }`}
                       >
                         {isProcessingVideoBatch ? (

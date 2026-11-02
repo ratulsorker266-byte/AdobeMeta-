@@ -215,7 +215,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
 
               <h2 className="text-2xl sm:text-4xl font-syne font-extrabold tracking-[-0.03em] leading-[1.1]">
                 Stock Contributor{' '}
-                <span className="font-editorial italic font-semibold text-[1.12em] wow-text-gold pr-1">
+                <span className="font-editorial italic font-semibold text-[1.12em] wow-text-lal-sobuj pr-1">
                   Earning &amp; Google Monetize
                 </span>{' '}
                 Studio
@@ -229,11 +229,11 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
 
           {/* Quick Projected Revenue Snapshot Card */}
           <div className={`shrink-0 p-6 rounded-2xl border ${
-            isLight ? 'bg-[#fbfaf8] border-neutral-200/90 text-neutral-900' : 'bg-[#050506] border-white/12 text-white'
+            isLight ? 'bg-[#fbfaf8] border-neutral-200/90 text-neutral-900' : 'bg-[#021f17] border-emerald-500/30 text-white shadow-[0_0_24px_rgba(16,185,129,0.18)]'
           } space-y-2.5 min-w-[260px]`}>
             <div className="flex items-center justify-between text-[10.5px] font-mono uppercase tracking-[0.14em] text-neutral-400">
               <span>Projected Run Rate</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+              <span className="text-emerald-400 font-bold">
                 100% Monetized
               </span>
             </div>
@@ -246,7 +246,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
             </div>
 
             <div className={`pt-2 border-t flex items-center justify-between text-xs ${
-              isLight ? 'border-neutral-200/80 text-neutral-600' : 'border-white/10 text-neutral-400'
+              isLight ? 'border-neutral-200/80 text-neutral-600' : 'border-emerald-500/20 text-neutral-400'
             }`}>
               <span>Annual Passive Yield:</span>
               <strong className={`font-mono ${isLight ? 'text-neutral-900' : 'text-emerald-400'}`}>
@@ -258,7 +258,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
 
         {/* Minimalist Tab Navigation Bar */}
         <div className={`mt-8 flex items-center gap-2 overflow-x-auto scrollbar-none pt-5 border-t ${
-          isLight ? 'border-neutral-200/70' : 'border-white/10'
+          isLight ? 'border-neutral-200/70' : 'border-emerald-500/20'
         }`}>
           {[
             { id: 'calculator', label: 'Earning Simulator', icon: Calculator },
@@ -276,8 +276,8 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition whitespace-nowrap cursor-pointer border ${
                   isActive
-                    ? (isLight ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-white text-neutral-950 border-white')
-                    : (isLight ? 'bg-[#fbfaf8] hover:bg-neutral-100 text-neutral-600 border-neutral-200/80' : 'bg-[#050506] hover:bg-white/10 text-neutral-300 border-white/10')
+                    ? (isLight ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-gradient-to-r from-rose-600 via-rose-500 to-emerald-600 text-white border-rose-400/50 shadow-lg shadow-rose-950/40')
+                    : (isLight ? 'bg-[#fbfaf8] hover:bg-neutral-100 text-neutral-600 border-neutral-200/80' : 'bg-[#022419]/80 hover:bg-[#033022] text-emerald-200/80 border-emerald-500/20')
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -563,7 +563,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
 
             {/* Publisher ID Configuration Input */}
             <div className={`p-5 rounded-2xl border space-y-3 ${
-              isLight ? 'bg-white border-neutral-200/90' : 'bg-[#090b10] border-white/10'
+              isLight ? 'bg-white border-neutral-200/90' : 'bg-[#000000] border-white/10'
             }`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <label className="text-xs font-bold flex items-center gap-2">
@@ -630,7 +630,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
                   <div
                     key={idx}
                     className={`p-4 rounded-2xl border space-y-1.5 ${
-                      isLight ? 'bg-white border-neutral-200/80' : 'bg-[#090b10] border-white/10'
+                      isLight ? 'bg-white border-neutral-200/80' : 'bg-[#000000] border-white/10'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -737,7 +737,7 @@ export const MonetizationHubView: React.FC<MonetizationHubViewProps> = ({
             <div
               key={niche.category}
               className={`rounded-2xl border p-5 space-y-3.5 transition flex flex-col justify-between sovereign-prism-card ${
-                isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#0e1017] border-neutral-800 shadow-xl'
+                isLight ? 'bg-white border-neutral-200/90 shadow-2xs' : 'bg-[#000000] border-white/10 shadow-xl'
               }`}
             >
               <div className="space-y-2">

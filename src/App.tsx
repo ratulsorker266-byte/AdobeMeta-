@@ -55,7 +55,8 @@ import { ArchitecturalAuthModal } from './components/ArchitecturalAuthModal';
 import { SovereignAiAssistantDrawer, AiAssistantMode } from './components/SovereignAiAssistantDrawer';
 import { VisualKeywordMixerModal } from './components/VisualKeywordMixerModal';
 import { UltraUpscalerModal } from './components/UltraUpscalerModal';
-import { SunoCustomStudioView } from './components/SunoCustomStudioView';
+import { OfficialStandardsModal } from './components/OfficialStandardsModal';
+import { Gen11QuantumInspectorModal } from './components/Gen11QuantumInspectorModal';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   return (
@@ -835,27 +836,6 @@ export default function App() {
   const [loginTransition, setLoginTransition] = useState<'idle' | 'authenticating' | 'leaving' | 'welcome'>('idle');
 
   const [currentView, setCurrentView] = useState<'home' | 'upload' | 'monetize' | 'seo-rank' | 'trends' | 'competitor' | 'prompts' | 'calendar'>('home');
-  const [studioLayoutMode, setStudioLayoutMode] = useState<'suno' | 'classic'>(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('mode') === 'CUSTOM') return 'suno';
-      }
-      return (localStorage.getItem('adobemeta_studio_layout') as 'suno' | 'classic') || 'suno';
-    } catch {
-      return 'suno';
-    }
-  });
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('mode') === 'CUSTOM') {
-        setCurrentView('upload');
-        setStudioLayoutMode('suno');
-      }
-    }
-  }, []);
   const [showMultiCsvModal, setShowMultiCsvModal] = useState<boolean>(false);
   const [trendSearchPreload, setTrendSearchPreload] = useState<string>('');
   const [promptStudioPreloadConcept, setPromptStudioPreloadConcept] = useState<string>('');
@@ -1072,6 +1052,7 @@ export default function App() {
   const [competitorActiveItem, setCompetitorActiveItem] = useState<BulkItem | null>(null);
   const [showKeywordMixerModal, setShowKeywordMixerModal] = useState<boolean>(false);
   const [mixerActiveItem, setMixerActiveItem] = useState<BulkItem | null>(null);
+  const [quantumInspectorItem, setQuantumInspectorItem] = useState<BulkItem | null>(null);
   const [showUltraUpscalerModal, setShowUltraUpscalerModal] = useState<boolean>(false);
   const [upscalerInitialTab, setUpscalerInitialTab] = useState<'image' | 'video'>('image');
 
@@ -1089,6 +1070,7 @@ export default function App() {
   const [showAboutModal, setShowAboutModal] = useState<boolean>(false);
   const [showPricingModal, setShowPricingModal] = useState<boolean>(false);
   const [showResourcesModal, setShowResourcesModal] = useState<boolean>(false);
+  const [showOfficialStandardsModal, setShowOfficialStandardsModal] = useState<boolean>(false);
 
   // 3-Mode Refined Architectural Theme Engine:
   // - 'dark' + gen10Skin === 'velvet' (Default): Sovereign Velvet Slate & Champagne Gold (Preme Porar Moto Marjito Luxury)
@@ -1119,14 +1101,14 @@ export default function App() {
     try { return localStorage.getItem('adobemeta_lite_mode') === 'true'; } catch { return false; }
   });
   const [uiLang, setUiLang] = useState<'en' | 'bn'>('en');
-  const [gen10Skin, setGen10Skin] = useState<'velvet' | 'black'>(() => {
+  const [gen10Skin, setGen10Skin] = useState<'lal-sobuj' | 'velvet' | 'black'>(() => {
     try {
       const saved = localStorage.getItem('adobemeta_gen10_skin_v3');
-      if (saved === 'black') {
-        return 'black';
+      if (saved === 'black' || saved === 'velvet' || saved === 'lal-sobuj') {
+        return saved;
       }
     } catch {}
-    return 'black';
+    return 'lal-sobuj';
   });
 
   useEffect(() => {
@@ -1138,13 +1120,16 @@ export default function App() {
   }, [gen10Skin, themeMode]);
 
   const cycleLuxuryTheme = () => {
-    if (themeMode === 'dark') {
+    if (themeMode === 'dark' && gen10Skin === 'lal-sobuj') {
+      setGen10Skin('black');
+      showToast('🖤 Theme: Pure Obsidian Black');
+    } else if (themeMode === 'dark') {
       setThemeMode('light');
       showToast('☀️ Theme: Warm Sunlight Gallery');
     } else {
       setThemeMode('dark');
-      setGen10Skin('black');
-      showToast('🖤 Theme: Pure Premium Black');
+      setGen10Skin('lal-sobuj');
+      showToast('🇧🇩 Theme: Lal-Sobuj Sovereign (Bangladesh Red & Green)');
     }
   };
 
@@ -3971,7 +3956,9 @@ export default function App() {
       className={`min-h-screen ${
         themeMode === 'light' 
           ? 'bg-[#f8f6f0] text-[#111215] spatial-3d-typography-light' 
-          : 'bg-[#0a0b0e] text-[#f4f4f6] spatial-3d-typography-dark'
+          : gen10Skin === 'lal-sobuj'
+          ? 'bg-[#011710] text-[#f4f4f6] spatial-3d-typography-dark'
+          : 'bg-[#000000] text-[#f4f4f6] spatial-3d-typography-dark'
       } font-sans relative overflow-x-hidden transition-colors duration-500`}
       style={customBgUrl ? {
         backgroundImage: `url(${customBgUrl})`,
@@ -3985,12 +3972,12 @@ export default function App() {
         <div className={`absolute inset-0 z-0 pointer-events-none transition-colors duration-500 ${
           themeMode === 'light'
             ? 'bg-gradient-to-b from-white/72 via-white/52 to-white/75 backdrop-blur-[1px]'
-            : 'bg-[#0a0b0e]/90 backdrop-blur-[2px]'
+            : 'bg-[#011710]/95 backdrop-blur-[2px]'
         }`} />
       )}
 
       {/* ==================================================================== */}
-      {/* BESPOKE PRO MATTE OBSIDIAN CHARCOAL CANVAS (PRO WORKSTATION LAYER)   */}
+      {/* BESPOKE BANGLADESH LAL-SOBUJ & OBSIDIAN CANVASES (PRO WORKSTATION)   */}
       {/* ==================================================================== */}
       <div
         aria-hidden="true"
@@ -4001,6 +3988,8 @@ export default function App() {
           className={`absolute -inset-6 hyper-5d-grid-plane ${
             themeMode === 'light'
               ? 'bg-[linear-gradient(to_right,rgba(24,24,27,0.032)_1px,transparent_1px),linear-gradient(to_bottom,rgba(24,24,27,0.032)_1px,transparent_1px)] [background-size:52px_52px]'
+              : gen10Skin === 'lal-sobuj'
+              ? 'bg-[linear-gradient(to_right,rgba(16,185,129,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.04)_1px,transparent_1px)] [background-size:52px_52px]'
               : 'bg-[linear-gradient(to_right,rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.015)_1px,transparent_1px)] [background-size:52px_52px]'
           }`}
         />
@@ -4010,10 +3999,23 @@ export default function App() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_65%_at_50%_-10%,rgba(255,255,255,0.92),rgba(254,243,199,0.22)_45%,rgba(248,246,240,0.85)_100%)]" />
         )}
 
-        {/* 2. VELVET PRO CHARCOAL OBSIDIAN (ZERO NOISE, CRISP WORKSTATION BACKGROUND) */}
-        {themeMode === 'dark' && (
+        {/* 2. BANGLADESH LAL-SOBUJ SOVEREIGN CANVAS (CRIMSON SUN × EMERALD FIELD) */}
+        {themeMode === 'dark' && gen10Skin === 'lal-sobuj' && (
           <>
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_85%_55%_at_50%_-15%,rgba(255,255,255,0.03)_0%,rgba(148,163,184,0.015)_40%,#0a0b0e_100%)]" />
+            {/* The Radiant Rising Crimson Sun of Bangladesh */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_580px_at_50%_14%,rgba(244,42,65,0.26)_0%,rgba(225,29,72,0.12)_42%,transparent_75%)]" />
+            {/* The Lush Sovereign Emerald Green Expanse */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_95%_70%_at_50%_90%,rgba(5,150,105,0.22)_0%,transparent_60%)]" />
+            {/* Atmospheric Caustic Highlights in Crimson & Emerald */}
+            <div className="absolute top-1/4 -left-32 w-[420px] h-[420px] rounded-full bg-rose-600/[0.14] blur-[110px] pointer-events-none" />
+            <div className="absolute top-1/3 -right-32 w-[420px] h-[420px] rounded-full bg-emerald-500/[0.18] blur-[110px] pointer-events-none" />
+          </>
+        )}
+
+        {/* 3. PURE OBSIDIAN PITCH BLACK (ZERO NOISE, CRISP WORKSTATION BACKGROUND) */}
+        {themeMode === 'dark' && gen10Skin !== 'lal-sobuj' && (
+          <>
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_85%_55%_at_50%_-15%,rgba(255,255,255,0.03)_0%,transparent_40%,#000000_100%)]" />
             <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full bg-white/[0.01] blur-3xl pointer-events-none" />
             <div className="absolute top-1/3 -right-32 w-96 h-96 rounded-full bg-slate-400/[0.01] blur-3xl pointer-events-none" />
           </>
@@ -4083,6 +4085,7 @@ export default function App() {
           }}
           uiLang="en"
           showToast={showToast}
+          onOpenOfficialStandards={() => setShowOfficialStandardsModal(true)}
           onLoadStorePack={(pack) => {
             const packFile = new File([''], `${pack.id}.eps`, { type: 'application/postscript' });
             const stagedPackItem: BulkItem = {
@@ -4177,8 +4180,8 @@ export default function App() {
                   onClick={() => setCurrentView(tab.id as any)}
                   className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold tracking-[0.04em] transition cursor-pointer whitespace-nowrap shrink-0 ${
                     isActive
-                      ? (themeMode === 'light' ? 'bg-neutral-950 text-white shadow-2xs' : 'bg-white text-neutral-950')
-                      : (themeMode === 'light' ? 'text-neutral-500 hover:text-black hover:bg-neutral-100/80' : 'text-neutral-400 hover:text-white hover:bg-white/5')
+                      ? (themeMode === 'light' ? 'bg-neutral-950 text-white shadow-2xs' : 'bg-gradient-to-r from-emerald-600 via-rose-600 to-emerald-600 text-white font-bold shadow-[0_0_15px_rgba(244,42,65,0.35)] border border-rose-400/50')
+                      : (themeMode === 'light' ? 'text-neutral-500 hover:text-black hover:bg-neutral-100/80' : 'text-emerald-100/75 hover:text-white hover:bg-emerald-500/10')
                   }`}
                 >
                   {tab.label}
@@ -4194,13 +4197,13 @@ export default function App() {
               className={`lumina-tactile-button px-2.5 py-1.5 rounded-xl text-[11px] font-mono hidden md:flex items-center gap-1.5 border transition cursor-pointer ${
                 themeMode === 'light'
                   ? 'bg-white/85 hover:bg-white text-neutral-600 hover:text-neutral-950 border-neutral-200/90'
-                  : 'bg-white/[0.03] hover:bg-white/10 text-neutral-400 hover:text-white border-white/10'
+                  : 'bg-white/[0.03] hover:bg-emerald-500/10 text-emerald-200/80 hover:text-white border-emerald-500/20'
               }`}
               title="Quick Command & Search Palette (⌘K)"
             >
               <span>Search</span>
               <kbd className={`px-1 py-0.5 text-[9.5px] rounded font-mono ${
-                themeMode === 'light' ? 'bg-neutral-200/70 text-neutral-700' : 'bg-white/10 text-neutral-300'
+                themeMode === 'light' ? 'bg-neutral-200/70 text-neutral-700' : 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30'
               }`}>⌘K</kbd>
             </button>
 
@@ -4213,30 +4216,30 @@ export default function App() {
               className={`lumina-tactile-button px-3.5 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border transition cursor-pointer ${
                 themeMode === 'light'
                   ? 'bg-white/85 hover:bg-white text-neutral-800 border-neutral-200/90'
-                  : 'bg-white/5 hover:bg-white/10 text-neutral-200 border-white/15'
+                  : 'bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-200 border-emerald-500/35 shadow-sm'
               }`}
               title="Open Pre-Submission Checker, Rejection Helper, AI Disclosure & Earnings Tracker"
             >
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               <span className="hidden sm:inline">Audit</span>
             </button>
 
             <button
               onClick={cycleLuxuryTheme}
-              aria-label="Cycle theme mode (Champagne Velvet / Warm Sunlight / Pure Black)"
+              aria-label="Cycle theme mode (Lal-Sobuj / Warm Sunlight / Pure Black)"
               className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer ${
                 themeMode === 'light'
                   ? 'text-amber-700 hover:text-black hover:bg-neutral-100'
                   : gen10Skin === 'black'
                   ? 'text-neutral-300 hover:text-white hover:bg-neutral-900'
-                  : 'text-amber-300 hover:text-amber-200 hover:bg-white/10'
+                  : 'text-rose-400 hover:text-rose-300 hover:bg-rose-500/15'
               }`}
               title={
                 themeMode === 'light'
                   ? 'Current: Warm Sunlight · Click for Pure Black'
                   : gen10Skin === 'black'
-                  ? 'Current: Pure Black · Click for Champagne Velvet'
-                  : 'Current: Champagne Velvet · Click for Warm Sunlight'
+                  ? 'Current: Pure Black · Click for Lal-Sobuj'
+                  : 'Current: Lal-Sobuj (Bangladesh Red & Green) · Click for Warm Sunlight'
               }
             >
               {themeMode === 'light' ? <Sun className="w-3.5 h-3.5" /> : gen10Skin === 'black' ? <Moon className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
@@ -4248,7 +4251,7 @@ export default function App() {
               className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer relative ${
                 themeMode === 'light'
                   ? 'text-neutral-600 hover:text-black hover:bg-neutral-100'
-                  : 'text-neutral-300 hover:text-white hover:bg-neutral-900'
+                  : 'text-emerald-200 hover:text-white hover:bg-emerald-950/40'
               }`}
               title="Settings, Account Login/Logout & Custom API Key"
             >
@@ -4263,7 +4266,7 @@ export default function App() {
               className={`lumina-tactile-button text-[11px] font-semibold tracking-[0.06em] flex items-center gap-1.5 px-4 py-1.5 rounded-xl transition cursor-pointer ${
                 themeMode === 'light'
                   ? 'text-white bg-neutral-950 hover:bg-black'
-                  : 'text-neutral-950 bg-white hover:bg-neutral-200'
+                  : 'lal-sobuj-glow-button'
               }`}
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -4481,77 +4484,6 @@ export default function App() {
               }}
               themeMode={themeMode}
             />
-          ) : studioLayoutMode === 'suno' ? (
-            <motion.div
-              key="suno-studio"
-              initial={{ opacity: 0, scale: 0.99 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.99 }}
-              className="space-y-4 -mx-3 sm:-mx-6 lg:-mx-10 xl:-mx-14 -mt-6"
-            >
-              {/* Studio Switcher pill */}
-              <div className="px-6 pt-3 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10.5px] font-mono uppercase tracking-widest text-amber-400 font-bold flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    SUNO STUDIO WORKSTATION (CUSTOM MODE)
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold">
-                    suno.com/create?mode=CUSTOM
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 p-1 rounded-xl text-xs">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStudioLayoutMode('suno');
-                      try { localStorage.setItem('adobemeta_studio_layout', 'suno'); } catch {}
-                    }}
-                    className="px-3 py-1 rounded-lg font-bold transition cursor-pointer bg-amber-400 text-black shadow-xs"
-                  >
-                    ⚡ Suno Custom Mode
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStudioLayoutMode('classic');
-                      try { localStorage.setItem('adobemeta_studio_layout', 'classic'); } catch {}
-                    }}
-                    className="px-3 py-1 rounded-lg font-bold transition cursor-pointer text-neutral-400 hover:text-white"
-                  >
-                    Classic Multi-Table
-                  </button>
-                </div>
-              </div>
-
-              <SunoCustomStudioView
-                items={items}
-                setItems={setItems}
-                onDropFiles={(dropped) => {
-                  handleFilesSelect({ target: { files: dropped } } as any);
-                }}
-                onStartBulkProcessing={() => startBulkProcessing()}
-                isProcessing={isProcessing}
-                targetMarketplace={targetMarketplace}
-                setTargetMarketplace={setTargetMarketplace}
-                assetType={assetType}
-                setAssetType={setAssetType}
-                language={language}
-                setLanguage={setLanguage}
-                onOpenUpscaler={handleOpenUpscaler}
-                onOpenMultiCsv={() => setShowMultiCsvModal(true)}
-                onExportZip={exportBatchZip}
-                onExportCsv={exportBatchCSV}
-                onAutoFixItem={autoFixItem}
-                onDeleteItem={deleteItem}
-                onClearAll={clearAllItems}
-                onNavigateView={(v) => setCurrentView(v as any)}
-                user={user}
-                onOpenLogin={() => setShowAuthModal(true)}
-                showToast={showToast}
-                themeMode={themeMode}
-              />
-            </motion.div>
           ) : (
             <motion.div
               key="upload"
@@ -4575,26 +4507,13 @@ export default function App() {
                       themeMode === 'light' ? 'border-neutral-200/70' : 'border-white/10'
                     }`}>
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10.5px] font-mono tracking-[0.18em] uppercase text-neutral-400">
-                            01 · CORE METADATA STUDIO
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setStudioLayoutMode('suno');
-                              try { localStorage.setItem('adobemeta_studio_layout', 'suno'); } catch {}
-                              showToast('Switched to Suno Custom Studio View');
-                            }}
-                            className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold hover:bg-amber-500/25 transition cursor-pointer"
-                          >
-                            ⚡ Switch to Suno Custom Studio
-                          </button>
+                        <div className="text-[10.5px] font-mono tracking-[0.18em] uppercase text-neutral-400">
+                          01 · CORE METADATA STUDIO
                         </div>
                         <div className="flex items-center gap-2.5">
                           <span className="text-lg sm:text-2xl font-bold tracking-[-0.025em]">
                             Studio{' '}
-                            <span className="font-editorial italic font-semibold text-[1.08em] luxury-headline-gradient pr-1">
+                            <span className="font-editorial italic font-semibold text-[1.08em] wow-text-lal-sobuj pr-1">
                               Metadata
                             </span>{' '}
                             Workbench
@@ -5255,7 +5174,7 @@ export default function App() {
                           className={`font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg cursor-pointer ${
                             themeMode === 'light'
                               ? 'bg-neutral-950 hover:bg-black disabled:bg-stone-200 disabled:text-stone-400 text-amber-300'
-                              : 'bg-[#f3e5ab] hover:bg-[#e5c158] disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-950'
+                              : 'lal-sobuj-glow-button disabled:opacity-50 disabled:pointer-events-none'
                           }`}
                           title="Generate Title & 49 Keywords for all pending files in 1 click"
                         >
@@ -5286,7 +5205,7 @@ export default function App() {
                             className={`font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-md cursor-pointer ${
                               themeMode === 'light'
                                 ? 'bg-neutral-950 hover:bg-black text-white'
-                                : 'bg-white hover:bg-neutral-200 text-black'
+                                : 'lal-sobuj-glow-button'
                             }`}
                             title={`Download 100% verified ${targetMarketplace === 'adobe_stock' ? 'Adobe Stock (Filename,Title,Keywords,Category)' : targetMarketplace === 'shutterstock' ? 'Shutterstock (Filename,Description,Keywords,Categories)' : 'agency-compliant'} CSV`}
                           >
@@ -6373,6 +6292,15 @@ export default function App() {
                                 >
                                   Getty (35)
                                 </button>
+                                <span aria-hidden="true" className="opacity-30">·</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setQuantumInspectorItem(item)}
+                                  className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                                >
+                                  <Zap className="w-3 h-3 text-amber-400" />
+                                  <span>7 Agencies · Gen-11 Quantum</span>
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -6659,6 +6587,16 @@ export default function App() {
 
                             <button
                               type="button"
+                              onClick={() => setQuantumInspectorItem(item)}
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold border border-emerald-500/40 bg-gradient-to-r from-emerald-500/20 via-emerald-600/25 to-teal-500/20 hover:from-emerald-500/35 hover:to-teal-500/35 text-emerald-300 flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-emerald-500/15"
+                              title="Open Gen-11 Quantum Mastermind: 7-Agency Live Calibration, Intent Matrix, Visual Palette, and Commercial RPM Yield"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                              <span>⚡ Gen-11 Quantum</span>
+                            </button>
+
+                            <button
+                              type="button"
                               onClick={() => openEditor(item)}
                               className={`px-3 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition cursor-pointer ${
                                 themeMode === 'light'
@@ -6863,6 +6801,7 @@ export default function App() {
           onOpenGuideHub={() => setShowGuideHubModal(true)}
           onOpenMultiCsv={() => setShowMultiCsvModal(true)}
           onOpenMonetize={() => setCurrentView('monetize')}
+          onOpenOfficialStandards={() => setShowOfficialStandardsModal(true)}
           themeMode={themeMode}
         />
       </motion.div>
@@ -7798,6 +7737,31 @@ export default function App() {
         />
       )}
 
+      {/* Gen-11 Quantum Mastermind Commercial Inspector Modal */}
+      {quantumInspectorItem && (
+        <Gen11QuantumInspectorModal
+          isOpen={Boolean(quantumInspectorItem)}
+          onClose={() => setQuantumInspectorItem(null)}
+          item={quantumInspectorItem}
+          themeMode={themeMode}
+          showToast={showToast}
+          onApplyTitle={(newTitle) => {
+            if (!quantumInspectorItem) return;
+            setItems((prev) =>
+              prev.map((it) =>
+                it.id === quantumInspectorItem.id && it.result
+                  ? { ...it, result: { ...it.result, recommendedTitle: newTitle } }
+                  : it
+              )
+            );
+          }}
+          onReorderKeywords={(newKws) => {
+            if (!quantumInspectorItem) return;
+            handleSaveAlgorithmKeywords(quantumInspectorItem.id, newKws);
+          }}
+        />
+      )}
+
       {/* Live Visual Similar Image Keyword Mixer (ImStocker-Style Consensus Engine) */}
       {showKeywordMixerModal && (
         <VisualKeywordMixerModal
@@ -8220,11 +8184,19 @@ export default function App() {
       {/* GDPR & Google AdSense Compliant Cookie Banner */}
       <CookieConsentBanner onOpenPrivacy={() => setShowPrivacyModal(true)} />
 
-      {/* Legal & Compliance Modals for AdSense Approval */}
+      {/* Legal & Compliance Modals for AdSense Approval & Official Accreditation */}
       {showPrivacyModal && <PrivacyPolicyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />}
       {showTermsModal && <TermsOfServiceModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />}
       {showDisclaimerModal && <EarningsDisclaimerModal isOpen={showDisclaimerModal} onClose={() => setShowDisclaimerModal(false)} />}
       {showContactModal && <ContactSupportModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />}
+      {showOfficialStandardsModal && (
+        <OfficialStandardsModal
+          isOpen={showOfficialStandardsModal}
+          onClose={() => setShowOfficialStandardsModal(false)}
+          onOpenContact={() => setShowContactModal(true)}
+          themeMode={themeMode}
+        />
+      )}
 
       {/* Editorial Navigation Modals */}
       {showAboutModal && <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />}
@@ -8283,6 +8255,27 @@ export default function App() {
           customApiKey={customApiKey}
           showToast={showToast}
         />
+      )}
+
+      {/* Floating AI Contributor Director Trigger Button (When Drawer is closed) */}
+      {!isChatOpen && (
+        <button
+          type="button"
+          onClick={() => setIsChatOpen(true)}
+          className="fixed bottom-6 right-6 z-[80] p-3.5 sm:px-5 sm:py-3.5 rounded-full border border-cyan-400/40 bg-[#000000]/95 hover:bg-[#000000] text-white shadow-[0_0_35px_rgba(0,240,255,0.3)] hover:shadow-[0_0_50px_rgba(0,240,255,0.45)] hover:border-cyan-300 transition-all duration-300 flex items-center gap-3 cursor-pointer group backdrop-blur-xl"
+          title="Open AI Contributor Director & Vision 49-Tag Studio"
+        >
+          <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition shrink-0">
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+          </div>
+          <div className="hidden sm:flex flex-col text-left">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-white tracking-tight">AI Contributor Director</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            </div>
+            <span className="text-[10px] text-neutral-400 font-mono">12 Engines · 2026 Ready</span>
+          </div>
+        </button>
       )}
 
       {/* Contributor Pre-Submission Checker, Rejection Reason Helper, AI Disclosure & Earnings Tracker */}

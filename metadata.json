@@ -1,6 +1,6 @@
 {
   "name": "AdobeMeta Pro",
-  "description": "Commercial stock metadata studio, 100% Adobe Stock SEO guidelines calibrator, EPS vector rendering, and royalty monetization suite for contributors.",
+  "description": "Official commercial stock metadata workstation, 100% Adobe Stock SEO guidelines calibrator, IPTC 7.2 embedder, EPS vector rendering, and Google monetization suite for contributors.",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

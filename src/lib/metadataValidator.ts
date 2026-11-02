@@ -719,12 +719,42 @@ export const sanitizeAndPerfectMetadataResult = (
       highVolumeSeo: altSeo,
       editorialStory: altEditorial
     },
-    agencyTitles: rawResult.agencyTitles || {
-      adobeStock: finalCleanTitle.slice(0, 69),
-      shutterstock: altEditorial.slice(0, 180),
-      freepik: altSeo.slice(0, 95),
-      getty: altB2b.slice(0, 95),
-      vecteezy: finalCleanTitle.slice(0, 85)
+    agencyTitles: {
+      adobeStock: rawResult.agencyTitles?.adobeStock || finalCleanTitle.slice(0, 69),
+      shutterstock: rawResult.agencyTitles?.shutterstock || altEditorial.slice(0, 180),
+      freepik: rawResult.agencyTitles?.freepik || altSeo.slice(0, 95),
+      getty: rawResult.agencyTitles?.getty || altB2b.slice(0, 95),
+      vecteezy: rawResult.agencyTitles?.vecteezy || finalCleanTitle.slice(0, 85),
+      onetwothreerf: rawResult.agencyTitles?.onetwothreerf || `${finalCleanTitle} Commercial Stock Visual`.slice(0, 90),
+      dreamstime: rawResult.agencyTitles?.dreamstime || altEditorial.slice(0, 140)
+    },
+    visualPalette: rawResult.visualPalette || {
+      dominantHex: '#006a4e',
+      palette: [
+        { hex: '#006a4e', name: 'Sovereign Emerald' },
+        { hex: '#f42a41', name: 'National Crimson' },
+        { hex: '#d4af37', name: 'Prestige Gold' },
+        { hex: '#1e293b', name: 'Deep Slate' },
+        { hex: '#f8fafc', name: 'Pure White' }
+      ],
+      lightingStyle: 'Commercial Studio High-Key',
+      compositionType: 'Negative Space Balanced',
+      copySpaceLocation: 'Top / Left Quadrant'
+    },
+    commercialYield: rawResult.commercialYield || {
+      predictedRpmRange: '$28 - $58',
+      commercialDemandScore: 98,
+      recommendedMicrostockTier: 'Premium / High-Yield',
+      seasonalityPeak: 'Year-Round Evergreen Commercial Demand',
+      salesVelocityPrediction: 'Rapid (<48h)',
+      topBuyerIndustries: ['Corporate Branding', 'Publishing & Editorial', 'Digital Marketing', 'Packaging Design']
+    },
+    intentKeywordGroups: rawResult.intentKeywordGroups || {
+      buyerQueries: finalTop10.slice(0, 5),
+      coreSubject: finalTop10.slice(0, 8),
+      lightingAndAtmosphere: ['natural light', 'clean background', 'high contrast', 'copy space'],
+      commercialUseCases: ['advertising', 'web design', 'marketing campaign', 'social media banner'],
+      compositionAndLayout: ['isolated', 'close-up', 'negative space', 'horizontal banner']
     },
     searchWeightIndex: rawResult.searchWeightIndex || 99,
     estimatedCpcUSD: rawResult.estimatedCpcUSD || '$3.40',

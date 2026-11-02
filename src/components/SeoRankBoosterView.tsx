@@ -107,7 +107,7 @@ export const SeoRankBoosterView: React.FC<SeoRankBoosterViewProps> = ({
 
             <h2 className="text-2xl sm:text-4xl font-bold tracking-[-0.03em] leading-[1.1]">
               Algorithmic{' '}
-              <span className="font-editorial italic font-semibold text-[1.08em] luxury-headline-gradient pr-1">
+              <span className="font-editorial italic font-semibold text-[1.08em] wow-text-lal-sobuj pr-1">
                 Title &amp; Top-10
               </span>{' '}
               Search Calibrator
@@ -126,7 +126,7 @@ export const SeoRankBoosterView: React.FC<SeoRankBoosterViewProps> = ({
       }`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h3 className={`text-base font-bold flex items-center gap-2 ${isLight ? 'text-neutral-900' : 'text-white'}`}>
-            <Target className="w-4 h-4 text-amber-500" />
+            <Target className="w-4 h-4 text-emerald-400" />
             <span>Search Term Slot #1 Locking Simulator</span>
           </h3>
           <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
@@ -146,7 +146,7 @@ export const SeoRankBoosterView: React.FC<SeoRankBoosterViewProps> = ({
               className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-medium ${
                 isLight
                   ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-900 focus:bg-white focus:border-neutral-900'
-                  : 'bg-neutral-950 border-neutral-800 text-white focus:border-neutral-600'
+                  : 'bg-neutral-950 border-emerald-500/30 text-white focus:border-emerald-400'
               } focus:outline-none transition font-sans`}
             />
           </div>
@@ -162,10 +162,10 @@ export const SeoRankBoosterView: React.FC<SeoRankBoosterViewProps> = ({
             className={`font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition flex items-center justify-center gap-2 shrink-0 cursor-pointer ${
               isLight
                 ? 'bg-neutral-950 hover:bg-black text-white'
-                : 'bg-white hover:bg-neutral-200 text-neutral-950'
+                : 'lal-sobuj-glow-button'
             }`}
           >
-            <Lock className="w-3.5 h-3.5 text-amber-500" />
+            <Lock className="w-3.5 h-3.5 text-white" />
             <span>Lock into Studio Assets</span>
           </button>
         </div>

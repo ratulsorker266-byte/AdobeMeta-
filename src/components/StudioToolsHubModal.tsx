@@ -219,7 +219,7 @@ export const StudioToolsHubModal: React.FC<StudioToolsHubModalProps> = ({
         initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 12 }}
-        className="w-full max-w-5xl bg-[#050507] border border-white/[0.1] rounded-[32px] shadow-[0_32px_90px_rgba(0,0,0,0.92)] overflow-hidden flex flex-col my-auto max-h-[88vh]"
+        className="w-full max-w-5xl bg-[#000000] border border-white/[0.1] rounded-[32px] shadow-[0_32px_90px_rgba(0,0,0,0.92)] overflow-hidden flex flex-col my-auto max-h-[88vh]"
       >
         {/* Modal Header */}
         <div className="p-7 sm:p-9 border-b border-white/[0.08] flex items-center justify-between bg-black/60 shrink-0">

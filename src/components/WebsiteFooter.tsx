@@ -12,6 +12,7 @@ interface WebsiteFooterProps {
   onOpenGuideHub: () => void;
   onOpenMultiCsv: () => void;
   onOpenMonetize?: () => void;
+  onOpenOfficialStandards?: () => void;
   themeMode?: 'light' | 'dark';
 }
 
@@ -25,6 +26,7 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
   onOpenGuideHub,
   onOpenMultiCsv,
   onOpenMonetize,
+  onOpenOfficialStandards,
   themeMode = 'light',
 }) => {
   const isLight = themeMode === 'light';
@@ -124,6 +126,17 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
             >
               Disclaimer
             </button>
+            {onOpenOfficialStandards && (
+              <button
+                type="button"
+                onClick={onOpenOfficialStandards}
+                className={`lumina-directional-link cursor-pointer text-cyan-400 font-semibold ${
+                  isLight ? 'hover:text-black text-cyan-700' : 'hover:text-white text-cyan-400'
+                }`}
+              >
+                Official Specs
+              </button>
+            )}
             {onOpenMonetize && (
               <button
                 type="button"
@@ -162,11 +175,19 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
             </button>
           </div>
 
-          {/* Right: Copyright */}
-          <div className={`text-[11px] font-medium ${
-            isLight ? 'text-neutral-500' : 'text-neutral-400'
-          }`}>
-            © {new Date().getFullYear()} AdobeMeta Pro
+          {/* Right: Official Corporate Copyright & Bangladesh Sovereign Tribute */}
+          <div className="flex flex-col sm:items-end gap-1">
+            <div className={`text-[11px] font-mono tracking-tight flex items-center gap-1.5 ${
+              isLight ? 'text-neutral-700' : 'text-emerald-300'
+            }`}>
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0 shadow-[0_0_8px_#f43f5e]" />
+              <span>Crafted with pride in Bangladesh 🇧🇩 by <strong className="text-white">Ratul Sorker</strong></span>
+            </div>
+            <div className={`text-[10px] font-mono tracking-tight ${
+              isLight ? 'text-neutral-400' : 'text-emerald-200/50'
+            }`}>
+              © {new Date().getFullYear()} AdobeMeta Systems Ltd. · Lal-Sobuj Sovereign Edition
+            </div>
           </div>
         </div>
       </div>

@@ -211,7 +211,7 @@ const AI_MODES: {
     label: '🎨 AI Visual & Commercial Prompt Synth',
     shortLabel: '🎨 Image & Prompt',
     icon: Wand2,
-    badgeColor: 'text-cyan-400 border-cyan-500/40 bg-cyan-500/10',
+    badgeColor: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
     placeholder: 'Describe any visual to synthesize artwork preview + Midjourney v6.1 prompt + 49 tags...',
     quickPrompts: [
       'Generate image of luxury emerald & gold Islamic arch with negative copy space',
@@ -369,6 +369,7 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
   const [webSearchGrounding, setWebSearchGrounding] = useState<boolean>(false);
   const [showControlPanel, setShowControlPanel] = useState(false);
   const [cardTabMap, setCardTabMap] = useState<Record<number, 'titles' | 'tags' | 'export'>>({});
+  const [controlPanelTab, setControlPanelTab] = useState<'engines' | 'voice'>('engines');
 
   const chatFileInputRef = useRef<HTMLInputElement | null>(null);
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
@@ -1399,200 +1400,156 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                 onChatImageUpload({ target: chatFileInputRef.current } as any);
               }
             }}
-            className={`relative flex flex-col overflow-hidden sovereign-prism-card transition-all duration-300 ${
+            className={`relative flex flex-col overflow-hidden sovereign-prism-card transition-all duration-300 border ${
               isExpanded
-                ? 'w-[94vw] sm:w-[760px] lg:w-[920px] h-[82vh] max-h-[780px] rounded-3xl shadow-[0_35px_100px_rgba(0,0,0,0.75)]'
-                : 'w-[350px] sm:w-[410px] h-[540px] rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.6)]'
+                ? 'w-[96vw] sm:w-[900px] lg:w-[1100px] h-[88vh] max-h-[880px] rounded-3xl shadow-[0_35px_120px_rgba(0,0,0,0.95)]'
+                : 'w-[95vw] sm:w-[480px] md:w-[540px] h-[680px] sm:h-[720px] max-h-[90vh] rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.95)]'
             } ${
               isLight
-                ? 'crystal-architectural-slab-light text-neutral-900'
-                : 'crystal-architectural-slab-dark text-neutral-100'
+                ? 'bg-white border-neutral-300 text-neutral-900 shadow-2xl'
+                : 'bg-[#011710] border-emerald-500/35 text-neutral-100 shadow-[0_0_60px_rgba(244,42,65,0.25)]'
             }`}
           >
             {/* Drag & Drop Visual Overlay */}
             {isDragOverChat && (
-              <div className="absolute inset-0 z-50 bg-emerald-950/85 backdrop-blur-md border-2 border-dashed border-emerald-400 rounded-2xl flex flex-col items-center justify-center p-6 text-center pointer-events-none">
-                <ImageIcon className="w-10 h-10 text-emerald-400 mb-2 animate-bounce" />
-                <p className="text-sm font-bold text-white">Drop Image / EPS / PSD for Instant 49-Tag Vision SEO</p>
-                <p className="text-xs text-emerald-300 mt-1">Subject-First Title (&lt;70 chars) + Top 10 Weighted Tags</p>
+              <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md border-2 border-dashed border-emerald-400 rounded-3xl flex flex-col items-center justify-center p-8 text-center pointer-events-none">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-400 mb-3 animate-bounce">
+                  <ImageIcon className="w-8 h-8" />
+                </div>
+                <p className="text-base font-bold text-white">Drop Visual Asset for Instant 49-Tag Vision SEO</p>
+                <p className="text-xs text-emerald-300 mt-1">Generates Subject-First Title (&lt;70c) + Top 10 Weighted Tags</p>
               </div>
             )}
 
             {/* =================================================================== */}
-            {/* 1. UNIFIED EXECUTIVE COMMAND HEADER (CLEAN, ZERO-CLUTTER)           */}
+            {/* 1. EXECUTIVE COMMAND HEADER (CLEAN, SPACIOUS, ZERO CLUTTER)         */}
             {/* =================================================================== */}
             <div
-              className={`px-3.5 py-2.5 border-b flex items-center justify-between gap-2 z-20 ${
-                isLight ? 'bg-white border-neutral-200/90' : 'bg-[#0b0e14] border-neutral-800/90'
+              className={`px-5 py-4 border-b flex items-center justify-between gap-3 z-20 ${
+                isLight ? 'bg-white border-neutral-200' : 'bg-[#021f17] border-emerald-500/20'
               }`}
             >
-              {/* Left: History Vault + Active Mode Pill */}
-              <div className="flex items-center gap-2 min-w-0">
+              {/* Left: Identity & Engine Status */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border transition-all ${
+                  isLight
+                    ? 'bg-neutral-900 text-white border-neutral-700 shadow-sm'
+                    : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35 shadow-[0_0_15px_rgba(16,185,129,0.22)]'
+                }`}>
+                  <Sparkles className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[13.5px] font-bold tracking-tight truncate ${isLight ? 'text-neutral-950' : 'text-white'}`}>
+                      AI Contributor Director 🇧🇩
+                    </span>
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0 shadow-[0_0_6px_#f43f5e]" />
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-neutral-400 mt-0.5 truncate font-sans">
+                    <span className="text-emerald-300 font-semibold">{currentModeConfig.shortLabel}</span>
+                    <span className="opacity-40">·</span>
+                    <span className="text-neutral-300">{currentLangObj.name}</span>
+                    <span className="opacity-40">·</span>
+                    <span className="text-rose-400 font-mono font-medium">Lal-Sobuj Edition</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Clean Action Controls with Adequate Spacing */}
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Engine Deck Switcher Pill */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowControlPanel((prev) => !prev);
+                    setShowChatHistorySidebar(false);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                    showControlPanel
+                      ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300'
+                      : isLight
+                      ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-200 text-neutral-800'
+                      : 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/30 text-emerald-200'
+                  }`}
+                  title="Configure AI Specialist Engines, Voice & Grounding Settings"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">Engines</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showControlPanel ? 'rotate-180 text-emerald-400' : 'text-neutral-400'}`} />
+                </button>
+
+                {/* Live Voice Call Button */}
+                <button
+                  type="button"
+                  onClick={toggleLiveVoiceCall}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                    isLiveVoiceCall
+                      ? 'bg-rose-500 text-white border-rose-400 shadow-[0_0_16px_rgba(244,63,94,0.5)] animate-pulse'
+                      : isLight
+                      ? 'bg-neutral-900 text-white border-neutral-900 hover:bg-black'
+                      : 'bg-rose-500/15 text-rose-300 border-rose-500/40 hover:bg-rose-500/25'
+                  }`}
+                  title={isLiveVoiceCall ? 'End Hands-Free Voice Conversation' : 'Start Hands-Free Two-Way Voice Call'}
+                >
+                  {isLiveVoiceCall ? <PhoneOff className="w-3.5 h-3.5" /> : <PhoneCall className="w-3.5 h-3.5 text-rose-400" />}
+                  <span className="hidden sm:inline">{isLiveVoiceCall ? 'End Call' : 'Voice'}</span>
+                </button>
+
+                {/* History Vault Button */}
                 <button
                   type="button"
                   onClick={() => {
                     setShowChatHistorySidebar((prev) => !prev);
                     setShowControlPanel(false);
                   }}
-                  className={`px-2 py-1.5 rounded-xl border text-[10px] font-bold flex items-center gap-1 transition cursor-pointer shrink-0 ${
+                  className={`p-2 rounded-xl border transition cursor-pointer ${
                     showChatHistorySidebar
-                      ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400'
+                      ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300'
                       : isLight
-                      ? 'bg-neutral-100 hover:bg-neutral-200/80 border-neutral-200 text-neutral-700'
-                      : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+                      ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-200 text-neutral-700'
+                      : 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/30 text-emerald-200'
                   }`}
                   title="Conversation History Vault"
                 >
                   <Clock className="w-3.5 h-3.5" />
-                  <span>{chatSessions.length}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowControlPanel((prev) => !prev);
-                    setShowChatHistorySidebar(false);
-                  }}
-                  className={`px-2.5 py-1 rounded-xl border text-left transition cursor-pointer flex items-center gap-2 min-w-0 ${
-                    showControlPanel
-                      ? 'bg-emerald-500/15 border-emerald-500/40'
-                      : isLight
-                      ? 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200/90'
-                      : 'bg-neutral-900/90 hover:bg-neutral-800 border-neutral-800'
-                  }`}
-                  title="Switch AI Intelligence Mode & Voice Language Settings"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[11px] font-extrabold tracking-tight truncate">
-                        {currentModeConfig.shortLabel}
-                      </span>
-                      <span className="text-[9.5px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                        {currentLangObj.code.split('-')[0].toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-neutral-400 transition-transform shrink-0 ${
-                      showControlPanel ? 'rotate-180 text-emerald-400' : ''
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Right: Quick ♀/♂ Gender Voice Switch + Live Voice Call + Settings Toggle + New + Expand + Close */}
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const currentGender =
-                      AI_VOICE_PERSONAS.find((v) => v.id === aiVoicePersona)?.gender || 'female';
-                    const nextPersona: AiVoicePersonaId =
-                      currentGender === 'female' ? 'Charon' : 'Kore';
-                    aiVoicePersonaRef.current = nextPersona;
-                    setAiVoicePersona(nextPersona);
-                    getOrUnlockAudioPlayer();
-                    showToast(
-                      nextPersona === 'Charon'
-                        ? '♂ Pure Male Voice Locked (Charon · Deep Friend)'
-                        : '♀ Pure Female Voice Locked (Kore · Warm Friend)'
-                    );
-                  }}
-                  className={`px-2 py-1.5 rounded-xl border text-[10px] font-extrabold transition cursor-pointer ${
-                    (AI_VOICE_PERSONAS.find((v) => v.id === aiVoicePersona)?.gender || 'female') ===
-                    'male'
-                      ? 'bg-sky-500/15 border-sky-500/40 text-sky-400 hover:bg-sky-500/25'
-                      : 'bg-pink-500/15 border-pink-500/40 text-pink-400 hover:bg-pink-500/25'
-                  }`}
-                  title="1-Click Switch between Pure Female (♀) and Pure Male (♂) Voice"
-                >
-                  {(AI_VOICE_PERSONAS.find((v) => v.id === aiVoicePersona)?.gender || 'female') ===
-                  'male'
-                    ? '♂ Male'
-                    : '♀ Female'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={toggleLiveVoiceCall}
-                  className={`px-2.5 py-1.5 rounded-xl border text-[10.5px] font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
-                    isLiveVoiceCall
-                      ? 'bg-rose-500 text-white border-rose-400 shadow-[0_0_16px_rgba(244,63,94,0.5)] animate-pulse'
-                      : isLight
-                      ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
-                      : 'bg-emerald-500 text-slate-950 border-emerald-400 hover:bg-emerald-400'
-                  }`}
-                  title={
-                    isLiveVoiceCall
-                      ? 'End Hands-Free Voice Conversation'
-                      : 'Start Hands-Free Two-Way Voice Call (Speak & Listen in Any Language)'
-                  }
-                >
-                  {isLiveVoiceCall ? (
-                    <>
-                      <PhoneOff className="w-3 h-3" />
-                      <span>End Call</span>
-                    </>
-                  ) : (
-                    <>
-                      <PhoneCall className="w-3 h-3" />
-                      <span>Live Voice</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowControlPanel((prev) => !prev);
-                    setShowChatHistorySidebar(false);
-                  }}
-                  className={`p-1.5 rounded-xl border transition cursor-pointer ${
-                    showControlPanel
-                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                      : isLight
-                      ? 'bg-neutral-100 border-neutral-200 text-neutral-700 hover:text-black'
-                      : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white'
-                  }`}
-                  title="AI Modes & Voice Language Settings"
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                </button>
-
+                {/* New Chat Button */}
                 <button
                   type="button"
                   onClick={onStartNewChat}
-                  className={`p-1.5 rounded-xl border transition cursor-pointer ${
+                  className={`p-2 rounded-xl border transition cursor-pointer ${
                     isLight
-                      ? 'bg-neutral-100 border-neutral-200 text-neutral-700 hover:text-black'
-                      : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white'
+                      ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-200 text-neutral-700'
+                      : 'bg-white/[0.06] hover:bg-white/[0.12] border-white/12 text-neutral-300'
                   }`}
                   title="Start New Conversation"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
 
+                {/* Expand / Minimize */}
                 <button
                   type="button"
                   onClick={() => setIsExpanded((prev) => !prev)}
-                  className={`p-1.5 rounded-xl border transition cursor-pointer ${
+                  className={`p-2 rounded-xl border transition cursor-pointer ${
                     isLight
-                      ? 'bg-neutral-100 border-neutral-200 text-neutral-700 hover:text-black'
-                      : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white'
+                      ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-200 text-neutral-700'
+                      : 'bg-white/[0.06] hover:bg-white/[0.12] border-white/12 text-neutral-300'
                   }`}
                   title={isExpanded ? 'Compact View' : 'Expand Full Studio View'}
                 >
                   {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
                 </button>
 
+                {/* Close Button */}
                 <button
                   type="button"
                   onClick={onClose}
-                  className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  className={`p-2 rounded-xl transition cursor-pointer ${
                     isLight
                       ? 'text-neutral-500 hover:text-black hover:bg-neutral-100'
-                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/10'
                   }`}
                   title="Close Assistant"
                 >
@@ -1602,7 +1559,7 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
             </div>
 
             {/* =================================================================== */}
-            {/* 2. COLLAPSIBLE AI MODE & OMNILINGUAL VOICE SETTINGS DRAWER          */}
+            {/* 2. ADVANCED 2-TAB CONTROL DECK: ENGINES & VOICE MATRIX             */}
             {/* =================================================================== */}
             <AnimatePresence>
               {showControlPanel && (
@@ -1610,69 +1567,82 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.18 }}
+                  transition={{ duration: 0.2 }}
                   className={`border-b overflow-hidden z-20 ${
-                    isLight ? 'bg-[#f7f5f0] border-neutral-200' : 'bg-[#0e121b] border-neutral-800'
+                    isLight ? 'bg-neutral-50 border-neutral-200' : 'bg-[#050508] border-white/10'
                   }`}
                 >
-                  <div className="p-3 space-y-3">
-                    {/* Section A: 12 Intelligence Modes Grid */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
-                        <span className="text-[9.5px] font-mono uppercase tracking-wider text-neutral-400 font-bold">
-                          1. Select Intelligence Engine (12 Modes)
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const next = !deepMastermindMode;
-                              setDeepMastermindMode(next);
-                              showToast(
-                                next
-                                  ? '🧠 Deep Unfiltered Mastermind: ON (100% Full Details)'
-                                  : 'Standard Response Mode'
-                              );
-                            }}
-                            className={`px-2 py-0.5 rounded-md text-[9.5px] font-mono font-bold border transition cursor-pointer ${
-                              deepMastermindMode
-                                ? 'bg-amber-500/20 border-amber-400/50 text-amber-300'
-                                : isLight
-                                ? 'bg-white border-neutral-200 text-neutral-500'
-                                : 'bg-neutral-900 border-neutral-800 text-neutral-400'
-                            }`}
-                            title="When ON, AI reveals 100% unfiltered insider details like a close friend"
-                          >
-                            {deepMastermindMode ? '🧠 Deep Unfiltered: ON' : '🧠 Deep: OFF'}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const next = !webSearchGrounding;
-                              setWebSearchGrounding(next);
-                              showToast(
-                                next
-                                  ? '🌐 Live Google Search Grounding: ON'
-                                  : '🌐 Live Google Search: OFF'
-                              );
-                            }}
-                            className={`px-2 py-0.5 rounded-md text-[9.5px] font-mono font-bold border transition cursor-pointer ${
-                              webSearchGrounding
-                                ? 'bg-sky-500/20 border-sky-400/50 text-sky-300'
-                                : isLight
-                                ? 'bg-white border-neutral-200 text-neutral-500'
-                                : 'bg-neutral-900 border-neutral-800 text-neutral-400'
-                            }`}
-                            title="Ground answers with live Google Search web data"
-                          >
-                            {webSearchGrounding ? '🌐 Web Search: ON' : '🌐 Web Search'}
-                          </button>
-                        </div>
+                  <div className="p-4 sm:p-5 space-y-4">
+                    {/* Top Segmented Tab Switcher */}
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center p-1 rounded-xl bg-white/[0.05] border border-white/10">
+                        <button
+                          type="button"
+                          onClick={() => setControlPanelTab('engines')}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                            controlPanelTab === 'engines'
+                              ? 'bg-cyan-500 text-black shadow-sm'
+                              : 'text-neutral-300 hover:text-white'
+                          }`}
+                        >
+                          12 Specialist Engines
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setControlPanelTab('voice')}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                            controlPanelTab === 'voice'
+                              ? 'bg-cyan-500 text-black shadow-sm'
+                              : 'text-neutral-300 hover:text-white'
+                          }`}
+                        >
+                          Voice, Persona &amp; Grounding
+                        </button>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = !deepMastermindMode;
+                            setDeepMastermindMode(next);
+                            showToast(next ? '🧠 Deep Mastermind: ON (100% Unfiltered Secrets)' : 'Standard Mode');
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-bold border transition cursor-pointer ${
+                            deepMastermindMode
+                              ? 'bg-amber-500/20 border-amber-400/50 text-amber-300'
+                              : 'bg-white/[0.04] border-white/10 text-neutral-400'
+                          }`}
+                          title="Reveals 100% unfiltered insider formulas and real numbers"
+                        >
+                          {deepMastermindMode ? '🧠 Deep Mastermind: ON' : '🧠 Deep: OFF'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = !webSearchGrounding;
+                            setWebSearchGrounding(next);
+                            showToast(next ? '🌐 Live Google Search Grounding: ON' : 'Web Search: OFF');
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-bold border transition cursor-pointer ${
+                            webSearchGrounding
+                              ? 'bg-sky-500/20 border-sky-400/50 text-sky-300'
+                              : 'bg-white/[0.04] border-white/10 text-neutral-400'
+                          }`}
+                          title="Ground answers with live 2026 Google Web Search"
+                        >
+                          {webSearchGrounding ? '🌐 Web Search: ON' : '🌐 Web Search'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Tab 1: 12 Specialist Engines Grid */}
+                    {controlPanelTab === 'engines' && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[300px] overflow-y-auto pr-1">
                         {AI_MODES.map((m) => {
                           const isSelected = activeMode === m.id;
+                          const IconComp = m.icon;
                           return (
                             <button
                               key={m.id}
@@ -1680,141 +1650,132 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                               onClick={() => {
                                 setActiveMode(m.id);
                                 setShowControlPanel(false);
+                                showToast(`⚡ Switched to ${m.label}`);
                               }}
-                              className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold border text-left truncate transition cursor-pointer ${
+                              className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                                 isSelected
-                                  ? m.badgeColor
+                                  ? 'bg-cyan-500/15 border-cyan-400 text-white shadow-[0_0_20px_rgba(0,240,255,0.2)]'
                                   : isLight
-                                  ? 'bg-white border-neutral-200/90 text-neutral-700 hover:border-neutral-900'
-                                  : 'bg-neutral-900/90 border-neutral-800 text-neutral-300 hover:border-neutral-600'
+                                  ? 'bg-white hover:bg-neutral-100 border-neutral-200 text-neutral-800'
+                                  : 'bg-[#000000] hover:bg-white/[0.05] border-white/10 text-neutral-200'
                               }`}
                             >
-                              {m.shortLabel}
+                              <div className="flex items-center justify-between">
+                                <IconComp className={`w-4 h-4 ${isSelected ? 'text-cyan-400' : 'text-neutral-400'}`} />
+                                {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />}
+                              </div>
+                              <div className="mt-2">
+                                <div className="text-xs font-bold leading-tight truncate">{m.shortLabel}</div>
+                                <div className="text-[10px] text-neutral-400 truncate mt-0.5">{m.label.split('(')[0]}</div>
+                              </div>
                             </button>
                           );
                         })}
                       </div>
-                    </div>
+                    )}
 
-                    {/* Section B: Voice Language, Persona & Audio Test */}
-                    <div className="pt-2 border-t border-neutral-200/70 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <Globe className="w-3.5 h-3.5 text-emerald-500" />
-                        <select
-                          value={voiceLang}
-                          onChange={(e) => {
-                            const nextLang = e.target.value;
-                            setVoiceLang(nextLang);
-                            const found = VOICE_LANGUAGES.find((l) => l.code === nextLang);
-                            showToast(`🌐 Voice & AI Language set to ${found?.name || nextLang}`);
-                          }}
-                          className={`text-[10.5px] font-bold rounded-lg px-2 py-1 border focus:outline-none cursor-pointer ${
-                            isLight
-                              ? 'bg-white border-neutral-300 text-neutral-900'
-                              : 'bg-neutral-900 border-neutral-700 text-emerald-300'
-                          }`}
-                        >
-                          {VOICE_LANGUAGES.map((lang) => (
-                            <option key={lang.code} value={lang.code}>
-                              {lang.label}
-                            </option>
-                          ))}
-                        </select>
+                    {/* Tab 2: Voice, Persona & Grounding Matrix */}
+                    {controlPanelTab === 'voice' && (
+                      <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/10 space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-[11px] font-mono text-cyan-400 font-bold block mb-1">
+                              🌐 Language &amp; Dialect (12 Languages)
+                            </label>
+                            <select
+                              value={voiceLang}
+                              onChange={(e) => {
+                                const nextLang = e.target.value;
+                                setVoiceLang(nextLang);
+                                const found = VOICE_LANGUAGES.find((l) => l.code === nextLang);
+                                showToast(`🌐 Voice & AI Language set to ${found?.name || nextLang}`);
+                              }}
+                              className="w-full text-xs font-semibold rounded-xl px-3 py-2 bg-neutral-900 border border-white/15 text-white focus:outline-none cursor-pointer"
+                            >
+                              {VOICE_LANGUAGES.map((lang) => (
+                                <option key={lang.code} value={lang.code}>
+                                  {lang.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
 
-                        <select
-                          value={aiVoicePersona}
-                          onChange={(e) => {
-                            const nextVoice = e.target.value as AiVoicePersonaId;
-                            aiVoicePersonaRef.current = nextVoice;
-                            setAiVoicePersona(nextVoice);
-                            getOrUnlockAudioPlayer();
-                            const vObj = AI_VOICE_PERSONAS.find((v) => v.id === nextVoice);
-                            showToast(`🎙️ Switched to ${vObj?.label || nextVoice}`);
-                          }}
-                          className={`text-[10.5px] font-mono rounded-lg px-2 py-1 border focus:outline-none cursor-pointer ${
-                            isLight
-                              ? 'bg-white border-neutral-200 text-neutral-800'
-                              : 'bg-neutral-900 border-neutral-800 text-amber-300'
-                          }`}
-                          title="Choose Female or Male AI Voice Persona"
-                        >
-                          <optgroup label="♀ Female Voices (Warm & Expressive)">
-                            {AI_VOICE_PERSONAS.filter((v) => v.gender === 'female').map((v) => (
-                              <option key={v.id} value={v.id}>
-                                {v.label}
-                              </option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="♂ Male Voices (Deep & Confident)">
-                            {AI_VOICE_PERSONAS.filter((v) => v.gender === 'male').map((v) => (
-                              <option key={v.id} value={v.id}>
-                                {v.label}
-                              </option>
-                            ))}
-                          </optgroup>
-                        </select>
-                      </div>
+                          <div>
+                            <label className="text-[11px] font-mono text-cyan-400 font-bold block mb-1">
+                              🎙️ AI Voice Persona (Female &amp; Male)
+                            </label>
+                            <select
+                              value={aiVoicePersona}
+                              onChange={(e) => {
+                                const nextVoice = e.target.value as AiVoicePersonaId;
+                                aiVoicePersonaRef.current = nextVoice;
+                                setAiVoicePersona(nextVoice);
+                                getOrUnlockAudioPlayer();
+                                const vObj = AI_VOICE_PERSONAS.find((v) => v.id === nextVoice);
+                                showToast(`🎙️ Switched to ${vObj?.label || nextVoice}`);
+                              }}
+                              className="w-full text-xs font-semibold rounded-xl px-3 py-2 bg-neutral-900 border border-white/15 text-amber-300 focus:outline-none cursor-pointer"
+                            >
+                              <optgroup label="♀ Female Voices (Warm & Expressive)">
+                                {AI_VOICE_PERSONAS.filter((v) => v.gender === 'female').map((v) => (
+                                  <option key={v.id} value={v.id}>
+                                    {v.label}
+                                  </option>
+                                ))}
+                              </optgroup>
+                              <optgroup label="♂ Male Voices (Deep & Confident)">
+                                {AI_VOICE_PERSONAS.filter((v) => v.gender === 'male').map((v) => (
+                                  <option key={v.id} value={v.id}>
+                                    {v.label}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            </select>
+                          </div>
+                        </div>
 
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const sampleByLang: Record<string, string> = {
-                              'en-US':
-                                'Hello! I am your Contributor Studio Director. You can consult with me on commercial stock guidelines in any language.',
-                              'en-GB':
-                                'Hello! I am your AI assistant. Feel free to ask any question regarding stock metadata and royalties.',
-                              'es-ES':
-                                '¡Hola! Soy tu copiloto de inteligencia artificial. Puedes hablar conmigo en cualquier idioma.'
-                            };
-                            const sampleText =
-                              sampleByLang[voiceLang] ||
-                              'Hello! I am your Contributor Studio Director. You can consult with me on commercial stock guidelines in any language.';
-                            speakMessageAloud(sampleText, -99, false);
-                          }}
-                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition cursor-pointer ${
-                            speakingMsgIdx === -99
-                              ? 'bg-amber-500 text-slate-950 border-amber-400 animate-pulse'
-                              : isLight
-                              ? 'bg-white hover:bg-neutral-100 border-neutral-300 text-neutral-800'
-                              : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-700 text-amber-300'
-                          }`}
-                        >
-                          <Volume2 className="w-3 h-3" />
-                          <span>{speakingMsgIdx === -99 ? 'Speaking...' : 'Test Voice'}</span>
-                        </button>
+                        <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-3 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const sampleText = 'Hello! I am your Contributor Studio Director. You can consult with me on commercial stock metadata, Adobe Stock approval, and Google monetization.';
+                              speakMessageAloud(sampleText, -99, false);
+                            }}
+                            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                              speakingMsgIdx === -99
+                                ? 'bg-amber-500 text-black border-amber-400 animate-pulse'
+                                : 'bg-white/[0.06] hover:bg-white/[0.12] border-white/12 text-amber-300'
+                            }`}
+                          >
+                            <Volume2 className="w-3.5 h-3.5" />
+                            <span>{speakingMsgIdx === -99 ? 'Speaking Sample...' : 'Test Voice Persona'}</span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const next = !autoSpeakReplies;
-                            setAutoSpeakReplies(next);
-                            if (!next) {
-                              if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-                                window.speechSynthesis.cancel();
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = !autoSpeakReplies;
+                              setAutoSpeakReplies(next);
+                              if (!next) {
+                                if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                                  window.speechSynthesis.cancel();
+                                }
+                                setSpeakingMsgIdx(null);
                               }
-                              if (audioPlayerRef.current) {
-                                try {
-                                  audioPlayerRef.current.pause();
-                                } catch (_) {}
-                              }
-                              setSpeakingMsgIdx(null);
-                            }
-                            showToast(next ? '🔊 AI Auto-Voice Reply: ON' : '🔇 AI Auto-Voice Reply: OFF');
-                          }}
-                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition cursor-pointer ${
-                            autoSpeakReplies
-                              ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                              : isLight
-                              ? 'bg-white border-neutral-200 text-neutral-500'
-                              : 'bg-neutral-900 border-neutral-800 text-neutral-500'
-                          }`}
-                        >
-                          {autoSpeakReplies ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
-                          <span>{autoSpeakReplies ? 'Auto-Speak ON' : 'Muted'}</span>
-                        </button>
+                              showToast(next ? '🔊 AI Auto-Voice Reply: ON' : '🔇 AI Auto-Voice Reply: OFF');
+                            }}
+                            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                              autoSpeakReplies
+                                ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                                : 'bg-white/[0.04] border-white/10 text-neutral-400'
+                            }`}
+                          >
+                            {autoSpeakReplies ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                            <span>{autoSpeakReplies ? 'Auto-Voice: ON' : 'Auto-Voice: OFF'}</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -1973,63 +1934,156 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                   if (showChatHistorySidebar) setShowChatHistorySidebar(false);
                   if (showControlPanel) setShowControlPanel(false);
                 }}
-                className="flex-1 overflow-y-auto p-3.5 space-y-3.5 text-xs leading-relaxed"
+                className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 text-sm leading-relaxed"
               >
-                {/* Welcome Quick-Starter Cards (Only shown at the beginning of a conversation) */}
-                {chatMessages.length <= 1 && (
-                  <div
-                    className={`p-3 rounded-2xl border space-y-2.5 ${
-                      isLight
-                        ? 'bg-[#faf8f5] border-neutral-200/80 text-neutral-800'
-                        : 'bg-[#0d111a] border-neutral-800/90 text-neutral-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
-                        ⚡ Quick Actions ({currentModeConfig.shortLabel})
-                      </span>
-                      {activeWorkspaceAsset && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const prompt = activeWorkspaceAsset.title
-                              ? `Audit and upgrade my active Studio asset "${activeWorkspaceAsset.fileName}" (Current Title: "${activeWorkspaceAsset.title}"). Give me a higher-converting Rank #1 Title (<70 chars), Top 10 Priority Keywords, and Full 49 SEO Keywords.`
-                              : `Generate Rank #1 Title (<70 chars), Top 10 Priority Keywords, and Full 49 SEO Keywords for my active Studio asset "${activeWorkspaceAsset.fileName}".`;
-                            onSendChat(prompt, 'vision_seo');
-                          }}
-                          className="text-[9.5px] font-extrabold px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 hover:bg-amber-400 transition cursor-pointer flex items-center gap-1"
-                        >
-                          <span>Optimize Studio Asset ({totalQueueCount})</span>
-                          <ArrowUpRight className="w-2.5 h-2.5" />
-                        </button>
-                      )}
+                {/* Live Workbench Direct Sync Dock (If user has uploaded files in the workspace) */}
+                {activeWorkspaceAsset && (
+                  <div className={`p-4 sm:p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 shadow-lg ${
+                    isLight
+                      ? 'bg-neutral-50 border-neutral-300 text-neutral-900'
+                      : 'bg-emerald-950/40 border-emerald-500/35 text-white shadow-[0_0_30px_rgba(16,185,129,0.15)]'
+                  }`}>
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shrink-0">
+                        <ImageIcon className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono uppercase tracking-wider text-emerald-400 font-bold">
+                            WORKBENCH ASSET CONNECTED
+                          </span>
+                          <span className="text-[10.5px] px-2 py-0.5 rounded bg-white/10 text-neutral-300 font-mono">
+                            {totalQueueCount} in Queue
+                          </span>
+                        </div>
+                        <div className="text-xs sm:text-sm font-bold truncate mt-0.5 text-white">
+                          {activeWorkspaceAsset.fileName}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const prompt = activeWorkspaceAsset.title
+                          ? `Audit and upgrade my active Studio asset "${activeWorkspaceAsset.fileName}" (Current Title: "${activeWorkspaceAsset.title}"). Give me a higher-converting Rank #1 Title (<70 chars), Top 10 Priority Keywords, and Full 49 SEO Keywords.`
+                          : `Generate Rank #1 Title (<70 chars), Top 10 Priority Keywords, and Full 49 SEO Keywords for my active Studio asset "${activeWorkspaceAsset.fileName}".`;
+                        onSendChat(prompt, 'vision_seo');
+                      }}
+                      className="px-4 py-2 rounded-xl text-xs font-bold lal-sobuj-glow-button flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md shrink-0"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Calibrate 2026 Title &amp; 49 Tags</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Advanced Executive Presets & Launch Matrix (When conversation is new) */}
+                {chatMessages.length <= 1 && (
+                  <div className={`p-5 sm:p-6 rounded-3xl border space-y-4 ${
+                    isLight
+                      ? 'bg-neutral-50 border-neutral-300'
+                      : 'bg-[#000000] border-white/12 shadow-xl'
+                  }`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>EXECUTIVE WORKSTATION PRESETS · 2026 ENGINE</span>
+                      </div>
+                      <span className="text-[11px] font-mono text-neutral-400">1-Click Fast Launch</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSendChat(
+                            'Generate Adobe Stock 2026 compliant subject-first title (<70 chars) and 49 weighted keywords for my visual asset.',
+                            'vision_seo'
+                          )
+                        }
+                        className="p-3.5 rounded-2xl border text-left transition-all cursor-pointer bg-white/[0.03] hover:bg-white/[0.08] border-white/10 hover:border-emerald-400/50 group"
+                      >
+                        <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:text-emerald-300 transition">
+                          <Eye className="w-4 h-4 text-emerald-400" />
+                          <span>Vision 49-Tag Calibrator</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+                          Subject-first title (&lt;70c) + top 10 search priority slot locks.
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSendChat(
+                            'Audit my stock asset title and keywords for Adobe Stock rejection reasons, trademark violations, and AI disclosure requirements.',
+                            'audit_doctor'
+                          )
+                        }
+                        className="p-3.5 rounded-2xl border text-left transition-all cursor-pointer bg-white/[0.03] hover:bg-white/[0.08] border-white/10 hover:border-rose-400/50 group"
+                      >
+                        <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:text-rose-300 transition">
+                          <ShieldCheck className="w-4 h-4 text-rose-400" />
+                          <span>Rejection &amp; Trademark Shield</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+                          Detect trademark bans, duplicate stem penalties, and technical faults.
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSendChat(
+                            'Which commercial microstock themes and high-CPC Google AdSense keywords are paying contributors the highest monthly royalties right now?',
+                            'earning_advisor'
+                          )
+                        }
+                        className="p-3.5 rounded-2xl border text-left transition-all cursor-pointer bg-white/[0.03] hover:bg-white/[0.08] border-white/10 hover:border-amber-400/50 group"
+                      >
+                        <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:text-amber-300 transition">
+                          <DollarSign className="w-4 h-4 text-amber-400" />
+                          <span>Google AdSense &amp; High-RPM Niches</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+                          Highest paying buyer-intent search themes and $1,000/mo roadmap.
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSendChat(
+                            'Generate 7-Agency Universal Metadata Matrix for Adobe Stock, Shutterstock, Freepik, Getty Images, and Vecteezy.',
+                            'multi_agency_5x'
+                          )
+                        }
+                        className="p-3.5 rounded-2xl border text-left transition-all cursor-pointer bg-white/[0.03] hover:bg-white/[0.08] border-white/10 hover:border-sky-400/50 group"
+                      >
+                        <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:text-sky-300 transition">
+                          <Layers className="w-4 h-4 text-sky-400" />
+                          <span>7-Agency Universal Matrix</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+                          Universal title &amp; 49 tags adapted to every major stock agency.
+                        </p>
+                      </button>
+                    </div>
+
+                    <div className="pt-2 flex items-center justify-between gap-3 flex-wrap">
                       <button
                         type="button"
                         onClick={() => chatFileInputRef.current?.click()}
-                        className="text-[10px] font-bold px-2.5 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition flex items-center gap-1.5 cursor-pointer"
+                        className="px-4 py-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 text-xs font-bold flex items-center gap-2 transition cursor-pointer"
                       >
-                        <ImageIcon className="w-3 h-3" />
-                        <span>+ Upload Image / EPS / PSD</span>
+                        <ImageIcon className="w-4 h-4" />
+                        <span>Upload Visual Asset (EPS, AI, PSD, JPG, 4K)</span>
                       </button>
 
-                      {currentModeConfig.quickPrompts.map((q, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => onSendChat(q, activeMode)}
-                          disabled={isChatLoading}
-                          className={`text-[10px] font-medium px-2.5 py-1.5 rounded-xl border text-left transition cursor-pointer ${
-                            isLight
-                              ? 'bg-white border-neutral-200/90 text-neutral-700 hover:border-neutral-900 hover:text-black'
-                              : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-emerald-500/40 hover:text-white'
-                          }`}
-                        >
-                          {q}
-                        </button>
-                      ))}
+                      <div className="text-[11px] text-neutral-400 font-mono">
+                        Supports Drag &amp; Drop anywhere in chat
+                      </div>
                     </div>
                   </div>
                 )}
@@ -2678,7 +2732,7 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                 </div>
               )}
 
-              {/* Bottom Input Composer with Image Upload, Paste Support & Voice Dictation */}
+              {/* Bottom Input Composer with Generous Spacing, Drag & Paste, Voice Dictation */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -2689,8 +2743,8 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                     webSearchGrounding
                   });
                 }}
-                className={`p-2.5 border-t flex items-center gap-1.5 ${
-                  isLight ? 'bg-white border-neutral-200/90' : 'bg-[#0d1017] border-neutral-800'
+                className={`p-4 sm:p-5 border-t flex items-center gap-2.5 ${
+                  isLight ? 'bg-white border-neutral-200' : 'bg-[#050507] border-white/10'
                 }`}
               >
                 <input
@@ -2704,12 +2758,12 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                   type="button"
                   onClick={() => chatFileInputRef.current?.click()}
                   disabled={isChatLoading}
-                  className={`p-2 rounded-xl border transition cursor-pointer shrink-0 ${
+                  className={`p-3 rounded-2xl border transition cursor-pointer shrink-0 ${
                     chatAttachedImage
-                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                      ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300'
                       : isLight
-                      ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-700'
-                      : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+                      ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-200 text-neutral-700'
+                      : 'bg-white/[0.05] hover:bg-white/[0.1] border-white/12 text-cyan-400'
                   }`}
                   title="Attach Image, EPS, or PSD for Vision SEO"
                 >
@@ -2720,14 +2774,14 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                   type="button"
                   onClick={toggleVoiceInput}
                   disabled={isChatLoading}
-                  className={`p-2 rounded-xl border transition cursor-pointer shrink-0 ${
+                  className={`p-3 rounded-2xl border transition cursor-pointer shrink-0 ${
                     isListening
                       ? 'bg-rose-500/20 border-rose-500/50 text-rose-400 animate-pulse'
                       : isLight
-                      ? 'bg-[#fbfaf8] hover:bg-neutral-100 border-neutral-200 text-neutral-700'
-                      : 'bg-neutral-900 hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+                      ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-200 text-neutral-700'
+                      : 'bg-white/[0.05] hover:bg-white/[0.1] border-white/12 text-neutral-300'
                   }`}
-                  title={isListening ? 'Stop Voice Dictation' : 'Voice Input (Speak your prompt)'}
+                  title={isListening ? 'Stop Voice Dictation' : 'Voice Dictation (Speak your prompt)'}
                 >
                   {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                 </button>
@@ -2751,24 +2805,24 @@ export const SovereignAiAssistantDrawer: React.FC<SovereignAiAssistantDrawerProp
                   }}
                   placeholder={
                     chatAttachedImage
-                      ? 'Press Send for 49 tags or add instructions...'
+                      ? 'Press Send for 49 tags or add specific guidelines...'
                       : currentModeConfig.placeholder
                   }
                   disabled={isChatLoading}
-                  className={`flex-1 text-xs rounded-xl px-3 py-2 border focus:outline-none transition min-w-0 ${
+                  className={`flex-1 text-xs sm:text-sm rounded-2xl px-4 py-3 border focus:outline-none transition min-w-0 ${
                     isLight
-                      ? 'bg-[#fbfaf8] border-neutral-200 text-neutral-900 focus:border-neutral-900'
-                      : 'bg-neutral-950 border-neutral-800 text-white focus:border-emerald-500/50'
+                      ? 'bg-neutral-50 border-neutral-200 text-neutral-900 focus:border-neutral-900'
+                      : 'bg-white/[0.04] border-white/15 text-white placeholder:text-neutral-500 focus:border-emerald-400/70 focus:bg-white/[0.06]'
                   }`}
                 />
 
                 <button
                   type="submit"
                   disabled={isChatLoading || (!chatInput.trim() && !chatAttachedImage)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer disabled:opacity-40 shrink-0 flex items-center gap-1 ${
+                  className={`px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold transition cursor-pointer disabled:opacity-40 shrink-0 flex items-center gap-2 shadow-lg ${
                     isLight
                       ? 'bg-neutral-950 hover:bg-black text-white'
-                      : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                      : 'lal-sobuj-glow-button shadow-[0_0_24px_rgba(244,42,65,0.4)]'
                   }`}
                 >
                   <Send className="w-3.5 h-3.5" />
