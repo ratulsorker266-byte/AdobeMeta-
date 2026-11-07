@@ -997,6 +997,16 @@ a:hover,
 }
 
 /* ============================================================================
+.sovereign-card-interactive {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sovereign-card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+/* ============================================================================
    ACCESSIBILITY & LITE PERFORMANCE MODE (FOR LOW-END PHONES & REDUCED MOTION)
    ============================================================================ */
 @media (prefers-reduced-motion: reduce) {

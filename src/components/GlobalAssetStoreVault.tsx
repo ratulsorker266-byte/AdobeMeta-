@@ -15,6 +15,7 @@ import {
   Bookmark,
   Plus,
   X,
+  Zap,
 } from 'lucide-react';
 
 export interface GlobalStorePack {
@@ -493,7 +494,7 @@ export const GlobalAssetStoreVault: React.FC<GlobalAssetStoreVaultProps> = ({
   showToast,
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedDepartment, setSelectedDepartment] = useState<'all' | GlobalStorePack['department']>('all');
+  const [selectedDepartment, setSelectedDepartment] = useState<'all' | 'copyspace' | GlobalStorePack['department']>('all');
   const [selectedAgency, setSelectedAgency] = useState<'adobe' | 'shutterstock' | 'freepik' | 'getty'>('adobe');
   const [selectedPackId, setSelectedPackId] = useState<string>(GLOBAL_COMMERCIAL_PACKS[0].id);
   const [isInspectorExpanded, setIsInspectorExpanded] = useState<boolean>(false);
@@ -509,7 +510,13 @@ export const GlobalAssetStoreVault: React.FC<GlobalAssetStoreVaultProps> = ({
 
   const filteredPacks = useMemo(() => {
     return GLOBAL_COMMERCIAL_PACKS.filter((pack) => {
-      const matchesDept = selectedDepartment === 'all' || pack.department === selectedDepartment;
+      const isCopySpacePack = pack.keywords.some(k => k.toLowerCase().includes('copy space') || k.toLowerCase().includes('negative space')) || pack.recommendedTitle.toLowerCase().includes('copy space');
+      const matchesDept =
+        selectedDepartment === 'all'
+          ? true
+          : selectedDepartment === 'copyspace'
+          ? isCopySpacePack
+          : pack.department === selectedDepartment;
       if (!matchesDept) return false;
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase().trim();
@@ -702,131 +709,243 @@ export const GlobalAssetStoreVault: React.FC<GlobalAssetStoreVaultProps> = ({
       </div>
 
       {/* ================================================================= */}
-      {/* SLEEK 4-CARD EXHIBITION SHOWCASE (DEFAULT UNCLUTTERED VIEW)        */}
+      {/* DRIBBLE-STYLE STORE FILTER & SEARCH TOOLBAR                        */}
       {/* ================================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        {GLOBAL_COMMERCIAL_PACKS.slice(0, 4).map((pack) => {
-          const isSelected = activePack.id === pack.id && isInspectorExpanded;
-          return (
-            <div
-              key={pack.id}
-              onClick={() => {
-                setSelectedPackId(pack.id);
-                setIsInspectorExpanded(true);
-              }}
-              className={`group cursor-pointer rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 sovereign-prism-card relative overflow-hidden gallery-card-glow ${
-                isSelected
-                  ? isLight
-                    ? 'bg-white border-neutral-950 shadow-xl'
-                    : 'bg-[#0a0a0d] border-cyan-400/60 shadow-2xl'
-                  : isLight
-                  ? 'crystal-glass-panel-light hover:border-neutral-900'
-                  : 'crystal-glass-panel-dark'
-              }`}
-            >
-              {/* Prismatic Cyan Edge Caustic */}
-              <div aria-hidden="true" className="prismatic-edge-caustic opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="mb-8 space-y-4">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Department Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
+            {[
+              { id: 'all', label: `All Stores (${GLOBAL_COMMERCIAL_PACKS.length})` },
+              { id: 'copyspace', label: `With Copy Space (${GLOBAL_COMMERCIAL_PACKS.filter(p => p.keywords.some(k => k.toLowerCase().includes('copy space') || k.toLowerCase().includes('negative space')) || p.recommendedTitle.toLowerCase().includes('copy space')).length})` },
+              { id: 'business', label: `Business (${GLOBAL_COMMERCIAL_PACKS.filter(p => p.department === 'business').length})` },
+              { id: 'tech', label: `Tech & AI (${GLOBAL_COMMERCIAL_PACKS.filter(p => p.department === 'tech').length})` },
+              { id: 'luxury', label: `Luxury 3D (${GLOBAL_COMMERCIAL_PACKS.filter(p => p.department === 'luxury').length})` },
+              { id: 'vector', label: `Vectors (${GLOBAL_COMMERCIAL_PACKS.filter(p => p.department === 'vector').length})` },
+              { id: 'seasonal', label: `Seasonal (${GLOBAL_COMMERCIAL_PACKS.filter(p => p.department === 'seasonal').length})` },
+              { id: 'lifestyle', label: `Lifestyle (${GLOBAL_COMMERCIAL_PACKS.filter(p => p.department === 'lifestyle').length})` },
+              { id: 'prompts', label: `Prompts (${GLOBAL_COMMERCIAL_PACKS.filter(p => p.department === 'prompts').length})` },
+            ].map((tab) => {
+              const active = selectedDepartment === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSelectedDepartment(tab.id as any)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer border ${
+                    active
+                      ? isLight
+                        ? 'bg-neutral-950 text-white border-neutral-950 shadow-sm'
+                        : 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-700/30'
+                      : isLight
+                      ? 'bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-200'
+                      : 'bg-white/5 hover:bg-white/10 text-neutral-300 border-white/10'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
 
-              <div className="space-y-4 relative z-10">
-                {/* Clean Unboxed Kicker */}
-                <div className="flex items-center justify-between text-[10px] font-mono tabular-nums tracking-[0.14em] uppercase text-neutral-400">
-                  <span>{pack.code} · {pack.adobeCategory}</span>
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 font-mono text-[10.5px] font-bold">
-                    {pack.cpcEstimate}
-                  </span>
+          {/* Live Search Input */}
+          <div className="relative min-w-[260px] md:max-w-xs">
+            <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search store packs, niches, or keywords..."
+              className={`w-full pl-9 pr-8 py-2 rounded-xl text-xs font-medium border focus:outline-none transition ${
+                isLight
+                  ? 'bg-white border-neutral-300 text-neutral-900 focus:border-neutral-900'
+                  : 'bg-neutral-950/80 border-white/15 text-white focus:border-emerald-400'
+              }`}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white text-xs cursor-pointer"
+              >
+                &times;
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
+          <span>Showing <strong className="text-white">{filteredPacks.length}</strong> commercial store packs ready for ingestion</span>
+          <span className="hidden sm:inline">Click any card to load directly into the Split Workbench</span>
+        </div>
+      </div>
+
+      {/* ================================================================= */}
+      {/* DRIBBLE-GRADE FULL STORE SHOWCASE GRID (CONTINUOUS STORE & STORE)  */}
+      {/* ================================================================= */}
+      {filteredPacks.length === 0 ? (
+        <div className={`p-12 text-center rounded-3xl border ${
+          isLight ? 'bg-white border-neutral-200' : 'bg-black/40 border-white/10'
+        }`}>
+          <p className="text-sm font-semibold text-neutral-400">No store packs found matching &ldquo;{searchQuery}&rdquo;</p>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery('');
+              setSelectedDepartment('all');
+            }}
+            className="mt-3 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white cursor-pointer"
+          >
+            Reset Filters
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7 sm:gap-8 lg:gap-9">
+          {filteredPacks.map((pack) => {
+            const isSelected = activePack.id === pack.id && isInspectorExpanded;
+            const hasCopySpace = pack.keywords.some(k => k.toLowerCase().includes('copy space') || k.toLowerCase().includes('negative space')) || pack.recommendedTitle.toLowerCase().includes('copy space');
+
+            return (
+              <div
+                key={pack.id}
+                onClick={() => {
+                  setSelectedPackId(pack.id);
+                  setIsInspectorExpanded(true);
+                }}
+                className={`group cursor-pointer rounded-2xl p-5 sm:p-5.5 flex flex-col justify-between transition-all duration-300 sovereign-prism-card relative overflow-hidden gallery-card-glow ${
+                  isSelected
+                    ? isLight
+                      ? 'bg-white border-neutral-950 shadow-xl ring-2 ring-neutral-900'
+                      : 'bg-[#0a0a0d] border-emerald-400/60 shadow-2xl ring-2 ring-emerald-500/40'
+                    : isLight
+                    ? 'crystal-glass-panel-light hover:border-neutral-900'
+                    : 'crystal-glass-panel-dark hover:border-emerald-500/40'
+                }`}
+              >
+                {/* Prismatic Emerald Edge Caustic */}
+                <div aria-hidden="true" className="prismatic-edge-caustic opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                <div className="space-y-4 relative z-10">
+                  {/* Clean Unboxed Kicker with Copy Space Verified */}
+                  <div className="flex items-center justify-between text-[10px] font-mono tabular-nums tracking-[0.14em] uppercase text-neutral-400">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="font-semibold">{pack.code} &middot; {pack.adobeCategory}</span>
+                      {hasCopySpace && (
+                        <span className="text-emerald-400 font-bold hidden sm:inline">&middot; Copy Space</span>
+                      )}
+                    </div>
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono text-[10px] font-bold shrink-0">
+                      {pack.cpcEstimate}
+                    </span>
+                  </div>
+
+                  {/* Dribbble-Style Cover Visual & Hover Action Overlay */}
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-neutral-900 ring-1 ring-inset ring-white/15">
+                    <img
+                      src={pack.image}
+                      alt={pack.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.08]"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-60 group-hover:opacity-90 transition-opacity" />
+
+                    {/* Quick 1-Click Copy 49 Tags Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerCopy(
+                          getFormattedTagsForAgency(pack).join(', '),
+                          `card_kw_${pack.id}`,
+                          `✓ Copied ${getFormattedTagsForAgency(pack).length} ${selectedAgency.toUpperCase()} Keywords!`
+                        );
+                      }}
+                      className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg text-[9.5px] font-semibold bg-white/95 hover:bg-white text-black flex items-center gap-1 shadow-sm cursor-pointer z-20"
+                    >
+                      {copiedKey === `card_kw_${pack.id}` ? (
+                        <>
+                          <Check className="w-2.5 h-2.5 text-black" />
+                          <span>Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-2.5 h-2.5" />
+                          <span>Copy Tags</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Center Hover Action: Load Into Workbench (Dribbble Signature Action) */}
+                    <div className="absolute inset-0 flex items-center justify-center p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 pointer-events-none">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLoadPackIntoWorkbench(pack);
+                          if (showToast) showToast(`✓ Loaded "${pack.title}" into Split Workbench!`);
+                        }}
+                        className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-700/50 flex items-center gap-1.5 pointer-events-auto cursor-pointer transform group-hover:scale-105 transition-all"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Load to Workbench</span>
+                      </button>
+                    </div>
+
+                    <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-white text-[10px] font-mono">
+                      <span className="truncate text-neutral-300">{pack.niche}</span>
+                      <span className="shrink-0 text-amber-300 font-bold">{pack.demandLevel} Demand</span>
+                    </div>
+                  </div>
+
+                  {/* Pack Title & Top Keywords Preview */}
+                  <div className="space-y-1 pt-0.5">
+                    <h3
+                      className={`text-sm font-bold tracking-tight leading-snug line-clamp-1 ${
+                        isLight ? 'text-neutral-950' : 'text-white group-hover:text-emerald-300'
+                      }`}
+                    >
+                      {pack.title}
+                    </h3>
+                    <p className="text-[11px] text-neutral-400 line-clamp-1">
+                      {pack.keywords.slice(0, 4).join(' · ')}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Cover Visual */}
-                <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-neutral-900 ring-1 ring-inset ring-white/15">
-                  <img
-                    src={pack.image}
-                    alt={pack.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-75 group-hover:opacity-90 transition-opacity" />
-
-                  {/* Quick 1-Click Copy 49 Tags Button */}
+                {/* Bottom Quick Action Bar */}
+                <div className="mt-3 pt-2.5 border-t border-neutral-200/60 dark:border-white/[0.08] flex items-center justify-between text-[11px] font-medium">
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      triggerCopy(
-                        getFormattedTagsForAgency(pack).join(', '),
-                        `card_kw_${pack.id}`,
-                        `✓ Copied ${getFormattedTagsForAgency(pack).length} ${selectedAgency.toUpperCase()} Keywords!`
-                      );
+                      onLoadPackIntoWorkbench(pack);
+                      if (showToast) showToast(`✓ Loaded "${pack.title}" into Split Workbench!`);
                     }}
-                    className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg text-[9.5px] font-semibold bg-white/95 hover:bg-white text-black flex items-center gap-1 shadow-sm cursor-pointer"
-                  >
-                    {copiedKey === `card_kw_${pack.id}` ? (
-                      <>
-                        <Check className="w-2.5 h-2.5 text-black" />
-                        <span>Copied 49 KW</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-2.5 h-2.5" />
-                        <span>Copy {getFormattedTagsForAgency(pack).length} KW</span>
-                      </>
-                    )}
-                  </button>
-
-                  <div className="absolute bottom-3 left-3.5 right-3.5 flex items-center justify-between text-white">
-                    <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-neutral-200">
-                      Inspect Pack &amp; Prompts
-                    </span>
-                    <ArrowUpRight className="w-3.5 h-3.5 opacity-80 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </div>
-                </div>
-
-                {/* Pack Title & Top Keywords Preview */}
-                <div className="space-y-1.5 pt-1">
-                  <h3
-                    className={`text-[15px] font-bold tracking-tight leading-snug ${
-                      isLight ? 'text-neutral-950' : 'text-white'
+                    className={`hover:underline cursor-pointer flex items-center gap-1 font-bold ${
+                      isLight ? 'text-neutral-900' : 'text-emerald-400'
                     }`}
                   >
-                    {pack.title}
-                  </h3>
-                  <p className="text-[11.5px] text-neutral-400 truncate">
-                    {pack.keywords.slice(0, 5).join(' · ')}
-                  </p>
+                    <span>Load in Studio</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownloadPackCsv(pack);
+                    }}
+                    className="text-neutral-400 hover:text-white cursor-pointer font-mono text-[10.5px]"
+                  >
+                    Export CSV
+                  </button>
                 </div>
               </div>
-
-              {/* Bottom Quick Action Bar */}
-              <div className="mt-4 pt-3 border-t border-neutral-200/60 dark:border-white/[0.08] flex items-center justify-between text-[11px] font-medium">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onLoadPackIntoWorkbench(pack);
-                  }}
-                  className={`hover:underline cursor-pointer flex items-center gap-1 font-semibold ${
-                    isLight ? 'text-neutral-900' : 'text-white'
-                  }`}
-                >
-                  <span>Load in Studio</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownloadPackCsv(pack);
-                  }}
-                  className="text-neutral-400 hover:text-white cursor-pointer font-mono text-[10.5px]"
-                >
-                  Export CSV
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* ================================================================= */}
       {/* EXPANDABLE DEEP VAULT & 49-TAG CUSTOM BUILDER (OPEN ON DEMAND)     */}

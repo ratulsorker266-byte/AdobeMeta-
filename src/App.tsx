@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, CheckCircle2, Camera, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe, Gamepad2, Phone, PhoneCall, Heart, Headphones, Mic, Compass, Grid, Sun, Moon, Volume2, VolumeX, Award, Clock } from 'lucide-react';
+import { Upload, MessageSquare, AlertTriangle, Send, Download, Copy, Check, RefreshCw, Layers, Sparkles, Edit3, X, ChevronUp, ChevronDown, Plus, Gift, CheckCircle, CheckCircle2, Camera, AlertCircle, Lock, LogOut, Trash2, FileDown, Search, ArrowLeft, TrendingUp, CalendarDays, Settings, Key, Save, Image as ImageIcon, Lightbulb, Wand2, FileSpreadsheet, Eye, Keyboard, Zap, HelpCircle, DollarSign, Calculator, BookOpen, CloudUpload, Filter, Radar, ShieldAlert, Target, UserCheck, Video, FileCode, Globe, Gamepad2, Phone, PhoneCall, Heart, Headphones, Mic, Compass, Grid, Sun, Moon, Volume2, VolumeX, Award, Clock, Sliders } from 'lucide-react';
 import { BulkItem, TargetMarketplace, TrendData, MetadataResult, MetadataVersion } from './types';
 import { embedJpegMetadata, generateXmpSidecarXml, embedMetadataIntoEps, readEmbeddedJpegMetadata } from './lib/metadataEmbedder';
 import { sanitizeAndPerfectMetadataResult } from './lib/metadataValidator';
@@ -57,6 +57,8 @@ import { VisualKeywordMixerModal } from './components/VisualKeywordMixerModal';
 import { UltraUpscalerModal } from './components/UltraUpscalerModal';
 import { OfficialStandardsModal } from './components/OfficialStandardsModal';
 import { Gen11QuantumInspectorModal } from './components/Gen11QuantumInspectorModal';
+import { ManualPrecisionStudioModal } from './components/ManualPrecisionStudioModal';
+import { SplitManualWorkbench } from './components/SplitManualWorkbench';
 
 const WelcomeScreen = ({ userName }: { userName: string }) => {
   return (
@@ -1053,6 +1055,7 @@ export default function App() {
   const [showKeywordMixerModal, setShowKeywordMixerModal] = useState<boolean>(false);
   const [mixerActiveItem, setMixerActiveItem] = useState<BulkItem | null>(null);
   const [quantumInspectorItem, setQuantumInspectorItem] = useState<BulkItem | null>(null);
+  const [precisionStudioItem, setPrecisionStudioItem] = useState<BulkItem | null>(null);
   const [showUltraUpscalerModal, setShowUltraUpscalerModal] = useState<boolean>(false);
   const [upscalerInitialTab, setUpscalerInitialTab] = useState<'image' | 'video'>('image');
 
@@ -4039,6 +4042,7 @@ export default function App() {
 
       {/* Top Main Coffy.net Storefront Marketplace Hub - Active on Main 'home' View */}
       {currentView === 'home' && (
+        <>
         <EditorialHeroSection
           onStartGenerating={handleStartGenerating}
           onQuickDropFiles={(droppedFiles) => {
@@ -4086,6 +4090,12 @@ export default function App() {
           uiLang="en"
           showToast={showToast}
           onOpenOfficialStandards={() => setShowOfficialStandardsModal(true)}
+          onOpenPrecisionStudio={() => {
+            const activeItem = items[0] || (SAMPLE_SHOWCASE_ASSETS[0] ? SAMPLE_SHOWCASE_ASSETS[0].item : null);
+            if (activeItem) {
+              setPrecisionStudioItem(activeItem);
+            }
+          }}
           onLoadStorePack={(pack) => {
             const packFile = new File([''], `${pack.id}.eps`, { type: 'application/postscript' });
             const stagedPackItem: BulkItem = {
@@ -4136,10 +4146,39 @@ export default function App() {
             };
             setItems((prev) => [stagedPackItem, ...prev]);
             setCurrentView('upload');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
             showToast(`✓ Loaded "${pack.title}" (49 tags + 5 agency titles) into Studio Workbench!`);
           }}
         />
+
+          {/* Always-Open Dual-Column Manual Precision & Copy Space Workbench with Generous Negative Space */}
+          <section id="homepage-manual-workbench" className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14 pb-28 sm:pb-36">
+            <div className="mb-8 space-y-2">
+              <div className="flex items-center gap-2 text-[10.5px] font-mono tracking-[0.2em] uppercase text-emerald-400 font-bold">
+                <span>03. ALWAYS-OPEN MANUAL PRECISION STUDIO</span>
+                <span className="opacity-30">·</span>
+                <span className="text-zinc-400">Copy Space &amp; 50-Slot Engine</span>
+              </div>
+              <h2 className={`text-2xl sm:text-4xl font-sans font-bold tracking-[-0.03em] ${themeMode === 'light' ? 'text-neutral-950' : 'text-white'}`}>
+                Always-Open Dual Column Workbench
+              </h2>
+              <p className={`text-xs sm:text-sm max-w-2xl leading-relaxed ${themeMode === 'light' ? 'text-neutral-600' : 'text-zinc-400'}`}>
+                Live drag-and-drop keyword reordering across priority tiers #1 to #5, rule-of-thirds commercial copy space calibration, inline typo corrections, and instant 7-agency CSV exports.
+              </p>
+            </div>
+            <SplitManualWorkbench
+              activeItem={items.find(i => i.status === 'completed' && i.result) || items[0] || (SAMPLE_SHOWCASE_ASSETS[0] ? SAMPLE_SHOWCASE_ASSETS[0].item : null)}
+              onUpdateItem={(updatedItem) => {
+                setItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+              }}
+              themeMode={themeMode}
+              showToast={showToast}
+              onOpenPrecisionStudio={() => {
+                const active = items.find(i => i.status === 'completed' && i.result) || items[0] || (SAMPLE_SHOWCASE_ASSETS[0] ? SAMPLE_SHOWCASE_ASSETS[0].item : null);
+                if (active) setPrecisionStudioItem(active);
+              }}
+            />
+          </section>
+        </>
       )}
 
       {/* Single Ultra-Minimalist Top Header for Dedicated Store Views (Encased in 3D Crystal Glass) */}
@@ -4498,6 +4537,20 @@ export default function App() {
                   format="leaderboard"
                   themeMode={themeMode}
                   onOpenMonetizeHub={() => setCurrentView('monetize')}
+                />
+
+                {/* SeaDream 5.0 Always-Open Split Manual Precision Workbench */}
+                <SplitManualWorkbench
+                  activeItem={items.find(i => i.status === 'completed' && i.result) || items[0] || (SAMPLE_SHOWCASE_ASSETS[0] ? SAMPLE_SHOWCASE_ASSETS[0].item : null)}
+                  onUpdateItem={(updatedItem) => {
+                    setItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+                  }}
+                  themeMode={themeMode}
+                  showToast={showToast}
+                  onOpenPrecisionStudio={() => {
+                    const active = items.find(i => i.status === 'completed' && i.result) || items[0] || (SAMPLE_SHOWCASE_ASSETS[0] ? SAMPLE_SHOWCASE_ASSETS[0].item : null);
+                    if (active) setPrecisionStudioItem(active);
+                  }}
                 />
 
                 {/* Studio Manual Precision & Workflow Control Bar (Minimalist Progressive Disclosure) */}
@@ -6597,6 +6650,16 @@ export default function App() {
 
                             <button
                               type="button"
+                              onClick={() => setPrecisionStudioItem(item)}
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-600/20 to-emerald-600/15 hover:from-amber-500/25 hover:to-emerald-600/25 text-amber-300 flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-amber-500/10"
+                              title="Open Manual Precision Studio: 50-Slot Deck, Hidden Talent Gems, and 65-Rule Forensic Rejection Shield"
+                            >
+                              <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Manual Studio</span>
+                            </button>
+
+                            <button
+                              type="button"
                               onClick={() => openEditor(item)}
                               className={`px-3 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition cursor-pointer ${
                                 themeMode === 'light'
@@ -7758,6 +7821,21 @@ export default function App() {
           onReorderKeywords={(newKws) => {
             if (!quantumInspectorItem) return;
             handleSaveAlgorithmKeywords(quantumInspectorItem.id, newKws);
+          }}
+        />
+      )}
+
+      {/* Manual Precision Studio & Hidden Talent Discovery Modal */}
+      {precisionStudioItem && (
+        <ManualPrecisionStudioModal
+          isOpen={Boolean(precisionStudioItem)}
+          onClose={() => setPrecisionStudioItem(null)}
+          item={precisionStudioItem}
+          themeMode={themeMode}
+          showToast={showToast}
+          onSave={(updatedResult) => {
+            if (!precisionStudioItem) return;
+            handleUpdateMetadata(precisionStudioItem.id, updatedResult);
           }}
         />
       )}

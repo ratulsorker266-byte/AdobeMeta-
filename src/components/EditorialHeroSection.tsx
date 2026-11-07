@@ -79,6 +79,7 @@ interface EditorialHeroProps {
   onLoadStorePack?: (pack: GlobalStorePack) => void;
   showToast?: (msg: string) => void;
   onOpenOfficialStandards?: () => void;
+  onOpenPrecisionStudio?: () => void;
 }
 
 export interface BoutiqueStoreItem {
@@ -125,10 +126,11 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   onToggleLang,
   onLoadStorePack,
   showToast,
-  onOpenOfficialStandards
+  onOpenOfficialStandards,
+  onOpenPrecisionStudio
 }) => {
   const [activeDepartment, setActiveDepartment] = useState<'all' | 'metadata' | 'creative' | 'monetize'>('all');
-  const [showGlobalVaultExpanded, setShowGlobalVaultExpanded] = useState<boolean>(false);
+  const [showGlobalVaultExpanded, setShowGlobalVaultExpanded] = useState<boolean>(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewStoreIdx, setPreviewStoreIdx] = useState<number>(0);
   const [isHoveringSpecimen, setIsHoveringSpecimen] = useState<boolean>(false);
@@ -139,6 +141,8 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
   const [activeSpecimenAgency, setActiveSpecimenAgency] = useState<'adobe' | 'shutterstock' | 'freepik' | 'getty' | 'vecteezy'>('adobe');
   const [customSpecimenTitle, setCustomSpecimenTitle] = useState<string>('');
   const [customSpecimenTags, setCustomSpecimenTags] = useState<string[]>([]);
+  const [draggedTagIdx, setDraggedTagIdx] = useState<number | null>(null);
+  const [dragOverTagIdx, setDragOverTagIdx] = useState<number | null>(null);
 
   const [tilt, setTilt] = useState<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false });
   const [specularPos, setSpecularPos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
@@ -1185,7 +1189,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
       {/* ============================================================ */}
       {/* REFINED ARCHITECTURAL LUXURY HERO MONOLITH                   */}
       {/* ============================================================ */}
-      <div className="relative z-10 pt-12 sm:pt-16 pb-28 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14">
+      <div className="relative z-10 pt-16 sm:pt-20 lg:pt-28 pb-32 sm:pb-36 lg:pb-40 max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-14">
         <div
           onMouseMove={(e) => {
             if (isLiteMode) return;
@@ -1194,7 +1198,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             e.currentTarget.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
           }}
           style={{ '--spot-x': '650px', '--spot-y': '260px' } as React.CSSProperties}
-          className={`rounded-[32px] p-7 sm:p-12 lg:p-16 xl:p-20 relative overflow-hidden transition-colors duration-300 sovereign-prism-card ${
+          className={`rounded-[36px] p-8 sm:p-14 lg:p-18 xl:p-22 relative overflow-hidden transition-colors duration-300 sovereign-prism-card ${
             isLight ? 'crystal-architectural-slab-light' : 'crystal-architectural-slab-dark'
           }`}
         >
@@ -1250,7 +1254,7 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             }`}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 xl:gap-16 items-start relative z-10 pt-2 sm:pt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 xl:gap-18 items-start relative z-10 pt-2 sm:pt-4">
           
           {/* Left 7 Columns: Spacious Official Enterprise Workstation Console */}
           <motion.div
@@ -1260,39 +1264,36 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
             className="lg:col-span-7 flex flex-col space-y-8 text-left"
           >
             {/* Clean Authoritative Header Block with Generous Breathing Room */}
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full text-[11px] font-mono tracking-wider uppercase border border-emerald-500/40 bg-[#022419]/90 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.22)]">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0 shadow-[0_0_10px_#f43f5e]" />
-                <span className="font-bold text-white tracking-widest">🇧🇩 BANGLADESH SOVEREIGN EDITION</span>
-                <span className="opacity-40 text-emerald-300">·</span>
-                <span className="text-emerald-300 font-bold">SOVEREIGN LAL-SOBUJ ATELIER</span>
-                <span className="opacity-40 text-emerald-300 hidden sm:inline">·</span>
-                <span className="text-rose-300 font-semibold hidden sm:inline">2026 WORLD SPEC</span>
+            <div className="space-y-5">
+              <div className="flex items-center gap-2.5 text-xs font-mono tracking-widest uppercase text-emerald-400 font-medium">
+                <span>Bangladesh Sovereign Edition</span>
+                <span className="opacity-30">/</span>
+                <span className="text-zinc-400">Precision Contributor Suite</span>
               </div>
 
-              <h1 className={`text-4xl sm:text-5xl xl:text-6xl font-sans font-extrabold tracking-tight leading-[1.08] ${
+              <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-sans font-bold tracking-tight leading-[1.1] ${
                 isLight ? 'text-neutral-950' : 'text-white'
               }`}>
-                <span className="block text-white">Official Stock Metadata</span>
-                <span className="block mt-2 bg-gradient-to-r from-rose-500 via-red-400 via-emerald-400 to-emerald-300 bg-clip-text text-transparent">
-                  &amp; Contributor Enterprise Suite.
+                <span>Official Stock Metadata</span>
+                <span className="block mt-2 bg-gradient-to-r from-emerald-400 via-teal-300 to-rose-400 bg-clip-text text-transparent">
+                  &amp; Contributor Workspace.
                 </span>
               </h1>
 
-              <p className={`text-base sm:text-[17px] font-sans font-normal max-w-xl leading-[1.75] ${
-                isLight ? 'text-neutral-600' : 'text-emerald-100/90'
+              <p className={`text-base sm:text-lg font-sans max-w-xl leading-relaxed ${
+                isLight ? 'text-neutral-600' : 'text-zinc-300'
               }`}>
-                The official high-performance workstation for commercial photographers, vector studios, and footage contributors. Calibrate subject-first titles, lock 49 weighted keywords into Top-10 search algorithms, write lossless IPTC metadata, and maximize multi-agency Google AdSense earnings.
+                High-precision commercial titles, 49 rank-ordered keywords, direct IPTC/XMP file embedding, and 7-agency CSV exports for microstock photographers, vector illustrators, and footage studios.
               </p>
             </div>
 
             {/* Unified Grand Executive Studio Dropzone Console */}
-            <div className={`p-7 sm:p-9 rounded-3xl border sovereign-prism-card relative overflow-hidden transition-all duration-300 ${
+            <div className={`p-8 sm:p-10 rounded-3xl border sovereign-prism-card relative overflow-hidden transition-all duration-300 ${
               isHeroDragging
                 ? 'border-emerald-400 bg-emerald-500/10 shadow-[0_0_50px_rgba(16,185,129,0.35)]'
                 : isLight
                 ? 'bg-white border-neutral-300 shadow-xl'
-                : 'bg-[#021f17]/95 border-emerald-500/30 hover:border-rose-500/50 shadow-[0_16px_50px_rgba(0,0,0,0.85)] hover:shadow-[0_0_40px_rgba(244,42,65,0.25)]'
+                : 'bg-[#021f17]/95 border-emerald-500/30 hover:border-emerald-400/60 shadow-[0_16px_50px_rgba(0,0,0,0.85)]'
             }`}>
               {/* Prismatic Top Edge Accent (Red to Green) */}
               <div aria-hidden="true" className="prismatic-edge-caustic" />
@@ -1513,11 +1514,10 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
               />
               {/* Top Specimen Header + Minimalist Agency Selector */}
               <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-neutral-200/60 dark:border-emerald-500/20 gap-2">
-                <div className="flex items-center gap-2 text-[10.5px] font-mono tracking-[0.08em] uppercase tabular-nums truncate">
-                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0 shadow-[0_0_8px_#f43f5e]" />
-                  <span className="text-emerald-300 font-bold">{activePreviewStore.storeNumber}</span>
-                  <span className="text-neutral-500">·</span>
-                  <span className="text-emerald-100/90 font-medium hidden sm:inline">LIVE SPECIMEN SANDBOX</span>
+                <div className="flex items-center gap-2 text-xs font-mono tabular-nums truncate">
+                  <span className="text-emerald-400 font-semibold">{activePreviewStore.storeNumber}</span>
+                  <span className="opacity-40 text-neutral-500">/</span>
+                  <span className="text-zinc-300 font-medium hidden sm:inline">Interactive Specimen</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <select
@@ -1603,6 +1603,114 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                           isLight ? 'bg-transparent focus:bg-white text-neutral-900' : 'bg-transparent focus:bg-neutral-950 text-neutral-100'
                         }`}
                       />
+
+                      {/* Live Tachometer-Style Compliance Meter */}
+                      <div className="w-full bg-black/40 rounded-full h-1.5 overflow-hidden mt-1 border border-white/5">
+                        <div
+                          className={`h-full transition-all duration-300 rounded-full ${
+                            baseTitle.length <= 70
+                              ? 'bg-gradient-to-r from-emerald-500 to-emerald-300 tachometer-bar-glow'
+                              : 'bg-gradient-to-r from-amber-500 to-rose-500'
+                          }`}
+                          style={{ width: `${Math.min(100, (baseTitle.length / 70) * 100)}%` }}
+                        />
+                      </div>
+
+                      {/* Quick 1-Click Agency Matrix Pills */}
+                      <div className="flex items-center gap-1 pt-1.5 overflow-x-auto scrollbar-none">
+                        {[
+                          { id: 'adobe', label: 'Adobe' },
+                          { id: 'shutterstock', label: 'Shutterstock' },
+                          { id: 'freepik', label: 'Freepik' },
+                          { id: 'getty', label: 'Getty' },
+                          { id: 'vecteezy', label: 'Vecteezy' }
+                        ].map((ag) => (
+                          <button
+                            key={ag.id}
+                            type="button"
+                            onClick={() => setActiveSpecimenAgency(ag.id as any)}
+                            className={`px-2 py-0.5 rounded text-[9.5px] font-mono font-bold transition whitespace-nowrap cursor-pointer border ${
+                              activeSpecimenAgency === ag.id
+                                ? (isLight ? 'bg-neutral-950 text-white border-neutral-950' : 'bg-emerald-500/25 text-emerald-300 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]')
+                                : (isLight ? 'bg-neutral-100 text-neutral-600 border-neutral-200' : 'bg-white/5 text-neutral-400 border-white/10 hover:text-white')
+                            }`}
+                          >
+                            {ag.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Manual Title Case & Precision Tuning */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1.5 text-[9.5px] font-mono">
+                        <span className="text-neutral-400">Manual:</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const transformed = baseTitle.replace(/\b\w/g, (c) => c.toUpperCase());
+                            setCustomSpecimenTitle(transformed);
+                            if (showToast) showToast('✓ Title Case applied');
+                          }}
+                          className={`px-1.5 py-0.5 rounded border transition cursor-pointer ${
+                            isLight ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-300 text-neutral-800' : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300'
+                          }`}
+                        >
+                          Title Case
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const transformed = baseTitle.charAt(0).toUpperCase() + baseTitle.slice(1).toLowerCase();
+                            setCustomSpecimenTitle(transformed);
+                            if (showToast) showToast('✓ Sentence case applied');
+                          }}
+                          className={`px-1.5 py-0.5 rounded border transition cursor-pointer ${
+                            isLight ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-300 text-neutral-800' : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300'
+                          }`}
+                        >
+                          Sentence case
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (baseTitle.length > 70) {
+                              const trimmed = baseTitle.slice(0, 70).replace(/\s+\S*$/, '');
+                              setCustomSpecimenTitle(trimmed);
+                              if (showToast) showToast(`✓ Trimmed to ${trimmed.length}c`);
+                            }
+                          }}
+                          className={`px-1.5 py-0.5 rounded border transition cursor-pointer ${
+                            baseTitle.length > 70
+                              ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold'
+                              : isLight ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-300 text-neutral-800' : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300'
+                          }`}
+                        >
+                          Trim &lt;70c
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            let next = baseTitle;
+                            if (!next.toLowerCase().includes('copy space')) {
+                              const suffix = ' With Copy Space';
+                              next = (next + suffix).length <= 70 ? next + suffix : (next.slice(0, 70 - suffix.length).trim() + suffix).trim();
+                              setCustomSpecimenTitle(next);
+                            }
+                            const copyTags = ['copy space', 'negative space', 'empty background'];
+                            const cur = customSpecimenTags.length > 0 ? customSpecimenTags : activePreviewStore.sampleKeywords;
+                            const filtered = cur.filter((t) => !copyTags.includes(t));
+                            setCustomSpecimenTags([...copyTags, ...filtered]);
+                            if (showToast) showToast('✓ Injected Copy Space formula (+35% RPM commercial boost)');
+                          }}
+                          className={`px-1.5 py-0.5 rounded border transition cursor-pointer font-bold ${
+                            isLight
+                              ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
+                              : 'bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-400 text-emerald-300'
+                          }`}
+                          title="Inject commercial Copy Space title suffix and priority keyword slots"
+                        >
+                          + Copy Space
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -1623,62 +1731,152 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                     : 'Vecteezy Rule: Clean commercial vector tags · Zero spam or duplicate stems';
                 return (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-[10.5px] font-mono tabular-nums text-neutral-400">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold tracking-wider text-cyan-300">TIER-1 SLOTS 01–08</span>
-                        <span className="opacity-40">·</span>
-                        <span className="text-emerald-400 font-semibold">75% SEARCH POWER</span>
+                    <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] font-mono text-neutral-400">
+                      <span className="font-semibold text-zinc-300">Priority Keyword Slots (1–8 of {activeTags.length})</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsHoveringSpecimen(true);
+                            const baseTitle = customSpecimenTitle || activePreviewStore.sampleTitle;
+                            const titleTokens = baseTitle
+                              .toLowerCase()
+                              .replace(/[^a-z0-9\s]/g, ' ')
+                              .split(/\s+/)
+                              .filter((w) => w.length > 2);
+                            const scored = [...activeTags].sort((a, b) => {
+                              const aInTitle = titleTokens.some((t) => a.toLowerCase().includes(t));
+                              const bInTitle = titleTokens.some((t) => b.toLowerCase().includes(t));
+                              if (aInTitle && !bInTitle) return -1;
+                              if (!aInTitle && bInTitle) return 1;
+                              return 0;
+                            });
+                            setCustomSpecimenTags(scored);
+                            if (showToast) {
+                              showToast('✓ Keywords calibrated to match primary title nouns');
+                            }
+                          }}
+                          className={`text-[9.5px] font-mono px-2 py-0.5 rounded border transition cursor-pointer ${
+                            isLight
+                              ? 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border-neutral-300'
+                              : 'bg-white/5 hover:bg-white/10 text-emerald-300 border-emerald-500/30'
+                          }`}
+                          title="Reorder keywords so words found in the title appear in the highest priority slots"
+                        >
+                          Match Title
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsHoveringSpecimen(true);
+                            const sorted = [...activeTags].sort((a, b) => a.localeCompare(b));
+                            setCustomSpecimenTags(sorted);
+                            if (showToast) showToast('✓ Sorted tags A–Z');
+                          }}
+                          className={`text-[9.5px] font-mono px-2 py-0.5 rounded border transition cursor-pointer ${
+                            isLight
+                              ? 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border-neutral-300'
+                              : 'bg-white/5 hover:bg-white/10 text-neutral-300 border-white/10'
+                          }`}
+                        >
+                          A–Z
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsHoveringSpecimen(true);
+                            const reversed = [...activeTags].reverse();
+                            setCustomSpecimenTags(reversed);
+                            if (showToast) showToast('✓ Reversed tag sequence');
+                          }}
+                          className={`text-[9.5px] font-mono px-2 py-0.5 rounded border transition cursor-pointer ${
+                            isLight
+                              ? 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border-neutral-300'
+                              : 'bg-white/5 hover:bg-white/10 text-neutral-300 border-white/10'
+                          }`}
+                        >
+                          Reverse
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsHoveringSpecimen(true);
-                          const baseTitle = customSpecimenTitle || activePreviewStore.sampleTitle;
-                          const titleTokens = baseTitle
-                            .toLowerCase()
-                            .replace(/[^a-z0-9\s]/g, ' ')
-                            .split(/\s+/)
-                            .filter((w) => w.length > 2);
-                          const scored = [...activeTags].sort((a, b) => {
-                            const aInTitle = titleTokens.some((t) => a.toLowerCase().includes(t));
-                            const bInTitle = titleTokens.some((t) => b.toLowerCase().includes(t));
-                            if (aInTitle && !bInTitle) return -1;
-                            if (!aInTitle && bInTitle) return 1;
-                            return 0;
-                          });
-                          setCustomSpecimenTags(scored);
-                          if (showToast) {
-                            showToast('⚡ 100x Rank #1 Calibrated! Title & Slots 1–10 100% Synchronized for First-Page Search.');
+                    </div>
+
+                    {/* Inline Manual Tag Injector */}
+                    <div className="pt-0.5">
+                      <input
+                        type="text"
+                        placeholder="+ Type tag & press Enter to inject into Slot #1..."
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const val = (e.target as HTMLInputElement).value.trim().toLowerCase();
+                            if (val && !activeTags.includes(val)) {
+                              setCustomSpecimenTags([val, ...activeTags]);
+                              (e.target as HTMLInputElement).value = '';
+                              if (showToast) showToast(`✓ Injected "${val}" into Slot #1!`);
+                            }
                           }
                         }}
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded-md border flex items-center gap-1 transition cursor-pointer ${
+                        className={`w-full text-[11px] font-mono px-2.5 py-1 rounded-lg border transition focus:outline-none ${
                           isLight
-                            ? 'bg-neutral-900 text-white hover:bg-black border-neutral-900 font-bold'
-                            : 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border-cyan-400/40 font-bold'
+                            ? 'bg-white border-neutral-300 focus:border-neutral-900 text-neutral-900 placeholder-neutral-400'
+                            : 'bg-neutral-950/70 border-white/10 focus:border-emerald-400 text-white placeholder-neutral-500'
                         }`}
-                        title="1-Click Rank #1 Calibrator: Synchronize primary title nouns into slots 1-5 for instant search rank dominance"
-                      >
-                        <span>⚡ Calibrate Rank #1</span>
-                      </button>
+                      />
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 pt-0.5">
                       {activeTags.slice(0, 8).map((kw, kIdx) => {
+                        const isBeingDragged = draggedTagIdx === kIdx;
+                        const isOver = dragOverTagIdx === kIdx;
+
                         return (
-                          <button
+                          <div
                             key={kw}
-                            type="button"
+                            draggable
+                            onDragStart={(e) => {
+                              setDraggedTagIdx(kIdx);
+                              e.dataTransfer.effectAllowed = 'move';
+                              e.dataTransfer.setData('text/plain', String(kIdx));
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'move';
+                              if (dragOverTagIdx !== kIdx) setDragOverTagIdx(kIdx);
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (draggedTagIdx === null || draggedTagIdx === kIdx) {
+                                setDraggedTagIdx(null);
+                                setDragOverTagIdx(null);
+                                return;
+                              }
+                              const reordered = [...activeTags];
+                              const [moved] = reordered.splice(draggedTagIdx, 1);
+                              reordered.splice(kIdx, 0, moved);
+                              setCustomSpecimenTags(reordered);
+                              if (showToast) showToast(`✓ Shifted "${moved}" to Slot #${kIdx + 1}`);
+                              setDraggedTagIdx(null);
+                              setDragOverTagIdx(null);
+                            }}
+                            onDragEnd={() => {
+                              setDraggedTagIdx(null);
+                              setDragOverTagIdx(null);
+                            }}
                             onClick={() => {
                               setIsHoveringSpecimen(true);
                               const reordered = [kw, ...activeTags.filter((t) => t !== kw)];
                               setCustomSpecimenTags(reordered);
                             }}
-                            title={kIdx === 0 ? 'Locked at Slot #1 (99% Search Weight)' : `Click to promote "${kw}" to Slot #1`}
-                            className={`text-[11px] px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5 border transition cursor-pointer ${
+                            title={kIdx === 0 ? 'Primary slot #1 (Drag to reorder)' : `Slot #${kIdx + 1}: Drag to reorder, or click to lock into Slot #1`}
+                            className={`text-[11px] px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5 border transition cursor-grab active:cursor-grabbing group ${
+                              isBeingDragged ? 'opacity-30 scale-95 border-dashed border-amber-400' : ''
+                            } ${
+                              isOver ? 'ring-2 ring-emerald-400 bg-emerald-950/60' : ''
+                            } ${
                               kIdx === 0
                                 ? isLight
                                   ? 'bg-neutral-950 text-white border-neutral-950 font-semibold'
-                                  : 'bg-white text-black border-white font-bold shadow-xs'
+                                  : 'bg-emerald-600 text-white border-emerald-500 font-semibold shadow-xs'
                                 : isLight
                                 ? 'bg-white/70 hover:bg-white text-neutral-700 border-neutral-200/80'
                                 : 'bg-[#050506] hover:bg-white/10 text-neutral-200 border-white/12 hover:border-white/30'
@@ -1686,25 +1884,24 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                           >
                             <span className="text-[9.5px] font-mono tabular-nums opacity-55">0{kIdx + 1}</span>
                             <span>{kw}</span>
-                          </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCustomSpecimenTags(activeTags.filter(t => t !== kw));
+                                if (showToast) showToast(`Removed "${kw}"`);
+                              }}
+                              title="Delete tag"
+                              className="opacity-30 group-hover:opacity-100 hover:text-rose-400 ml-0.5 text-xs transition cursor-pointer"
+                            >
+                              &times;
+                            </button>
+                          </div>
                         );
                       })}
                     </div>
 
-                    {/* 100x First-Page Search Authority Guarantee Bar */}
-                    <div className={`p-2.5 rounded-xl border text-[10px] font-mono flex items-center justify-between gap-2 ${
-                      isLight
-                        ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
-                        : 'bg-emerald-950/25 border-emerald-500/25 text-emerald-300'
-                    }`}>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="font-bold">FIRST-PAGE SEARCH INDEX: 100%</span>
-                      </div>
-                      <span className="opacity-80">Slots 01–10 75% Weight · Zero Trademarks</span>
-                    </div>
-
-                    <div className={`text-[10px] font-mono pt-0.5 truncate ${
+                    <div className={`text-[10px] font-mono pt-1 truncate ${
                       isLight ? 'text-neutral-500' : 'text-neutral-400'
                     }`}>
                       {agencySpecNote}
@@ -1713,56 +1910,76 @@ export const EditorialHeroSection: React.FC<EditorialHeroProps> = ({
                 );
               })()}
 
-              {/* Store Switcher Dots & Single Active Format Copy Trigger */}
-              <div className="mt-6 pt-4 border-t border-neutral-200/60 dark:border-white/10 flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const baseTitle = customSpecimenTitle || activePreviewStore.sampleTitle;
-                    const kws = customSpecimenTags.length > 0 ? customSpecimenTags : activePreviewStore.sampleKeywords;
-                    navigator.clipboard.writeText(`${baseTitle}\n\n${kws.join(', ')}`);
-                    setCopiedId(`${activePreviewStore.id}_full`);
-                    setTimeout(() => setCopiedId(null), 1800);
-                  }}
-                  className={`text-[10.5px] font-mono tracking-[0.06em] uppercase flex items-center gap-1.5 cursor-pointer transition ${
-                    copiedId === `${activePreviewStore.id}_full`
-                      ? 'text-white font-bold'
-                      : isLight
-                      ? 'text-neutral-600 hover:text-neutral-950'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  {copiedId === `${activePreviewStore.id}_full` ? (
-                    <>
-                      <Check className="w-3 h-3 text-white" />
-                      <span>Copied Title + Tags</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3 h-3 opacity-70" />
-                      <span>Copy Specimen</span>
-                    </>
-                  )}
-                </button>
-                <div className="flex items-center gap-1.5">
-                  {marketStores.map((st, idx) => (
-                    <button
-                      key={st.id}
-                      type="button"
-                      onClick={() => {
-                        setPreviewStoreIdx(idx);
-                        setCustomSpecimenTitle('');
-                        setCustomSpecimenTags([]);
-                      }}
-                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                        previewStoreIdx === idx
-                          ? (isLight ? 'w-5 bg-neutral-950' : 'w-5 bg-white')
-                          : (isLight ? 'w-1.5 bg-neutral-300 hover:bg-neutral-500' : 'w-1.5 bg-neutral-700 hover:bg-neutral-500')
-                      }`}
-                      title={`Preview ${st.title}`}
-                    />
-                  ))}
+              {/* Manual Copy Shortcuts & Precision Studio Launcher */}
+              <div className="mt-5 pt-3.5 border-t border-neutral-200/60 dark:border-white/10 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const baseTitle = customSpecimenTitle || activePreviewStore.sampleTitle;
+                      navigator.clipboard.writeText(baseTitle);
+                      setCopiedId('title_only');
+                      if (showToast) showToast('✓ Copied Title (<70 chars)');
+                      setTimeout(() => setCopiedId(null), 1500);
+                    }}
+                    className={`px-2 py-1 rounded-lg border transition cursor-pointer flex items-center gap-1 ${
+                      copiedId === 'title_only' ? 'bg-emerald-600 text-white border-emerald-500' : isLight ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-200 text-neutral-800' : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300'
+                    }`}
+                  >
+                    {copiedId === 'title_only' ? <Check className="w-3 h-3 text-white" /> : <Copy className="w-3 h-3 opacity-60" />}
+                    <span>Copy Title</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const kws = customSpecimenTags.length > 0 ? customSpecimenTags : activePreviewStore.sampleKeywords;
+                      navigator.clipboard.writeText(kws.slice(0, 8).join(', '));
+                      setCopiedId('top10_only');
+                      if (showToast) showToast('✓ Copied Top 8 Priority Keywords');
+                      setTimeout(() => setCopiedId(null), 1500);
+                    }}
+                    className={`px-2 py-1 rounded-lg border transition cursor-pointer flex items-center gap-1 ${
+                      copiedId === 'top10_only' ? 'bg-emerald-600 text-white border-emerald-500' : isLight ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-200 text-neutral-800' : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300'
+                    }`}
+                  >
+                    {copiedId === 'top10_only' ? <Check className="w-3 h-3 text-white" /> : <Copy className="w-3 h-3 opacity-60" />}
+                    <span>Copy Top 8</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const kws = customSpecimenTags.length > 0 ? customSpecimenTags : activePreviewStore.sampleKeywords;
+                      navigator.clipboard.writeText(kws.join(', '));
+                      setCopiedId('all_kws');
+                      if (showToast) showToast(`✓ Copied all ${kws.length} Keywords`);
+                      setTimeout(() => setCopiedId(null), 1500);
+                    }}
+                    className={`px-2 py-1 rounded-lg border transition cursor-pointer flex items-center gap-1 ${
+                      copiedId === 'all_kws' ? 'bg-emerald-600 text-white border-emerald-500' : isLight ? 'bg-neutral-100 hover:bg-neutral-200 border-neutral-200 text-neutral-800' : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300'
+                    }`}
+                  >
+                    {copiedId === 'all_kws' ? <Check className="w-3 h-3 text-white" /> : <Copy className="w-3 h-3 opacity-60" />}
+                    <span>Copy All Tags</span>
+                  </button>
                 </div>
+
+                {onOpenPrecisionStudio && (
+                  <button
+                    type="button"
+                    onClick={onOpenPrecisionStudio}
+                    className={`px-3 py-1 rounded-lg border text-[10.5px] font-mono font-bold flex items-center gap-1 transition cursor-pointer ${
+                      isLight
+                        ? 'bg-neutral-900 text-white hover:bg-black border-neutral-900'
+                        : 'bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border-emerald-500/40'
+                    }`}
+                    title="Launch Full 50-Slot Manual Precision Studio"
+                  >
+                    <span>Full Manual Studio</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

@@ -49,15 +49,12 @@ export const LiveTrendingTicker: React.FC<LiveTrendingTickerProps> = ({
   };
 
   return (
-    <div className={`w-full ${isLight ? 'bg-slate-50/80 border-t border-slate-200/70' : 'bg-slate-950/60'} backdrop-blur-md py-1.5 px-3 sm:px-4 overflow-hidden relative`}>
+    <div className={`w-full ${isLight ? 'bg-emerald-50/70 border-t border-emerald-200/80' : 'bg-gradient-to-r from-[#011610] via-[#022419] to-[#011610] border-t border-emerald-500/25'} backdrop-blur-md py-1.5 px-3 sm:px-4 overflow-hidden relative shadow-sm`}>
       <div className="max-w-7xl mx-auto flex items-center gap-3">
-        {/* Left Live Badge */}
-        <div className={`flex items-center gap-1.5 shrink-0 ${isLight ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-indigo-950/70 border-indigo-500/30 text-indigo-300'} border px-2.5 py-1 rounded-full shadow-xs`}>
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-          <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-            <Flame className="w-3 h-3 text-amber-500" />
-            <span className="hidden sm:inline">Marketplace</span> Buyer Surge
-          </span>
+        {/* Left Clean Label */}
+        <div className="flex items-center gap-2 shrink-0 text-[11px] font-mono tracking-wider uppercase text-emerald-400 font-semibold">
+          <span>Market Demand</span>
+          <span className="opacity-30">/</span>
         </div>
 
         {/* Scrollable / Marquee Ticker Track */}
@@ -75,41 +72,41 @@ export const LiveTrendingTicker: React.FC<LiveTrendingTickerProps> = ({
                 className={`group px-3 py-1 rounded-xl text-xs font-semibold transition flex items-center gap-2 whitespace-nowrap shrink-0 border cursor-pointer ${
                   isLight
                     ? item.isHot
-                      ? 'bg-white hover:bg-slate-50 border-amber-300 hover:border-amber-400 text-slate-900 shadow-xs'
-                      : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-800 shadow-2xs'
+                      ? 'bg-white hover:bg-emerald-50/60 border-amber-300 hover:border-amber-400 text-neutral-900 shadow-xs'
+                      : 'bg-white hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300 text-neutral-800 shadow-2xs'
                     : item.isHot
-                    ? 'bg-slate-900/90 hover:bg-slate-800 border-amber-500/30 hover:border-amber-400 text-slate-200'
-                    : 'bg-slate-900/60 hover:bg-slate-800 border-slate-800 hover:border-slate-700 text-slate-300'
+                    ? 'bg-[#021d15]/90 hover:bg-[#032a20] border-rose-500/35 hover:border-rose-400 text-neutral-200 hover:shadow-[0_0_15px_rgba(244,42,65,0.2)]'
+                    : 'bg-[#011610]/80 hover:bg-[#022419] border-emerald-500/25 hover:border-emerald-400 text-neutral-300'
                 }`}
                 title={`Click to copy & apply "${item.tag}"`}
               >
-                <span className={`${isLight ? 'text-slate-900 group-hover:text-indigo-600' : 'text-white group-hover:text-amber-300'} transition font-bold`}>
+                <span className={`${isLight ? 'text-neutral-900 group-hover:text-emerald-700' : 'text-white group-hover:text-emerald-300'} transition font-bold`}>
                   {item.tag}
                 </span>
 
                 <span className={`font-mono text-[10px] font-black ${
                   isLight
-                    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                    : 'text-emerald-400 bg-emerald-950/60 border-emerald-500/30'
+                    ? 'text-emerald-700 bg-emerald-100/60 border-emerald-300'
+                    : 'text-emerald-300 bg-emerald-950/70 border-emerald-500/40'
                 } border px-1.5 py-0.2 rounded-md`}>
                   {item.growth}
                 </span>
 
-                <span className={`text-[9px] uppercase tracking-wider ${isLight ? 'text-slate-400' : 'text-slate-400'} hidden md:inline`}>
+                <span className={`text-[9px] uppercase tracking-wider ${isLight ? 'text-neutral-500' : 'text-emerald-300/60'} hidden md:inline`}>
                   {item.category}
                 </span>
 
                 {isCopied ? (
-                  <Check className="w-3 h-3 text-emerald-500" />
+                  <Check className="w-3 h-3 text-emerald-400" />
                 ) : (
-                  <Copy className={`w-3 h-3 ${isLight ? 'text-slate-400 group-hover:text-slate-600' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                  <Copy className={`w-3 h-3 ${isLight ? 'text-neutral-400 group-hover:text-neutral-600' : 'text-neutral-400 group-hover:text-emerald-300'}`} />
                 )}
               </button>
             );
           })}
         </div>
 
-        <div className={`hidden lg:flex items-center gap-1 text-[10px] ${isLight ? 'text-slate-400 font-medium' : 'text-slate-500 font-medium'} shrink-0`}>
+        <div className={`hidden lg:flex items-center gap-1 text-[10px] ${isLight ? 'text-neutral-500 font-medium' : 'text-emerald-200/60 font-medium'} shrink-0`}>
           <span>Click any trend to copy</span>
         </div>
       </div>
